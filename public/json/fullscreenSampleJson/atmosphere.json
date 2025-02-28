@@ -1,0 +1,19 @@
+{
+  "digitalPressure": "984.83",
+  "salinity": "0.70",
+  "atmosphereHumidity": "35.80",
+  "pm10": "88.98",
+  "sum": 31,
+  "soilHumidity": "12.91",
+  "rainfallAccumulation": "0.00",
+  "radiationAccumulation": "11.94",
+  "atmosphereTemperature": "2.98",
+  "negativeOxygenIon": "227.81",
+  "rainfall": "0.00",
+  "simpleTotalRadiation": "138.18",
+  "soilTemperature": "5.49",
+  "pm25": "67.74",
+  "month": "2021-01",
+  "windDirection": "177.68",
+  "windSpeed": "1.51"
+}

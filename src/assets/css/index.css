@@ -1,0 +1,199 @@
+/*先删除默认的内外间距*/
+*{
+    margin: 0;
+    padding: 0;
+}
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    font-size: 62.5%;
+}
+body,input,button, a,textarea,select{
+    margin: 0;
+    font-family: "Helvetica Neue",Helvetica,"Hiragino Sans GB";
+    font-size: 1.4rem;
+    line-height: 1.5;
+    color: #333;
+}
+html,body{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+a{
+    text-decoration: none;
+}
+a:hover, a:focus{
+    text-emphasis: none;
+}
+a:hover{
+    filter: alpha(opacity=90);
+    opacity: .9;
+}
+
+/*文本对齐*/
+.tc {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    font-size: 700;
+    line-height: 55px;
+    letter-spacing: 6px;
+}
+
+.tr {
+    text-align: right;
+}
+
+.tl {
+    width: 100%;
+    height: 40px;
+    text-align: left;
+    font-size: 20px;
+    letter-spacing: 6px;
+    line-height: 45px;
+}
+/*主体*/
+ .content {
+    color: #fff;
+    background: #000;
+    width:100%;
+    height:100%;
+}
+ .bg {
+    background-color: #081325;
+    background-size: cover;
+}
+.module-box {
+    display: flex;
+    justify-content: space-between;/*两端对齐*/
+    margin: 5px;
+}
+.header {
+    width: 100%;
+    height: 40px;
+    text-align: center;
+    font-size: 20px;
+    line-height: 40px;
+    letter-spacing: 1px;
+}
+.info {
+    background-color: black;
+    text-align: center;
+    padding: 10px;
+    position: relative;
+  }
+.info img {
+    width: 30px;
+    height: 23px;
+    position: absolute;
+    left: calc(50% - 15px);
+    bottom: -23px;
+  }
+.title1 {
+    background:url('../img/title1.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title2 {
+    background:url('../img/title2.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title3 {
+    background:url('../img/title3.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title4 {
+    background:url('../img/title5.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title5 {
+    background:url('../img/title4.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title6 {
+    background:url('../img/title6.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title7 {
+    background:url('../img/title7.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title8 {
+    background:url('../img/title8.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title9 {
+    background:url('../img/title9.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.title10{
+    background:url('../img/title10.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.tb {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    font-size: 700;
+    line-height: 55px;
+    letter-spacing: 2px;
+}
+.mark {
+    background:url('../img/mark.png') no-repeat center center;
+    background-size: 100%;
+    background-position: 0px,0px;
+}
+.mk {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    font-size: 25px;
+    line-height: 55px;
+    letter-spacing: 1px;
+    color: aqua;
+}
+.ta {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 55px;
+    letter-spacing: 2px;
+}
+.td {
+    position: relative;
+    top:140px;
+    right:10px;
+    line-height: 18px;
+}
+.color1{
+    position:absolute;
+    top:10px;
+    right:15px;
+    background-color:rgb(0, 104, 224);
+    width: 50px;
+  }
+.color{
+    background-color:rgb(0, 104, 224);
+    position: absolute;
+    top: 10px;
+    right:75px;
+  }
+
+.te{
+    position: relative;
+    bottom:70px;
+    left:100px;
+    line-height: 25px;
+}

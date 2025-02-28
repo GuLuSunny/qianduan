@@ -1,0 +1,82 @@
+[
+  {
+      "id": 1,
+      "imgsrc": "/images/fullscreenBird/bird1.jpg",
+      "name": "中华秋沙鸭",
+      "nameLatin": "Mergus squamatus",
+      "resideType": "冬候鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长52-62厘米。雌雄异色。嘴近红色，尖具钩。雄鸟头部和上颈黑色且有绿色金属光泽，枕部墨绿色延伸至背部，具长形冠羽；上背黑色，体侧和下体白色，两胁具黑色鳞片状斑纹，区别于普通秋沙鸭和红胸秋沙鸭。雌鸟头部和上颈棕褐色，冠羽较短，上体灰褐色，下体白色，体侧也有黑色鳞状斑。",
+      "livingHabit": "栖息于水质优良的溪流、河流、湖泊和水库等水域。主要以鱼类为食。多在缓流浅水处潜水觅食，捕到鱼后先衔出水面再吞食。潜水前上胸离开水面，再侧头向下钻入水中。陆浑湿地常见。"
+  },
+  {
+      "id": 2,
+      "imgsrc": "/images/fullscreenBird/bird2.jpg",
+      "name": "青头潜鸭",
+      "nameLatin": "Aythya baeri",
+      "resideType": "冬候鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长41-47cm。头青绿色。雄鸟特征为头颈部墨绿色具金属光泽，胸部暗栗色，两胁由浅栗色和白色形成长的锯齿形横斑，尾下覆羽白色。雌鸟色浅。与雄性凤头潜鸭区别在于头部无冠羽，两侧白色块线条不够整齐。与白眼潜鸭区别在于棕色多些，赤褐色少些，腹部白色延及体侧。",
+      "livingHabit": "栖息于水生植物丰富的河流、水库等地。常成对或成小群活动，有时也与其他潜鸭混群栖息。主要以各种水草为食，也吃软体动物、水生昆虫等动物性食物。陆浑湿地偶见。"
+  },
+  {
+      "id": 3,
+      "imgsrc": "/images/fullscreenBird/bird3.jpg",
+      "name": "大鸨",
+      "nameLatin": "Otis tarda",
+      "resideType": "冬候鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长75-105厘米。雌雄同色。特征为头灰色，颈棕栗色，颈粗且直。上体具宽大的棕色及黑色横斑，下体及尾下白色；飞行时翼端偏白；眼黄色，嘴偏黄，脚黄褐色。",
+      "livingHabit": "栖息于草原及滩地，越冬期多见于农田。常集群活动。主要以植物叶和种子为食，也吃昆虫、蛙等动物性食物。陆浑湿地周边的饭坡镇曾救助1只。陆浑湿地罕见。"
+  },
+  {
+      "id": 4,
+      "imgsrc": "/images/fullscreenBird/bird4.jpg",
+      "name": "黑鹳",
+      "nameLatin": "ciconia nigra",
+      "resideType": "冬候鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长90-110厘米。雌雄同色。鲜红色的嘴长而直，下胸、腹部及尾下为纯白色，其余均为黑色，在不同角度的光线下，映出变幻多端的绿色、紫色或青铜色金属光泽；较长的腿红色；眼周裸露皮肤红色。亚成鸟上体褐色，下体白色。",
+      "livingHabit": "栖息于河流沿岸、沼泽溪流等地。常集群活动，多选择靠近山崖的河流觅食，主要以鱼类为食，也吃蛙、昆虫等。陆浑湿地可见。"
+  },
+  {
+      "id": 5,
+      "imgsrc": "/images/fullscreenBird/bird5.jpg",
+      "name": "乌雕",
+      "nameLatin": "clanga clanga",
+      "resideType": "旅鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长61～74厘米，雌雄同色。特征为幼鸟翼上及背部具白色斑点，翼下初级飞羽基部发白，腰白色。通体为暗褐色，背部略微缀有紫色光泽，颏部、喉部和胸部为黑褐色，其余下体稍淡。",
+      "livingHabit": "栖息于丘陵、平原、水域附近的树林。多在飞翔中或伏于地面捕食，取食鱼、蛙、鼠等动物，也食金龟子、蝗虫。陆浑湿地偶见。"
+  },
+  {
+      "id": 6,
+      "imgsrc": "/images/fullscreenBird/bird6.jpg",
+      "name": "金雕",
+      "nameLatin": "Aquila chrysaetos",
+      "resideType": "留鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长78-105厘米。雌雄同色。全身深褐色。特征为体型巨大，头具金色冠羽，嘴巨大，耳羽黑褐色。上体暗褐色，肩部较淡，背肩部微缀紫色光泽。尾长而圆，尾羽灰褐色，具不规则的暗灰褐色横斑。飞行时腰部白色明显可见。两翼呈浅“V”字形。",
+      "livingHabit": "栖息于森林、草原、荒漠、山地等。主要以野兔、环颈雉、雁鸭等中小型动物为食。陆浑湿地周边的纸房镇曾救助1只。陆浑湿地罕见。"
+  },
+  {
+      "id": 7,
+      "imgsrc": "/images/fullscreenBird/bird7.jpg",
+      "name": "白尾海雕",
+      "nameLatin": "Haliaeetus albicilla",
+      "resideType": "冬候鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长85-92厘米。雌雄同色。特征为头及胸浅褐色，黄色的嘴粗壮，尾白色。头顶、后头、耳羽、后颈淡黄褐色，具暗褐色斑纹。颏、喉部淡黄褐色，胸部淡褐色，下体褐色。尾较短，呈楔状，纯白色。嘴大呈黄色。脚黄色，爪黑色。",
+      "livingHabit": "栖息于河口、江河附近的广大沼泽地带。有时蹲立不动达几个小时。高空翱翔时两翼弯曲略向上扬。主要以鱼类为食，也捕食各种鸟类及中小型哺乳动物，有时也吃腐肉和动物尸体。陆浑湿地罕见。"
+  },
+  {
+      "id": 8,
+      "imgsrc": "/images/fullscreenBird/bird8.jpg",
+      "name": "黄胸鹀",
+      "nameLatin": "Emberiza aureola",
+      "resideType": "旅鸟",
+      "protectionLevel": "国家Ⅰ级保护野生动物",
+      "morphologicalFeature": "体长14-16厘米。雌雄异色。雄鸟头和喉部黑色，翅上具一窄的白色横带和一宽的白色翅斑，胸具深栗色横带，腹部黄色。雌鸟上体棕褐色或黄褐色，腹部黄色。",
+      "livingHabit": "栖息于丘陵、平原、湿地的灌丛、草丛和农田。主要以昆虫、植物种子和谷壳类植物为食。陆浑湿地可见。"
+  }
+]
