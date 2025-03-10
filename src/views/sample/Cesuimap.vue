@@ -248,8 +248,7 @@ async function initializeCesium() {
     //默认令牌："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmJkYzFiZi1jMGE2LTQ2YmYtYTAyZS1jOTNhODEwZTYzZjYiLCJpZCI6MjE2NTk4LCJpYXQiOjE3MTYyNTc5OTJ9.AbNDyzzy3zB6vFXXXnJ9HwVhNvBSbKAnhFRo3k9D3hE";
     console.log(Cesium)
     viewer = new Cesium.Viewer("cesiumContainer", {
-        geocoder: false,                //是否显示地名查找控件
-        geocoder: false,                // 是否显示地名查找控件
+        geocoder: true,               // 是否显示地名查找控件
         sceneModePicker: false,         // 是否显示投影方式控件
         navigationHelpButton: false,    // 是否显示帮助信息控件
         baseLayerPicker: false,         // 是否显示图层选择控件
@@ -260,6 +259,7 @@ async function initializeCesium() {
         timeline: false,                // 是否显示时间轴
         selectionIndicator: false,      // 是否显示选中指示器
         infoBox: false,                 // 是否显示信息框
+        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./test'))
         // 使用中国在线地图服务作为底图
         // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         //     url: "http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer"
