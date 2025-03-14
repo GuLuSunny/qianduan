@@ -32,6 +32,7 @@
     "less": "^4.2.2",
     "less-loader": "^12.2.0",
     "node-polyfill-webpack-plugin": "^4.1.0",
+    "shpjs": "^6.1.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "vue": "^3.2.13",

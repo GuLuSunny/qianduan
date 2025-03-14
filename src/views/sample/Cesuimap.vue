@@ -259,7 +259,7 @@ async function initializeCesium() {
         timeline: false,                // 是否显示时间轴
         selectionIndicator: false,      // 是否显示选中指示器
         infoBox: false,                 // 是否显示信息框
-        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./test'))//加载地形
+        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'))//加载地形
         // 使用中国在线地图服务作为底图
         // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         //     url: "http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer"
@@ -272,8 +272,16 @@ async function initializeCesium() {
         //     tileMatrixSetID: "GoogleMapsCompatible",
         // })
     });
-
-
+    try {
+        // 动态加载 GeoJSON 数据源
+        const geojsonSource = await Cesium.GeoJsonDataSource.load('./water_GeoJSON/water.geojson');
+        // 将 GeoJSON 添加到场景实体集合中，并设置样式等属性
+        viewer.dataSources.add(geojsonSource);
+        // 自动飞向包含所有 GeoJSON 数据的位置范围
+        viewer.flyTo(geojsonSource);
+    } catch (error) {
+        console.error("加载 GeoJSON 文件失败:", error);
+    }
     // 设置最小缩放距离（以米为单位）
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
 
