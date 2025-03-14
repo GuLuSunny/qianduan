@@ -151,7 +151,7 @@ var lastClickedEntityPosition ;
 var viewer;
 
 // 给定的坐标
-var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
+var position = Cesium.Cartesian3.fromDegrees(117.085653, 39.102947);
 // 初始朝向角度
 var heading = 0;
 // 初始俯仰角度
@@ -272,16 +272,56 @@ async function initializeCesium() {
         //     tileMatrixSetID: "GoogleMapsCompatible",
         // })
     });
+
     try {
-        // 动态加载 GeoJSON 数据源
-        const geojsonSource = await Cesium.GeoJsonDataSource.load('./water_GeoJSON/water.geojson');
-        // 将 GeoJSON 添加到场景实体集合中，并设置样式等属性
-        viewer.dataSources.add(geojsonSource);
-        // 自动飞向包含所有 GeoJSON 数据的位置范围
-        viewer.flyTo(geojsonSource);
+    // 配置常量
+    const GEOJSON_PATH = './water/water.geojson';
+    const TEXTURE_PATH = './water/water.jpg';
+    // 加载数据源
+    const geojsonSource = await Cesium.GeoJsonDataSource.load(GEOJSON_PATH);
+    await viewer.dataSources.add(geojsonSource);
+    await viewer.flyTo(geojsonSource);
+    // 创建几何实例
+    const instances = geojsonSource.entities.values
+        .filter(entity => entity.polygon?.hierarchy)
+        .map(entity => {
+        const hierarchy = entity.polygon.hierarchy.getValue();
+        return new Cesium.GeometryInstance({
+            geometry: new Cesium.PolygonGeometry({
+            polygonHierarchy: new Cesium.PolygonHierarchy(hierarchy.positions),
+            extrudedHeight: 0,
+            height: 0,
+            vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+            })
+        });
+        });
+    // 创建水面效果图元
+    const waterPrimitive = new Cesium.GroundPrimitive({
+        geometryInstances: instances,
+        appearance: new Cesium.EllipsoidSurfaceAppearance({
+        aboveGround: true,
+        material: new Cesium.Material({
+            fabric: {
+            type: "Water",
+            uniforms: {
+                normalMap: TEXTURE_PATH,
+                frequency: 2000.0,
+                animationSpeed: 0.1,
+                amplitude: 5.0,
+                specularIntensity: 0.5,
+                baseWaterColor: new Cesium.Color(0/255, 54/255, 84/255, 0.8)
+            }
+            }
+        })
+        })
+    });
+    viewer.scene.primitives.add(waterPrimitive);
     } catch (error) {
-        console.error("加载 GeoJSON 文件失败:", error);
+    console.error("处理流程失败:", error);
+    // 可添加错误恢复逻辑，例如：显示错误提示层
     }
+
+    
     // 设置最小缩放距离（以米为单位）
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
 
@@ -308,7 +348,7 @@ async function initializeCesium() {
 
     console.log("初始化错误检查点1")
     // // 定义目标位置
-    var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
+    var destination = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 10000);
 
     // 缓慢飞行到指定位置并控制方向
     viewer.camera.flyTo({
@@ -324,7 +364,7 @@ async function initializeCesium() {
 
     // let model = viewer.entities.add({
     //     id: '建筑模型',
-    //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
+    //     position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
     //     model: {
     //         uri: glbModel,
     //         minimumPixelSize: 800,
@@ -339,7 +379,7 @@ async function initializeCesium() {
     viewer.entities.add({
         id: '000000001',
         name: '公司',
-        position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
+        position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
         billboard: {
             image: marker, // 图片路径
             width: 40.85,  // 图片宽度（像素）
@@ -365,6 +405,7 @@ async function initializeCesium() {
     console.log('坐标转换检查点1');
     // 将 HTML 元素与 Cesium 地图相对位置绑定
     viewer.scene.preRender.addEventListener(function () {
+        var position = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347);
         var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
         if (Cesium.defined(canvasPosition)) {
             htmlElement.style.left = canvasPosition.x + 'px';
@@ -388,8 +429,8 @@ async function initializeCesium() {
             name: `${i}`,
             text: i.toString(),
             position: {
-                longitude: await getRandom(114, 115),
-                latitude: await getRandom( 34, 35)
+                longitude: await getRandom(117.085053, 118),
+                latitude: await getRandom(39.102347, 40)
             }
         });
     }
