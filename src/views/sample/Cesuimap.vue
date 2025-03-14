@@ -151,7 +151,7 @@ var lastClickedEntityPosition ;
 var viewer;
 
 // 给定的坐标
-var position = Cesium.Cartesian3.fromDegrees(117.085653, 39.102947);
+var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
 // 初始朝向角度
 var heading = 0;
 // 初始俯仰角度
@@ -308,7 +308,7 @@ async function initializeCesium() {
 
     console.log("初始化错误检查点1")
     // // 定义目标位置
-    var destination = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 10000);
+    var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
 
     // 缓慢飞行到指定位置并控制方向
     viewer.camera.flyTo({
@@ -324,7 +324,7 @@ async function initializeCesium() {
 
     // let model = viewer.entities.add({
     //     id: '建筑模型',
-    //     position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
+    //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
     //     model: {
     //         uri: glbModel,
     //         minimumPixelSize: 800,
@@ -339,7 +339,7 @@ async function initializeCesium() {
     viewer.entities.add({
         id: '000000001',
         name: '公司',
-        position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
+        position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
         billboard: {
             image: marker, // 图片路径
             width: 40.85,  // 图片宽度（像素）
@@ -365,7 +365,6 @@ async function initializeCesium() {
     console.log('坐标转换检查点1');
     // 将 HTML 元素与 Cesium 地图相对位置绑定
     viewer.scene.preRender.addEventListener(function () {
-        var position = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347);
         var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
         if (Cesium.defined(canvasPosition)) {
             htmlElement.style.left = canvasPosition.x + 'px';
@@ -389,8 +388,8 @@ async function initializeCesium() {
             name: `${i}`,
             text: i.toString(),
             position: {
-                longitude: await getRandom(117.085053, 118),
-                latitude: await getRandom(39.102347, 40)
+                longitude: await getRandom(114, 115),
+                latitude: await getRandom( 34, 35)
             }
         });
     }
