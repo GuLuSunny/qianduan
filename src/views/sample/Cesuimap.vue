@@ -259,7 +259,7 @@ async function initializeCesium() {
         timeline: false,                // 是否显示时间轴
         selectionIndicator: false,      // 是否显示选中指示器
         infoBox: false,                 // 是否显示信息框
-        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./test'))
+        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./test'))//加载地形
         // 使用中国在线地图服务作为底图
         // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         //     url: "http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer"
