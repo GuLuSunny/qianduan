@@ -273,54 +273,58 @@ async function initializeCesium() {
         // })
     });
 
-    try {
-    // 配置常量
-    const GEOJSON_PATH = './water/water.geojson';
-    const TEXTURE_PATH = './water/water.jpg';
-    // 加载数据源
-    const geojsonSource = await Cesium.GeoJsonDataSource.load(GEOJSON_PATH);
-    await viewer.dataSources.add(geojsonSource);
-    await viewer.flyTo(geojsonSource);
-    // 创建几何实例
-    const instances = geojsonSource.entities.values
-        .filter(entity => entity.polygon?.hierarchy)
-        .map(entity => {
-        const hierarchy = entity.polygon.hierarchy.getValue();
-        return new Cesium.GeometryInstance({
-            geometry: new Cesium.PolygonGeometry({
-            polygonHierarchy: new Cesium.PolygonHierarchy(hierarchy.positions),
-            extrudedHeight: 0,
-            height: 0,
-            vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+    
+    let promise =Cesium.GeoJsonDataSource.load('./water/water.geojson');
+    // 数据加载完成后渲染
+    promise.then((ds) => {
+        let instances = [];
+        let entitys = ds.entities.values;
+
+        entitys.forEach((e) => {
+            let geometry = new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                    polygonHierarchy: new Cesium.PolygonHierarchy(e.polygon.hierarchy.getValue().positions),
+                    extrudedHeight: 0,
+                    height: 0,
+                    vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                }),
+                // attributes: {
+                //     color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+                //         Cesium.Color.fromRandom({
+                //             alpha: 0.5
+                //         })
+                //     )
+                // }
+            });
+            instances.push(geometry);
+            viewer.flyTo(ds);
+            
+        });
+
+        // 添加 GroundPrimitive 并设置其属性
+        let primitive = new Cesium.GroundPrimitive({
+            geometryInstances: instances, // 合并几何实例
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true, // 是否在椭球面上
+                material: new Cesium.Material({
+                    fabric: {
+                        type: "Water", // 使用 Water 材质模拟水面效果
+                        uniforms: {
+                            normalMap: "./water/water.jpg", // 法线贴图路径
+                            frequency: 2000.0, // 控制波数的数值
+                            animationSpeed: 0.1, // 水体动画速度
+                            amplitude: 5.0, // 水波动幅度
+                            specularIntensity: 0.5, // 镜面反射强度
+                            baseWaterColor: new Cesium.Color(0 / 255.0, 54 / 255.0, 84 / 255.0, 0.8) // 基础水颜色
+                        }
+                    }
+                })
             })
         });
-        });
-    // 创建水面效果图元
-    const waterPrimitive = new Cesium.GroundPrimitive({
-        geometryInstances: instances,
-        appearance: new Cesium.EllipsoidSurfaceAppearance({
-        aboveGround: true,
-        material: new Cesium.Material({
-            fabric: {
-            type: "Water",
-            uniforms: {
-                normalMap: TEXTURE_PATH,
-                frequency: 2000.0,
-                animationSpeed: 0.1,
-                amplitude: 5.0,
-                specularIntensity: 0.5,
-                baseWaterColor: new Cesium.Color(0/255, 54/255, 84/255, 0.8)
-            }
-            }
-        })
-        })
-    });
-    viewer.scene.primitives.add(waterPrimitive);
-    } catch (error) {
-    console.error("处理流程失败:", error);
-    // 可添加错误恢复逻辑，例如：显示错误提示层
-    }
 
+        // 将生成的 Primitive 添加到场景中，并缩放至目标区域
+        viewer.scene.primitives.add(primitive);
+    });
     
     // 设置最小缩放距离（以米为单位）
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
@@ -663,20 +667,20 @@ async function onMovement(movement) {
     // MouseZoom.style.left = screenPosition.x + 'px';
     // MouseZoom.style.top = screenPosition.y + 'px';
 
-    if (pickedObject && pickedObject.id._id === '建筑模型') {
-        // 获取模型对应的实体对象
-        var entity = viewer.entities.getById(pickedObject.id._id);
-        // 设置模型轮廓宽度
-        entity.model.silhouetteSize = 2;
-        entity.model.silhouetteColor = new Cesium.Color.fromCssColorString('#47e8fe');
-    } else {
-        // 获取模型对应的实体对象
-        var entity = viewer.entities.getById('建筑模型');
+    // if (pickedObject && pickedObject.id._id === '建筑模型') {
+    //     // 获取模型对应的实体对象
+    //     var entity = viewer.entities.getById(pickedObject.id._id);
+    //     // 设置模型轮廓宽度
+    //     entity.model.silhouetteSize = 2;
+    //     entity.model.silhouetteColor = new Cesium.Color.fromCssColorString('#47e8fe');
+    // } else {
+    //     // 获取模型对应的实体对象
+    //     var entity = viewer.entities.getById('建筑模型');
 
-        //待处理
-        // 设置模型轮廓宽度
-        //entity.model.silhouetteSize = 0;
-    }
+    //     //待处理
+    //     // 设置模型轮廓宽度
+    //     //entity.model.silhouetteSize = 0;
+    // }
 
     // 如果点击到了一个具有 monitoItems 属性的实体对象
     if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
