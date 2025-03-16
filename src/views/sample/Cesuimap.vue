@@ -12,56 +12,56 @@
         <!-- 内容盒子 -->
         <div class="dataBoxView">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">水位</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <HydrographView />
             </div>
         </div>
 
         <div class="dataBoxView" style="top: 37%;">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">径流</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <RunOff />
             </div>
         </div>
 
         <div class="dataBoxView" style="top: 67%;">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">气象</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <Atmosphere/>
             </div>
         </div>
 
 
         <div class="dataBoxView" style="right: 20px; left: auto;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">水体理化</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <WaterPhysicochemistry />
             </div>
         </div>
 
         <div class="dataBoxView" style="right: 20px; left: auto; top: 37%;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">光谱反射率</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <SpectralReflectance />
             </div>
         </div>
 
         <div class="dataBoxView" style="right: 20px; left: auto; top: 67%;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">湿地</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <WetLandView />
             </div>
         </div>
 
@@ -133,6 +133,13 @@ import * as Cesium from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import marker from '../../../public/images/cesiumMap/marker.png';
 import { dialogEmits } from 'element-plus';
+import RunOff from './charts/RunOff.vue' /* 径流 */
+import HydrographView from './charts/HydrographView.vue' /* 水位 */
+import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反射率 */
+import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体理化 */
+import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
+import WetLandView from './charts/WetLandView.vue' /* 湿地 */
+
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
 // 蓝色标志   http://mars3d.cn/project/vue/img/marker/mark-blue.png
@@ -711,7 +718,7 @@ async function rotate()
 <style lang="less" scoped>
 .CesiumapView {
     width: 100%;
-    height: 100%;
+    height: 1000px;
     overflow: hidden;
     cursor: url('../../../public/images/cesiumMap/cursor-RmLDFyYc32.png') 24 24, auto;
 }
@@ -1146,6 +1153,7 @@ async function rotate()
     padding: 20px;
     color: #ffffff;
     font-family: PuHuiTi, serif;
+    height: 100%;
     // background-color: red;
 }
 
@@ -1180,7 +1188,7 @@ async function rotate()
             background: url('../../../public/images/cesiumMap/menu-btn-unchecked-BbOiNvmo.png');
             background-size: 100% 100%;
 
-            opacity: 0;
+            opacity: 1;
         }
 
         li:nth-child(1) {
