@@ -255,8 +255,7 @@ async function initializeCesium() {
     //默认令牌："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmJkYzFiZi1jMGE2LTQ2YmYtYTAyZS1jOTNhODEwZTYzZjYiLCJpZCI6MjE2NTk4LCJpYXQiOjE3MTYyNTc5OTJ9.AbNDyzzy3zB6vFXXXnJ9HwVhNvBSbKAnhFRo3k9D3hE";
     console.log(Cesium)
     viewer = new Cesium.Viewer("cesiumContainer", {
-        geocoder: false,                //是否显示地名查找控件
-        geocoder: false,                // 是否显示地名查找控件
+        geocoder: true,               // 是否显示地名查找控件
         sceneModePicker: false,         // 是否显示投影方式控件
         navigationHelpButton: false,    // 是否显示帮助信息控件
         baseLayerPicker: false,         // 是否显示图层选择控件
@@ -267,6 +266,7 @@ async function initializeCesium() {
         timeline: false,                // 是否显示时间轴
         selectionIndicator: false,      // 是否显示选中指示器
         infoBox: false,                 // 是否显示信息框
+        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'))//加载地形
         // 使用中国在线地图服务作为底图
         // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         //     url: "http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer"
@@ -280,7 +280,59 @@ async function initializeCesium() {
         // })
     });
 
+    
+    let promise =Cesium.GeoJsonDataSource.load('./water/water.geojson');
+    // 数据加载完成后渲染
+    promise.then((ds) => {
+        let instances = [];
+        let entitys = ds.entities.values;
 
+        entitys.forEach((e) => {
+            let geometry = new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                    polygonHierarchy: new Cesium.PolygonHierarchy(e.polygon.hierarchy.getValue().positions),
+                    extrudedHeight: 0,
+                    height: 0,
+                    vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                }),
+                // attributes: {
+                //     color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+                //         Cesium.Color.fromRandom({
+                //             alpha: 0.5
+                //         })
+                //     )
+                // }
+            });
+            instances.push(geometry);
+            viewer.flyTo(ds);
+            
+        });
+
+        // 添加 GroundPrimitive 并设置其属性
+        let primitive = new Cesium.GroundPrimitive({
+            geometryInstances: instances, // 合并几何实例
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true, // 是否在椭球面上
+                material: new Cesium.Material({
+                    fabric: {
+                        type: "Water", // 使用 Water 材质模拟水面效果
+                        uniforms: {
+                            normalMap: "./water/water.jpg", // 法线贴图路径
+                            frequency: 2000.0, // 控制波数的数值
+                            animationSpeed: 0.1, // 水体动画速度
+                            amplitude: 5.0, // 水波动幅度
+                            specularIntensity: 0.5, // 镜面反射强度
+                            baseWaterColor: new Cesium.Color(0 / 255.0, 54 / 255.0, 84 / 255.0, 0.8) // 基础水颜色
+                        }
+                    }
+                })
+            })
+        });
+
+        // 将生成的 Primitive 添加到场景中，并缩放至目标区域
+        viewer.scene.primitives.add(primitive);
+    });
+    
     // 设置最小缩放距离（以米为单位）
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
 
@@ -622,20 +674,20 @@ async function onMovement(movement) {
     // MouseZoom.style.left = screenPosition.x + 'px';
     // MouseZoom.style.top = screenPosition.y + 'px';
 
-    if (pickedObject && pickedObject.id._id === '建筑模型') {
-        // 获取模型对应的实体对象
-        var entity = viewer.entities.getById(pickedObject.id._id);
-        // 设置模型轮廓宽度
-        entity.model.silhouetteSize = 2;
-        entity.model.silhouetteColor = new Cesium.Color.fromCssColorString('#47e8fe');
-    } else {
-        // 获取模型对应的实体对象
-        var entity = viewer.entities.getById('建筑模型');
+    // if (pickedObject && pickedObject.id._id === '建筑模型') {
+    //     // 获取模型对应的实体对象
+    //     var entity = viewer.entities.getById(pickedObject.id._id);
+    //     // 设置模型轮廓宽度
+    //     entity.model.silhouetteSize = 2;
+    //     entity.model.silhouetteColor = new Cesium.Color.fromCssColorString('#47e8fe');
+    // } else {
+    //     // 获取模型对应的实体对象
+    //     var entity = viewer.entities.getById('建筑模型');
 
-        //待处理
-        // 设置模型轮廓宽度
-        //entity.model.silhouetteSize = 0;
-    }
+    //     //待处理
+    //     // 设置模型轮廓宽度
+    //     //entity.model.silhouetteSize = 0;
+    // }
 
     // 如果点击到了一个具有 monitoItems 属性的实体对象
     if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
