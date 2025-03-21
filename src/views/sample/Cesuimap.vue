@@ -12,56 +12,56 @@
         <!-- 内容盒子 -->
         <div class="dataBoxView">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">水位</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <HydrographView />
             </div>
         </div>
 
         <div class="dataBoxView" style="top: 37%;">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">径流</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <RunOff />
             </div>
         </div>
 
         <div class="dataBoxView" style="top: 67%;">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">气象</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <Atmosphere/>
             </div>
         </div>
 
 
         <div class="dataBoxView" style="right: 20px; left: auto;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">水体理化</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <WaterPhysicochemistry />
             </div>
         </div>
 
         <div class="dataBoxView" style="right: 20px; left: auto; top: 37%;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">光谱反射率</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <SpectralReflectance />
             </div>
         </div>
 
         <div class="dataBoxView" style="right: 20px; left: auto; top: 67%;  transform: translateX(200%);">
             <div class="titleIcon"></div>
-            <div class="boxTitle">我是盒子的标题哦</div>
+            <div class="boxTitle">湿地</div>
 
             <div class="dataCenter">
-                asdasdasdasdas
+                <WetLandView />
             </div>
         </div>
 
@@ -85,12 +85,12 @@
         <div class="MouseZoom" id="MouseZoom"></div>
 
 
-        <!-- <transition name="fade">
-            <div class="loading-box" id="loadingBox" v-if="loadingShow">
+        <transition name="fade">
+            <div  v-if="loadingShow" class="loading-box" id="loadingBox">
                 <div class="spinner"></div>
                 <p>加载中...</p>
             </div>
-        </transition> -->
+        </transition>
 
 
 
@@ -133,17 +133,25 @@ import * as Cesium from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import marker from '../../../public/images/cesiumMap/marker.png';
 import { dialogEmits } from 'element-plus';
+import RunOff from './charts/RunOff.vue' /* 径流 */
+import HydrographView from './charts/HydrographView.vue' /* 水位 */
+import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反射率 */
+import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体理化 */
+import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
+import WetLandView from './charts/WetLandView.vue' /* 湿地 */
+
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
 // 蓝色标志   http://mars3d.cn/project/vue/img/marker/mark-blue.png
 // lading
-var loadingShow = true;
-var cesiumLoaded = false;
-var clickPopupShowRight = true; // 控制弹窗显示与隐藏
+const loadingShow = ref(true);
+const cesiumLoaded = ref(false);
+const clickPopupShowRight = ref(true); // 控制弹窗显示与隐藏
 
 // 悬浮弹窗
-var hoverPopupShow=true;
-
+const hoverPopupShow=ref(true);
+// 内容盒子
+const dataBoxShow=ref(true);
 // 记录标记为
 var lastClickedEntityPosition ;
 // 旋转函数
@@ -151,7 +159,7 @@ var lastClickedEntityPosition ;
 var viewer;
 
 // 给定的坐标
-var position = Cesium.Cartesian3.fromDegrees(117.085653, 39.102947);
+var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
 // 初始朝向角度
 var heading = 0;
 // 初始俯仰角度
@@ -182,7 +190,7 @@ function checkCesiumLoaded() {
         if (typeof Cesium !== 'undefined') {
             // Cesium对象已加载
             clearInterval(intervalId); // 停止定时器
-            cesiumLoaded = true;
+            cesiumLoaded.value = true;
             // 执行你的操作，例如初始化Cesium地图
             await initializeCesium();
             console.log("初始化完毕");
@@ -194,7 +202,7 @@ function checkCesiumLoaded() {
                 if (e == 0) {
                     console.log("矢量切片加载完成时的回调");
                     //关闭加载动画
-                    loadingShow=false;
+                    loadingShow.value=false;
                     console.log(loadingShow);
                     // 移除监听器
                     eventHelper.removeAll(tileLoadProgressEvent);
@@ -216,16 +224,22 @@ async function boxesSlidein() {
 
     // 分别在不同时间点触发滑入和淡出效果
     setTimeout(() => {
+        boxes[0].classList.remove('slide-out-left');
+        boxes[3].classList.remove('slide-out-right');
         boxes[0].classList.add('slide-in');
         boxes[3].classList.add('slide-in');
     }, 1000);
 
     setTimeout(() => {
+        boxes[1].classList.remove('slide-out-left');
+        boxes[4].classList.remove('slide-out-right');
         boxes[1].classList.add('slide-in');
         boxes[4].classList.add('slide-in');
     }, 1500);
 
     setTimeout(() => {
+        boxes[2].classList.remove('slide-out-left');
+        boxes[5].classList.remove('slide-out-right');
         boxes[2].classList.add('slide-in');
         boxes[5].classList.add('slide-in');
     }, 2000);
@@ -234,6 +248,44 @@ async function boxesSlidein() {
     const lis = document.querySelectorAll('.boxMenuView ul li');
     lis.forEach((li, index) => {
         li.style.animation = `fadeInUp 3s ease forwards`;
+        li.style.animationDelay = `${index * 0.3}s`;
+    });
+}
+
+async function boxesSlideOut() {
+    // 添加淡出动画
+    const boxes = document.querySelectorAll('.dataBoxView');
+    boxes.forEach(box => {
+        box.classList.add('fade-out');
+    });
+
+
+    // 分别在不同时间点触发滑入和淡出效果
+    setTimeout(() => {
+        boxes[0].classList.remove('slide-in');
+        boxes[3].classList.remove('slide-in');
+        boxes[0].classList.add('slide-out-left');
+        boxes[3].classList.add('slide-out-right');
+    }, 1000);
+
+    setTimeout(() => {
+        boxes[1].classList.remove('slide-in');
+        boxes[4].classList.remove('slide-in');
+        boxes[1].classList.add('slide-out-left');
+        boxes[4].classList.add('slide-out-right');
+    }, 1500);
+
+    setTimeout(() => {
+        boxes[2].classList.remove('slide-in');
+        boxes[5].classList.remove('slide-in');
+        boxes[2].classList.add('slide-out-left');
+        boxes[5].classList.add('slide-out-right');
+    }, 2000);
+
+    // 菜单特效
+    const lis = document.querySelectorAll('.boxMenuView ul li');
+    lis.forEach((li, index) => {
+        li.style.animation = `fadeInUp 2s ease reverse`;
         li.style.animationDelay = `${index * 0.3}s`;
     });
 }
@@ -297,6 +349,7 @@ async function initializeCesium() {
                 // }
             });
             instances.push(geometry);
+            viewer.flyTo(ds);
             
         });
 
@@ -357,9 +410,8 @@ async function initializeCesium() {
     //隐藏logo
     viewer._cesiumWidget._creditContainer.style.display = "none";
 
-    console.log("初始化错误检查点1")
     // // 定义目标位置
-    var destination = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 10000);
+    var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
 
     // 缓慢飞行到指定位置并控制方向
     viewer.camera.flyTo({
@@ -375,7 +427,7 @@ async function initializeCesium() {
 
     // let model = viewer.entities.add({
     //     id: '建筑模型',
-    //     position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
+    //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
     //     model: {
     //         uri: glbModel,
     //         minimumPixelSize: 800,
@@ -390,7 +442,7 @@ async function initializeCesium() {
     viewer.entities.add({
         id: '000000001',
         name: '公司',
-        position: Cesium.Cartesian3.fromDegrees(117.085053, 39.102347, 0),
+        position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
         billboard: {
             image: marker, // 图片路径
             width: 40.85,  // 图片宽度（像素）
@@ -413,10 +465,9 @@ async function initializeCesium() {
     // 将 HTML 元素添加到地图容器中
     cesiumContainer.appendChild(htmlElement);
 
-    console.log('坐标转换检查点1');
     // 将 HTML 元素与 Cesium 地图相对位置绑定
     viewer.scene.preRender.addEventListener(function () {
-        var position = Cesium.Cartesian3.fromDegrees(117.085053, 39.102347);
+        var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
         var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
         if (Cesium.defined(canvasPosition)) {
             htmlElement.style.left = canvasPosition.x + 'px';
@@ -432,16 +483,16 @@ async function initializeCesium() {
     }
 
 
-    // 生成100个点位的经纬度数据
+    // 生成10个点位的经纬度数据
     const points = [];
-    for (let i = 1; i <= 300; i++) {
+    for (let i = 1; i <= 10; i++) {
         points.push({
             id: i.toString(),
             name: `${i}`,
             text: i.toString(),
             position: {
-                longitude: await getRandom(117.085053, 118),
-                latitude: await getRandom(39.102347, 40)
+                longitude: await getRandom(114.3, 114.5),
+                latitude: await getRandom(34.2, 34.5)
             }
         });
     }
@@ -575,7 +626,7 @@ async function initializeCesium() {
 }
 
 // 实体点击事件处理函数
-function onEntityClick(movement) {
+async function onEntityClick(movement) {
     // 获取点击位置的实体对象
     var pickedObject = viewer.scene.pick(movement.position);
     console.log(pickedObject)
@@ -615,15 +666,13 @@ function onEntityClick(movement) {
         // 将弹窗定位到实体位置的窗口坐标
         modalElement.style.left = windowPosition.x + 'px';
         modalElement.style.top = windowPosition.y + 'px';
-
         // 在弹窗中显示实体的详细信息
         // modal_P_Element.innerHTML = `${JSON.stringify(pickedObject.id.monitoItems.data)}`;
-
+        await boxesSlideOut();
     } else {
         // 如果没有点击到目标实体，则关闭弹窗
         closeModal();
-
-
+        await boxesSlidein();
         //====取消旋转======
         viewer.clock.onTick.removeEventListener(rotate);
 
@@ -635,11 +684,11 @@ function onEntityClick(movement) {
 
 // 显示弹窗
 async function showModal() {
-    clickPopupShowRight = true;
+    clickPopupShowRight.value = true;
 }
 // 关闭弹窗
 async function closeModal() {
-    clickPopupShowRight = false;
+    clickPopupShowRight.value = false;
 }
 
 
@@ -649,7 +698,6 @@ async function onMapViewChange() {
     // 如果弹窗正在显示且存在点击的位置，则更新弹窗位置为点击的位置
     if (clickPopupShowRight && lastClickedEntityPosition) {
         const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, lastClickedEntityPosition);
-        console.log("坐标检查点3");
         const modalElement = document.getElementById('clickPopup');
         // 将弹窗定位到实体位置的窗口坐标
         modalElement.style.left = windowPosition.x + 'px';
@@ -697,7 +745,6 @@ async function onMovement(movement) {
         
         // 将 Cartesian 坐标转换为窗口坐标
         const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, entityPosition);
-        console.log("鼠标移动倒了一个具有 monitoItems 属性的实体对象");
         // 获取弹窗元素
         const modalElement = document.getElementById('hoverPopup');
         const modal_P_Element = document.getElementById('hoverPopup-p');
@@ -708,16 +755,15 @@ async function onMovement(movement) {
 
         // 在弹窗中显示实体的详细信息
         modal_P_Element.innerHTML = `${JSON.stringify(pickedObject.id.monitoItems.data.name)}`;
-
-
+        
         // 判断clickPopup状态决定是否显示hoverPopup
-        if (!clickPopupShowRight) {
+        if (!clickPopupShowRight.value) {
         }
-        clickPopupShowRight ? hoverPopupShow = false : hoverPopupShow = true;
+        clickPopupShowRight.value ? hoverPopupShow.value = false : hoverPopupShow.value = true;
+
     } else {
-        clickPopupShowRight = false;
+        clickPopupShowRight.value = false;
     }
-    console.log(clickPopupShowRight);
 }
 
 // 开始旋转的函数
@@ -818,7 +864,7 @@ async function rotate()
     // width: 100%;
     height: 35px;
     line-height: 32px;
-    background: url('../../../public/images/cesiumMap//custom-styles-title-BXpsbnaH.png');
+    background: url('../../../public/images/cesiumMap/custom-styles-title-BXpsbnaH.png');
     background-size: 100% 100%;
     padding-left: 16px;
     user-select: none;
@@ -1064,7 +1110,7 @@ async function rotate()
 .headView {
     width: 100%;
     height: 80px;
-    background: url('../../../public/images/cesiumMap//header-CE2FZDIm.png');
+    background: url('../../../public/images/cesiumMap/header-CE2FZDIm.png');
     background-size: 100% 100%;
     position: fixed;
     top: -2px;
@@ -1125,7 +1171,7 @@ async function rotate()
     margin-top: -20px;
     margin-left: -20px;
 
-    background: url("../../../public/images/cesiumMap//cursor-RmLDFyYc.png");
+    background: url("../../../public/images/cesiumMap/cursor-RmLDFyYc.png");
     background-size: 100% 100%;
     z-index: 1;
 
@@ -1160,20 +1206,22 @@ async function rotate()
     transform: translateX(0) !important;
 }
 
+.slide-out-left
+{
+    transform: translateX(-200%) !important;
+}
+.slide-out-right
+{
+    transform: translateX(200%) !important;
+}
 .fade-out {
-    animation: fadeOut 5s forwards;
+    animation: fadeOut 2s forwards;
 }
 
-@keyframes fadeOut {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+.fade-out-back
+{
+    animation: fadeOut 2s reverse;
 }
-
 .titleIcon {
     position: absolute;
     left: 0px;
@@ -1181,7 +1229,7 @@ async function rotate()
     width: 24px;
     height: 24px;
     background-color: green;
-    background: url("../../../public/images/cesiumMap//panel-header2-D01NbEeL.png");
+    background: url("../../../public/images/cesiumMap/panel-header2-D01NbEeL.png");
     background-size: 100% 100%;
 }
 
@@ -1190,7 +1238,7 @@ async function rotate()
     padding-left: 24px;
 
     color: #ffffff;
-    background: url("../../../public/images/cesiumMap//panel-header1-DVTX7Lb2.png");
+    background: url("../../../public/images/cesiumMap/panel-header1-DVTX7Lb2.png");
     background-size: 100% 100%;
 
     font-family: YouShe, serif;
@@ -1205,6 +1253,7 @@ async function rotate()
     padding: 20px;
     color: #ffffff;
     font-family: PuHuiTi, serif;
+    height: 100%;
     // background-color: red;
 }
 
@@ -1239,7 +1288,7 @@ async function rotate()
             background: url('../../../public/images/cesiumMap/menu-btn-unchecked-BbOiNvmo.png');
             background-size: 100% 100%;
 
-            opacity: 0;
+            opacity: 1;
         }
 
         li:nth-child(1) {
@@ -1271,6 +1320,14 @@ async function rotate()
     100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+@keyframes fadeOut{
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 </style>
