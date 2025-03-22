@@ -140,6 +140,7 @@ import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体
 import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
 import WetLandView from './charts/WetLandView.vue' /* 湿地 */
 
+
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
 // 蓝色标志   http://mars3d.cn/project/vue/img/marker/mark-blue.png
@@ -390,10 +391,11 @@ async function initializeCesium() {
         position:position,
         //orientation:orientation,
         model:{
-            url:':/public/building/building.glb',
+            uri:'./building/building.glb',
         }
       })
       viewer.zoomTo(model)
+    
     // // 倾斜视图 鼠标左键平移
     // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
 
