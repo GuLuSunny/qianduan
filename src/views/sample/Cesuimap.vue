@@ -380,11 +380,14 @@ async function initializeCesium() {
     });
     
     // 设置最小缩放距离（以米为单位）
-    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
 
     // 设置最大缩放距离（以米为单位）
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
 
+    viewer.scene.sun.show = false;
+    viewer.scene.moon.show = false;
+    viewer.scene.skyBox.show = false;
       let position=Cesium.Cartesian3.fromDegrees(114.273371,34.802674,0);
       let model=viewer.entities.add({
         id:'model',
