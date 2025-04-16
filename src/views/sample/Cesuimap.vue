@@ -3,9 +3,9 @@
         <!-- 顶部标题 -->
         <transition name="fade">
             <div class="headView">
-                <div class="headTime">2024-5-23 14:02:43</div>
-                <div class="headTitle">Ai-Family智慧用电数据看板</div>
-                <div class="headWeather">天津 29℃ 晴</div>
+                <div class="headTime">2025-4-16 16:52:36</div>
+                <div class="headTitle">豫东智慧水网检测系统</div>
+                <div class="headWeather">开封 34℃ 浮尘</div>
             </div>
         </transition>
 
@@ -204,7 +204,6 @@ function checkCesiumLoaded() {
                     console.log("矢量切片加载完成时的回调");
                     //关闭加载动画
                     loadingShow.value=false;
-                    console.log(loadingShow);
                     // 移除监听器
                     eventHelper.removeAll(tileLoadProgressEvent);
                     console.log("移除监听器");
@@ -299,9 +298,8 @@ async function initializeCesium() {
     Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwODZhN2NiNi00N2JiLTQwMjQtOTFlZS1kZmY2MTdlMzE5M2UiLCJpZCI6MjcwODY2LCJpYXQiOjE3Mzk2Mjk1Mzh9.5jTz_wsmd8tYJSDLnUmxSpGE2d4gNp3EJqGTUjfGpf0"
     //个人令牌，双权限："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZGU2YTc1ZS0zMmVjLTQ0YjktODthisMC05YTUxMjthisYmE3MGIiLCJpZCI6MjcwODY2LCJpYXQiOjE3Mzc1OTkwMTl9.cebCb2cPYCxfd8jVXFVB-6HpmD63nQLiEVDtO2Z7Ccs"
     //默认令牌："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmJkYzFiZi1jMGE2LTQ2YmYtYTAyZS1jOTNhODEwZTYzZjYiLCJpZCI6MjE2NTk4LCJpYXQiOjE3MTYyNTc5OTJ9.AbNDyzzy3zB6vFXXXnJ9HwVhNvBSbKAnhFRo3k9D3hE";
-    console.log(Cesium)
     viewer = new Cesium.Viewer("cesiumContainer", {
-        geocoder: true,               // 是否显示地名查找控件
+        geocoder: false,               // 是否显示地名查找控件
         sceneModePicker: false,         // 是否显示投影方式控件
         navigationHelpButton: false,    // 是否显示帮助信息控件
         baseLayerPicker: false,         // 是否显示图层选择控件
@@ -765,9 +763,9 @@ async function onMovement(movement) {
         if (!clickPopupShowRight.value) {
         }
         clickPopupShowRight.value ? hoverPopupShow.value = false : hoverPopupShow.value = true;
-
     } else {
         clickPopupShowRight.value = false;
+        hoverPopupShow.value = false;
     }
 }
 
