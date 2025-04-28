@@ -340,7 +340,7 @@ async function initializeCesium() {
           uri:'./building/building.glb',
       }
     })
-    viewer.zoomTo(model);
+
     
     // // 倾斜视图 鼠标左键平移
     // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
