@@ -289,7 +289,11 @@ async function boxesSlideOut() {
         li.style.animationDelay = `${index * 0.3}s`;
     });
 }
-
+async function initializeterrain()
+{
+    viewer.terrain =new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
+    console.log("地形导入");
+}
 // 初始化失败--待处理
 // 初始化地球
 async function initializeCesium() {
@@ -310,7 +314,7 @@ async function initializeCesium() {
         timeline: false,                // 是否显示时间轴
         selectionIndicator: false,      // 是否显示选中指示器
         infoBox: false,                 // 是否显示信息框
-        terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'))//加载地形
+        //terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'))//加载地形
         // 使用中国在线地图服务作为底图
         // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         //     url: "http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer"
@@ -323,8 +327,101 @@ async function initializeCesium() {
         //     tileMatrixSetID: "GoogleMapsCompatible",
         // })
     });
+    await initializeterrain();
+    await initializeWater();
+    await CesiumHandlerConfig();
 
+    let position=Cesium.Cartesian3.fromDegrees(114.273371,34.802674,0);
+    let model=viewer.entities.add({
+      id:'model',
+      position:position,
+      //orientation:orientation,
+      model:{
+          uri:'./building/building.glb',
+      }
+    })
+    viewer.zoomTo(model);
     
+    // // 倾斜视图 鼠标左键平移
+    // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
+
+    // // 缩放设置 重新设置缩放成员
+    // viewer.scene.screenSpaceCameraController.zoomEventTypes = [Cesium.CameraEventType.MIDDLE_DRAG, Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH];
+
+    // // 偏斜平移
+    // //viewer.scene.screenSpaceCameraController.lookEventTypes = [ Cesium.CameraEventType.RIGHT_DRAG]
+
+    // // 平移 添加鼠标右键  鼠标右键旋转
+    // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
+
+
+    //隐藏logo
+    viewer._cesiumWidget._creditContainer.style.display = "none";
+    // 设置最小缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
+
+    // 设置最大缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+
+    viewer.scene.sun.show = false;
+    viewer.scene.moon.show = false;
+    viewer.scene.skyBox.show = false;
+
+        // 监听 Cesium 实体点击事件
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(onEntityClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // 鼠标悬浮
+    handler.setInputAction(onMovement, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+
+    // 监听地图视图改变事件--待修正
+    viewer.scene.postRender.addEventListener(onMapViewChange, this);
+
+
+
+    // 监听地图鼠标移动事件
+    // viewer.screenSpaceEventHandler.setInputAction(onMouseMove, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+
+    // // 监听地图上的鼠标滚动事件
+    // viewer.scene.canvas.addEventListener('wheel', onMouseWheel);
+
+    // function onMouseWheel(event) {
+    //     console.log('开始')
+    // }
+
+    // // 监听鼠标滚动结束事件
+    // viewer.scene.canvas.addEventListener('wheel', onMouseWheelEnd);
+
+    // function onMouseWheelEnd(event) {
+    //     console.log('结束')
+
+    // }
+
+    await initializeEntites();
+    // // 定义目标位置
+    var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
+
+    // 缓慢飞行到指定位置并控制方向
+    viewer.camera.flyTo({
+        destination: destination,
+         duration: 8,// 以秒为单位的飞行时间，时间越长速度越慢
+         complete:  function () {
+             startRotation();
+         }
+    });
+
+
+
+
+
+}
+
+async function initializeWater()
+{
     let promise =Cesium.GeoJsonDataSource.load('./water/water.geojson');
     // 数据加载完成后渲染
     promise.then((ds) => {
@@ -376,69 +473,10 @@ async function initializeCesium() {
         // 将生成的 Primitive 添加到场景中，并缩放至目标区域
         viewer.scene.primitives.add(primitive);
     });
+    console.log("水体加载完毕");
+}
+async function initializeEntites() {
     
-    // 设置最小缩放距离（以米为单位）
-    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
-
-    // 设置最大缩放距离（以米为单位）
-    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
-
-    viewer.scene.sun.show = false;
-    viewer.scene.moon.show = false;
-    viewer.scene.skyBox.show = false;
-      let position=Cesium.Cartesian3.fromDegrees(114.273371,34.802674,0);
-      let model=viewer.entities.add({
-        id:'model',
-        position:position,
-        //orientation:orientation,
-        model:{
-            uri:'./building/building.glb',
-        }
-      })
-      viewer.zoomTo(model)
-    
-    // // 倾斜视图 鼠标左键平移
-    // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
-
-    // // 缩放设置 重新设置缩放成员
-    // viewer.scene.screenSpaceCameraController.zoomEventTypes = [Cesium.CameraEventType.MIDDLE_DRAG, Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH];
-
-    // // 偏斜平移
-    // //viewer.scene.screenSpaceCameraController.lookEventTypes = [ Cesium.CameraEventType.RIGHT_DRAG]
-
-    // // 平移 添加鼠标右键  鼠标右键旋转
-    // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-
-
-    //隐藏logo
-    viewer._cesiumWidget._creditContainer.style.display = "none";
-
-    // // 定义目标位置
-    var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
-
-    // 缓慢飞行到指定位置并控制方向
-    viewer.camera.flyTo({
-        destination: destination,
-         duration: 8,// 以秒为单位的飞行时间，时间越长速度越慢
-         complete:  function () {
-             startRotation();
-         }
-    });
-
-
-
-
-    // let model = viewer.entities.add({
-    //     id: '建筑模型',
-    //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
-    //     model: {
-    //         uri: glbModel,
-    //         minimumPixelSize: 800,
-    //         maximumScale: 800,
-    //         scale: 1.0, // 模型的缩放比例
-    //         shadows: Cesium.ShadowMode.ENABLED // 阴影模式
-    //     },
-    // });
 
 
     // 创建带有图片的实体
@@ -477,7 +515,6 @@ async function initializeCesium() {
             htmlElement.style.top = canvasPosition.y + 'px';
         }
     });
-
 
 
     // 生成随机数函数
@@ -544,7 +581,17 @@ async function initializeCesium() {
         // 返回作为背景的图像
         return canvas.toDataURL('image/png');
     }
-
+    // let model = viewer.entities.add({
+    //     id: '建筑模型',
+    //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
+    //     model: {
+    //         uri: glbModel,
+    //         minimumPixelSize: 800,
+    //         maximumScale: 800,
+    //         scale: 1.0, // 模型的缩放比例
+    //         shadows: Cesium.ShadowMode.ENABLED // 阴影模式
+    //     },
+    // });
     // 使用上面创建的图像作为标签的背景
     const gradientBackground = createGradientBackground(200, 50);
     // 点位信息
@@ -591,10 +638,37 @@ async function initializeCesium() {
         entities.push(entity);
     });
 
+    console.log("实体加载完毕");
+}
+async function CesiumHandlerConfig() {
+        
+    // // 倾斜视图 鼠标左键平移
+    // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
+
+    // // 缩放设置 重新设置缩放成员
+    // viewer.scene.screenSpaceCameraController.zoomEventTypes = [Cesium.CameraEventType.MIDDLE_DRAG, Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH];
+
+    // // 偏斜平移
+    // //viewer.scene.screenSpaceCameraController.lookEventTypes = [ Cesium.CameraEventType.RIGHT_DRAG]
+
+    // // 平移 添加鼠标右键  鼠标右键旋转
+    // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
 
 
-    // 监听 Cesium 实体点击事件
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    //隐藏logo
+    viewer._cesiumWidget._creditContainer.style.display = "none";
+    // 设置最小缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
+
+    // 设置最大缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+
+    viewer.scene.sun.show = false;
+    viewer.scene.moon.show = false;
+    viewer.scene.skyBox.show = false;
+
+        // 监听 Cesium 实体点击事件
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction(onEntityClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     // 鼠标悬浮
@@ -626,8 +700,8 @@ async function initializeCesium() {
     //     console.log('结束')
 
     // }
+    console.log("Cesium配置和监听加载完毕");
 }
-
 // 实体点击事件处理函数
 async function onEntityClick(movement) {
     // 获取点击位置的实体对象
