@@ -68,10 +68,10 @@
         <!-- 底部功能按钮 -->
         <div class="boxMenuView">
             <ul>
-                <li>智慧用电</li>
-                <li>智慧照明</li>
-                <li>智慧交通</li>
-                <li>智能家居</li>
+                <li @click="initializeBuildings">智慧建筑</li>
+                <li>智慧水体</li>
+                <li>智慧林地</li>
+                <li>智能农田</li>
                 <li>数据总览</li>
             </ul>
         </div>
@@ -149,6 +149,18 @@ const loadingShow = ref(true);
 const cesiumLoaded = ref(false);
 const clickPopupShowRight = ref(true); // 控制弹窗显示与隐藏
 
+//是否加载水体
+const loadedWater=ref(false);
+
+//是否加载建筑物
+const loadedBuildings=ref(false);
+
+//是否加载了林地
+const loadedForest=ref(false);
+
+//是否加载了农田
+const loadedFarmLand=ref(false);
+
 // 悬浮弹窗
 const hoverPopupShow=ref(true);
 // 内容盒子
@@ -171,13 +183,12 @@ var distance = 10000;
 var offset = new Cesium.HeadingPitchRange(Cesium.Math.toRadians(heading), -Cesium.Math.toRadians(pitch), distance);
 // 控制heading增减的标志位
 var increasing = true;
-
+window.CESIUM_BASE_URL = "/static/Cesium";
 onMounted(async () => {
     const instance = getCurrentInstance();
     if (instance) {
         instance.proxy.$nextTick(() => {
             console.log("实体化完成。");
-            window.CESIUM_BASE_URL = "/static/Cesium";
             checkCesiumLoaded();
         })
     }
@@ -214,6 +225,7 @@ function checkCesiumLoaded() {
         }
     }, 1000); // 每隔1秒检查一次
 }
+
 async function boxesSlidein() {
     // 添加淡出动画
     const boxes = document.querySelectorAll('.dataBoxView');
@@ -289,13 +301,6 @@ async function boxesSlideOut() {
         li.style.animationDelay = `${index * 0.3}s`;
     });
 }
-async function initializeterrain()
-{
-    viewer.terrain =new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
-    console.log("地形导入");
-}
-// 初始化失败--待处理
-// 初始化地球
 async function initializeCesium() {
     // 请自己去cesium官网注册申请一个token替换
     //个人token全权限
@@ -330,17 +335,16 @@ async function initializeCesium() {
     await initializeterrain();
     await initializeWater();
     await CesiumHandlerConfig();
-
-    let position=Cesium.Cartesian3.fromDegrees(114.273371,34.802674,0);
-    let model=viewer.entities.add({
-      id:'model',
-      position:position,
-      //orientation:orientation,
-      model:{
-          uri:'./building/building.glb',
-      }
-    })
-
+    
+    // viewer.entities.remove({
+    //   id:'model',
+    //   position:position,
+    //   //orientation:orientation,
+    //   model:{
+    //       uri:'./building/building.glb',
+    //   }
+    // })   
+   
     
     // // 倾斜视图 鼠标左键平移
     // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
@@ -361,7 +365,7 @@ async function initializeCesium() {
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
 
     // 设置最大缩放距离（以米为单位）
-    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 800000; // 例如设置为 5000000 米
 
     viewer.scene.sun.show = false;
     viewer.scene.moon.show = false;
@@ -420,6 +424,42 @@ async function initializeCesium() {
 
 }
 
+function initializeBuildings() {
+    if(loadedBuildings.value==false)
+    {
+        viewer.entities.add({
+            id:'model',
+            position:position,
+            //orientation:orientation,
+            model:{
+                uri:'./building/building.glb',
+            }
+        }) 
+        loadedBuildings.value=true;
+    }else{
+        viewer.entities.remove({
+          id:'model',
+          position:position,
+          //orientation:orientation,
+          model:{
+              uri:'./building/building.glb',
+          }
+        })
+        loadedBuildings.value=false;
+    }
+    
+}
+
+async function initializeterrain()
+{
+    viewer.terrain =new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
+    console.log("地形导入");
+}
+
+
+// 初始化失败--待处理
+// 初始化地球
+
 async function initializeWater()
 {
     let promise =Cesium.GeoJsonDataSource.load('./water/water.geojson');
@@ -476,9 +516,6 @@ async function initializeWater()
     console.log("水体加载完毕");
 }
 async function initializeEntites() {
-    
-
-
     // 创建带有图片的实体
     viewer.entities.add({
         id: '000000001',
