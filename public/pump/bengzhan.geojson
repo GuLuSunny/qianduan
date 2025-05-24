@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "bengzhan",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "OBJECTID": 2, "PROVINCIAL": "河南省", "CITY": "开封市", "COUNTY": null, "IRRNAME": "黑岗口引黄灌区", "IRRTYPE": "中型灌区", "NAME": "丁庄泵站", "ANGLE": 0.0, "REMARK": null }, "geometry": { "type": "Point", "coordinates": [ 114.385660699000027, 34.731041583000035 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 4, "PROVINCIAL": "河南省", "CITY": "开封市", "COUNTY": null, "IRRNAME": "黑岗口引黄灌区", "IRRTYPE": "中型灌区", "NAME": "西干渠渠首泵站", "ANGLE": 0.0, "REMARK": null }, "geometry": { "type": "Point", "coordinates": [ 114.273878790000026, 34.786476669000024 ] } }
+]
+}

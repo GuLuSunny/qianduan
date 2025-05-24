@@ -918,3 +918,17 @@ export function fileDownload(data: any) {
     responseType: 'blob'
   });
 }
+//水闸点位
+export function selectAllSluicesByConditions(data: any) {
+  return useAxiosApi('api/sluice/selectAllByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+//泵站点位
+export function selectAllPumpingStationByConditions(data: any) {
+  return useAxiosApi('api/pumpingStation/getAllPumpingStationByCondition', {
+    method: 'POST',
+    data: data,
+  });
+}
