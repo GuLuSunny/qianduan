@@ -1,21 +1,25 @@
+const path = require('path');
 const { defineConfig } = require("@vue/cli-service");
 const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const webpack = require('webpack');
-  
+const fs = require('graceful-fs');
+fs.gracefulify(require('fs'));
+
 module.exports = defineConfig({
-  //publicPath:'./',
   transpileDependencies: true,
   lintOnSave: false,
   devServer: {
+    port: 8081,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8090",
+        target: "http://127.0.0.1:8091",
         changeOrigin: true,
         pathRewrite: { "^/api": "/api" },
       },
     },
+    // 移除 watchOptions 配置
   },
   chainWebpack: (config) => {
     config.plugin('define').tap((definitions) => {
@@ -23,41 +27,51 @@ module.exports = defineConfig({
         __VUE_OPTIONS_API__: 'true',
         __VUE_PROD_DEVTOOLS__: 'false',
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false'
-      })
-      return definitions
-    })
+      });
+      return definitions;
+    });
+
+    config.module
+      .rule('ignore-terrain')
+      .test(/\.(hm|terrain|jpg|png)$/)
+      .include.add(path.resolve(__dirname, 'public/dixing'))
+      .end()
+      .use('ignore-loader')
+      .loader('ignore-loader');
   },
   configureWebpack: {
+    // 添加 watchOptions 到这里
+    watchOptions: {
+      ignored: /public\/dixing/
+    },
+    parallelism: 100,
     plugins: [
       new NodePolyfillPlugin(),
       new CopyWebpackPlugin({
         patterns: [
-          {
-            from: "node_modules/cesium/Build/Cesium/Workers",
-            to: "cesium/Workers",
-          },
-          {
-            from: "node_modules/cesium/Build/Cesium/ThirdParty",
-            to: "cesium/ThirdParty",
-          },
-          {
-            from: "node_modules/cesium/Build/Cesium/Assets",
-            to: "cesium/Assets",
-          },
-          {
-            from: "node_modules/cesium/Build/Cesium/Widgets",
-            to: "cesium/Widgets",
-          },
+          { from: "node_modules/cesium/Build/Cesium/Workers", to: "cesium/Workers" },
+          { from: "node_modules/cesium/Build/Cesium/ThirdParty", to: "cesium/ThirdParty" },
+          { from: "node_modules/cesium/Build/Cesium/Assets", to: "cesium/Assets" },
+          { from: "node_modules/cesium/Build/Cesium/Widgets", to: "cesium/Widgets" },
         ],
-    
       }),
       new webpack.DefinePlugin({
         CESIUM_BASE_URL: JSON.stringify("./cesium"),
       }),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^\.\/dixing/,
+        contextRegExp: /public/
+      }),
+      new webpack.ContextReplacementPlugin(
+        /public\/dixing/,
+        true,
+        /^.*$/,
+        'lazy'
+      )
     ],
     externals: {
       fs: require('fs')
-     },    
+    },
     module: {
       rules: [
         {
@@ -65,6 +79,7 @@ module.exports = defineConfig({
           type: "asset",
         },
       ],
+      noParse: [/public\/dixing/]
     },
     resolve: {
       fallback: {
@@ -81,13 +96,10 @@ module.exports = defineConfig({
           minimizer: {
             implementation: ImageMinimizerPlugin.imageminMinify,
             options: {
-              // Lossless optimization with custom option
-              // Feel free to experiment with options for better result for you
               plugins: [
                 ["gifsicle", { interlaced: true }],
-                ["jpegtran", {  progressive: true, copyBlocks: false, optimizeScans: true }],
+                ["jpegtran", { progressive: true, copyBlocks: false, optimizeScans: true }],
                 ["optipng", { optimizationLevel: 7 }],
-                // Svgo configuration here https://github.com/svg/svgo#configuration
                 [
                   "svgo",
                   {
