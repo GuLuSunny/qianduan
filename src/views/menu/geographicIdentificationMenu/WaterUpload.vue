@@ -126,7 +126,7 @@ import { modelFilesUpload } from '@/api/getData'
 
 const { Dragger } = Upload
 
-const className = ref('land')
+const className = ref('water')
 const loadingoptions = {
   target: '.layoutLoading',
   background: 'rgba(0, 0, 0, 0.7)',

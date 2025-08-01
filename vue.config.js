@@ -1,6 +1,5 @@
 const path = require('path');
 const { defineConfig } = require("@vue/cli-service");
-const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const webpack = require('webpack');
@@ -10,6 +9,7 @@ fs.gracefulify(require('fs'));
 module.exports = defineConfig({
   transpileDependencies: true,
   lintOnSave: false,
+  
   devServer: {
     port: 8081,
     proxy: {
@@ -19,9 +19,10 @@ module.exports = defineConfig({
         pathRewrite: { "^/api": "/api" },
       },
     },
-    // 移除 watchOptions 配置
   },
+  
   chainWebpack: (config) => {
+    // 环境变量定义
     config.plugin('define').tap((definitions) => {
       Object.assign(definitions[0], {
         __VUE_OPTIONS_API__: 'true',
@@ -30,7 +31,19 @@ module.exports = defineConfig({
       });
       return definitions;
     });
-
+    
+    // 删除默认的 public 复制插件
+    config.plugins.delete('copy');
+    
+    // 解决 index.html 冲突的关键配置
+    config.plugin('html').tap(args => {
+      args[0].template = path.resolve(__dirname, 'public/index.html');
+      args[0].filename = 'index.html';
+      args[0].inject = true;
+      return args;
+    });
+    
+    // 忽略地形文件处理
     config.module
       .rule('ignore-terrain')
       .test(/\.(hm|terrain|jpg|png)$/)
@@ -39,94 +52,70 @@ module.exports = defineConfig({
       .use('ignore-loader')
       .loader('ignore-loader');
   },
+  
   configureWebpack: {
-    // 添加 watchOptions 到这里
     watchOptions: {
       ignored: /public\/dixing/
     },
-    parallelism: 100,
+    
     plugins: [
       new NodePolyfillPlugin(),
+       new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
+      // 合并所有复制操作到单个 CopyWebpackPlugin 实例
       new CopyWebpackPlugin({
         patterns: [
-          { from: "node_modules/cesium/Build/Cesium/Workers", to: "cesium/Workers" },
-          { from: "node_modules/cesium/Build/Cesium/ThirdParty", to: "cesium/ThirdParty" },
-          { from: "node_modules/cesium/Build/Cesium/Assets", to: "cesium/Assets" },
-          { from: "node_modules/cesium/Build/Cesium/Widgets", to: "cesium/Widgets" },
+          // 1. 复制 public 目录（排除 index.html 和 dixting 目录）
+          {
+            from: path.resolve(__dirname, 'public'),
+            to: path.resolve(__dirname, 'dist'),
+            globOptions: {
+              ignore: [
+                '**/dixing/**',
+                '**/index.html'  // 确保忽略 index.html
+              ]
+            }
+          },
+          // 2. 复制 Cesium 资源
+          { 
+            from: "node_modules/cesium/Build/Cesium/Workers", 
+            to: "cesium/Workers",
+            noErrorOnMissing: true
+          },
+          { 
+            from: "node_modules/cesium/Build/Cesium/ThirdParty", 
+            to: "cesium/ThirdParty",
+            noErrorOnMissing: true
+          },
+          { 
+            from: "node_modules/cesium/Build/Cesium/Assets", 
+            to: "cesium/Assets",
+            noErrorOnMissing: true
+          },
+          { 
+            from: "node_modules/cesium/Build/Cesium/Widgets", 
+            to: "cesium/Widgets",
+            noErrorOnMissing: true,
+            transform: (content, path) => {
+              return path && path.endsWith('.gif') ? content : content;
+            }
+          }
         ],
       }),
       new webpack.DefinePlugin({
         CESIUM_BASE_URL: JSON.stringify("./cesium"),
-      }),
-      new webpack.IgnorePlugin({
-        resourceRegExp: /^\.\/dixing/,
-        contextRegExp: /public/
-      }),
-      new webpack.ContextReplacementPlugin(
-        /public\/dixing/,
-        true,
-        /^.*$/,
-        'lazy'
-      )
+      })
     ],
-    externals: {
-      fs: require('fs')
-    },
-    module: {
-      rules: [
-        {
-          test: /\.(jpe?g|png|gif|svg)$/i,
-          type: "asset",
-        },
-      ],
-      noParse: [/public\/dixing/]
-    },
+    
     resolve: {
       fallback: {
         zlib: require.resolve("browserify-zlib"),
         http: require.resolve("stream-http"),
         https: require.resolve("https-browserify"),
         stream: require.resolve("stream-browserify"),
+        process: require.resolve("process/browser")
       },
-    },
-    optimization: {
-      minimizer: [
-        "...",
-        new ImageMinimizerPlugin({
-          minimizer: {
-            implementation: ImageMinimizerPlugin.imageminMinify,
-            options: {
-              plugins: [
-                ["gifsicle", { interlaced: true }],
-                ["jpegtran", { progressive: true, copyBlocks: false, optimizeScans: true }],
-                ["optipng", { optimizationLevel: 7 }],
-                [
-                  "svgo",
-                  {
-                    plugins: [
-                      {
-                        name: "preset-default",
-                        params: {
-                          overrides: {
-                            removeViewBox: false,
-                            addAttributesToSVGElement: {
-                              params: {
-                                attributes: [
-                                  { xmlns: "http://www.w3.org/2000/svg" },
-                                ],
-                              },
-                            },
-                          },
-                        },
-                      },
-                    ],
-                  },
-                ],
-              ],
-            },
-          },
-        }),
-      ],
     },
   },
 });

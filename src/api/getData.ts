@@ -1,3 +1,4 @@
+import { blob } from 'stream/consumers'
 import useAxiosApi from '../config/useAxiosApi'
 /**
  * 账号密码登录
@@ -918,17 +919,230 @@ export function fileDownload(data: any) {
     responseType: 'blob'
   });
 }
+/**
+ * 统一删除接口
+ * @returns UseAxiosReturn
+ */
+export function deleteByIdListAndTypes(data: any) {
+  return useAxiosApi('/api/DataManagement/deleteByIdListAndTypes', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+/**
+ * 作废文件上传记录
+ * @returns UseAxiosReturn
+ */
+export function dropModelFileByConditions(data: any) {
+  return useAxiosApi('/api/modelFile/dropByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+
+
 //水闸点位
 export function selectAllSluicesByConditions(data: any) {
-  return useAxiosApi('api/sluice/selectAllByConditions', {
+  return useAxiosApi('/api/sluice/selectAllByConditions', {
     method: 'POST',
     data: data,
   });
 }
 //泵站点位
 export function selectAllPumpingStationByConditions(data: any) {
-  return useAxiosApi('api/pumpingStation/getAllPumpingStationByCondition', {
+  return useAxiosApi('/api/pumpingStation/getAllPumpingStationByCondition', {
     method: 'POST',
     data: data,
+  });
+}
+//湖泊范围
+export function getAlllakesByConditions(data: any) {
+  return useAxiosApi('/api/lakes/getAlllakesByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+//渠道获取
+export function selectAllChannelsByCondition(data: any) {
+  return useAxiosApi('/api/Channel/selectAllByconditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+//水库范围
+export function getAllreservoirByConditions(data: any) {
+  return useAxiosApi('/api/reservoir/getAllByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+/*shp文件上传*/ 
+//水闸点位文件上传
+export function uploadSluicesShpfiles(data: any) {
+  return useAxiosApi('/api/sluice/uploadByShpfiles', {
+    method: 'POST',
+    data: data,
+  });
+}
+//泵站点位文件上传
+export function uploadPumpingStationShpfiles(data: any) {
+  return useAxiosApi('/api/pumpingStation/uploadByShpfiles', {
+    method: 'POST',
+    data: data,
+  });
+}
+//湖泊点位文件上传
+export function uploadlakesByShpfiles(data: any) {
+  return useAxiosApi('/api/lakes/getAlllakesByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+//渠道点位文件上传
+export function uploadChannelByShpfiles(data: any) {
+  return useAxiosApi('/api/Channel/selectAllByconditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+//水库范围文件上传
+export function uploadreservoirByShpfiles(data: any) {
+  return useAxiosApi('/api/reservoir/uploadByShpfiles', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 地类模型调用
+ * @returns UseAxiosReturn
+ */
+export function landPredictByCommons(data: any) {
+  return useAxiosApi('/api/groupType/predict', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 水网提取总
+ * @returns UseAxiosReturn
+ */
+export function waterModelPredict(data: any) {
+  return useAxiosApi('/api/water/process', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 植被覆盖脚本调用
+ * @returns UseAxiosReturn
+ */
+export function plantCover(data: any) {
+  return useAxiosApi('/api/plantCover', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 获取模型功能类型名称列表
+ * @returns UseAxiosReturn
+ */
+export function getModelClassName(data: any) {
+  return useAxiosApi('/api/model/getClassName', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 通过脚本功能分类名称获取模型名称列表
+ * @returns UseAxiosReturn
+ */
+export function getModelByClassName(data: any) {
+  return useAxiosApi('/api/model/getModelByClassName', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 获取脚本功能执行状态
+ * @returns UseAxiosReturn
+ */
+export function getModelStatusByConditions(data: any) {
+  return useAxiosApi('/api/model/getModelStatusByConditions', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 脚本调用状态更新接口
+ * @returns UseAxiosReturn
+ */
+export function updateModelStatus(data: any) {
+  return useAxiosApi('/api/model/updateModelStatus', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 放弃正在使用的脚本功能
+ * @returns UseAxiosReturn
+ */
+export function dropModelLogs(data: any) {
+  return useAxiosApi('/api/model/dropModelLogs', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 预测目标文件上传
+ * @returns UseAxiosReturn
+ */ 
+export function modelFilesUpload(data: any) {
+  return useAxiosApi('/api/modelFile/upload', {
+    method: 'POST',
+    data: data,
+  });
+}
+/**
+ * 获取土地分类结果
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResult(data: any) {
+  return useAxiosApi('/api/modelFile/getLandResult', {
+    method: 'POST',
+    data: data
+  });
+}
+/**
+ * 获取土地分类结果图片
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResultPreview(data: any) {
+  return useAxiosApi('/api/modelFile/preview', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+/**
+ * 获取土地分类结果矩阵下载
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResultConfusionMatrix(data: any) {
+  return useAxiosApi('/api/modelFile/download/confusion_matrix', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+/**
+ * 获取土地分类结果
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResultConfusionMatrixClassStats(data: any) {
+  return useAxiosApi('/api/modelFile/download/class_stats', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
   });
 }

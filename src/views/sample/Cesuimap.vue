@@ -72,7 +72,7 @@
                 <li @click="selectAllSluicesDatas">智慧水体</li>
                 <li>智慧林地</li>
                 <li>智能农田</li>
-                <li>数据总览</li>
+                <li @click="goToModelView">数据菜单</li>
             </ul>
         </div>
 
@@ -140,6 +140,8 @@ import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体
 import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
 import WetLandView from './charts/WetLandView.vue' /* 湿地 */
 import {selectAllSluicesByConditions}  from '@/api/getData.ts'
+import router from '@/router';
+import { resolve } from 'path';
 
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
@@ -248,6 +250,13 @@ function checkCesiumLoaded() {
             });
         }
     }, 1000); // 每隔1秒检查一次
+}
+
+function goToModelView()
+{
+    console.log(localStorage);
+    setTimeout(resolve,10000);
+    router.push('/mainMenu')
 }
 
 async function boxesSlidein() {

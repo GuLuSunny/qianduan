@@ -54,11 +54,12 @@
 
 <script setup>
 import { ref, onMounted, getCurrentInstance } from 'vue'
-import {
+import Icon, {
   DashboardOutlined,
   FormOutlined,
   InsertRowAboveOutlined,
-  BarsOutlined
+  BarsOutlined,
+  MenuFoldOutlined
 } from '@ant-design/icons-vue'
 import SpectralQuery from './menu/dataQuerySpectralMenu/SpectralQuery.vue'
 import Head from './menu/head.vue'
@@ -77,6 +78,11 @@ import PhysicochemicalPanel from './menu/PhysicochemicalData/PhysicochemicalPane
 import RunoffQuery from './menu/runoff/RunoffQuery.vue'
 import configManagement from './menu/configManagementMenu/ConfigManagement.vue'
 import RemoteSensingQuery from './menu/remoteSensingMenu/RemoteSensingQuery.vue'
+import GeographicIdentificationUpload from './menu/geographicIdentificationMenu/GeographicIdentificationUpload.vue'
+import LandIdentification from './menu/geographicIdentificationMenu/LandIdentification.vue'
+import WaterIdentification from './menu/geographicIdentificationMenu/WaterIdentification.vue'
+import PlantCoverIdentification from './menu/geographicIdentificationMenu/PlantCoverIdentification.vue'
+import { title } from 'process'
 
 // 权限过滤后菜单配置数组
 const menus = ref([])
@@ -131,13 +137,13 @@ const menus_pre = [
         breadcrumb: ['数据查询', '气象'],
         pressionKey: 'menu_subB_a'
       },
-      {
-        key: '6',
-        title: '水鸟',
-        component: Birdsdata,
-        breadcrumb: ['数据查询', '水鸟'],
-        pressionKey: 'menu_subB_b'
-      },
+      // {
+      //   key: '6',
+      //   title: '水鸟',
+      //   component: Birdsdata,
+      //   breadcrumb: ['数据查询', '水鸟'],
+      //   pressionKey: 'menu_subB_b'
+      // },
       {
         key: '7',
         title: '理化',
@@ -166,13 +172,13 @@ const menus_pre = [
         breadcrumb: ['数据查询', '径流'],
         pressionKey: 'menu_subB_f'
       },
-      {
-        key: '11',
-        title: '湿地',
-        component: WetlandMonitoringQuery,
-        breadcrumb: ['数据查询', '湿地'],
-        pressionKey: 'menu_subB_g'
-      },
+      // {
+      //   key: '11',
+      //   title: '湿地',
+      //   component: WetlandMonitoringQuery,
+      //   breadcrumb: ['数据查询', '湿地'],
+      //   pressionKey: 'menu_subB_g'
+      // },
       {
         key: '16',
         title: '遥感',
@@ -224,6 +230,42 @@ const menus_pre = [
         pressionKey: 'menu_subD_b'
       }
     ]
+  },
+  {
+    key: 'sub5',
+    pressionKey: 'menu_subE',
+    title: '地类识别',
+    icon: MenuFoldOutlined,
+    items:[
+      {
+        key:'17',
+        title: '文件上传',
+        component: GeographicIdentificationUpload,
+        breadcrumb: ['地类识别','文件提交'] ,
+        pressionKey: 'menu_subE_a'
+      },
+      {
+        key:'18',
+        title: '土地分类',
+        component: LandIdentification,
+        breadcrumb: ['地类识别','土地分类'] ,
+        pressionKey: 'menu_subE_b'
+      },
+      {
+        key:'19',
+        title: '水域地域',
+        component: LandIdentification,
+        breadcrumb: ['地类识别','水域地域'] ,
+        pressionKey: 'menu_subE_c'
+      },
+      {
+        key:'20',
+        title: '植被覆盖',
+        component: LandIdentification,
+        breadcrumb: ['地类识别','植被覆盖'] ,
+        pressionKey: 'menu_subE_d'
+      }
+    ]
   }
 ]
 
@@ -241,38 +283,39 @@ const openKeys = ref([''])
 onMounted(() => {
   // 权限过滤
   menu_Pression()
-  const menuParamsStr = localStorage.getItem('menuItemKeyList')
-  const menuParams = JSON.parse(menuParamsStr)
-  // { menuItemKey, openSubKey }
-  const { component, breadcrumb } = getMenuItemByKey(menuParams.menuItemKey)
-  selectedKeys.value = [menuParams.menuItemKey]
-  openKeys.value = [menuParams.openSubKey]
-  updateComponent(component, breadcrumb)
+  if (menus.value.length > 0) {
+      // 默认选择第一个菜单项的第一个子项
+      const firstMenu = menus.value[0]
+      if (firstMenu.items.length > 0) {
+        const firstItem = firstMenu.items[0]
+        selectedKeys.value = [firstItem.key]
+        openKeys.value = [firstMenu.key]
+        updateComponent(firstItem.component, firstItem.breadcrumb)
+      }
+  }
 })
 
 function menu_Pression () {
+  menus.value = []
   for (const menuItem of menus_pre) {
-    let menuItemList = {}
     const menuItemPressionKey = menuItem.pressionKey
     if (!hasPermission(menuItemPressionKey)) {
       continue
     }
-    menuItemList = {
+        // 创建菜单项并过滤子项
+    const menuItemList = {
       key: menuItem.key,
       pressionKey: menuItem.pressionKey,
       title: menuItem.title,
       icon: menuItem.icon,
-      items: []
+      items: menuItem.items.filter(item => 
+        hasPermission(item.pressionKey)
+      )
     }
-    // 遍历当前菜单项的 items 数组
-    for (const item of menuItem.items) {
-      const itemPressionKey = item.pressionKey
-      if (!hasPermission(itemPressionKey)) {
-        continue
-      }
-      menuItemList.items.push(item)
+    
+    if (menuItemList.items.length > 0) {
+      menus.value.push(menuItemList)
     }
-    menus.value.push(menuItemList)
   }
 }
 

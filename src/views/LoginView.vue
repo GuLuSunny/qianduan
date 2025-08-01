@@ -3,7 +3,7 @@
     <div class="box">
       <!-- 滑动盒子 -->
       <div class="pre-box">
-        <h1>多源数据综汇系统</h1>
+        <h1>豫东水网智慧监测</h1>
         <div class="img-box">
           <img src="../assets/img/bg6.png" alt="" />
         </div>
