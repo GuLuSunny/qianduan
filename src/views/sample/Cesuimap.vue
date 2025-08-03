@@ -334,7 +334,88 @@ async function initializeCesium() {
         //     tileMatrixSetID: "GoogleMapsCompatible",
         // })
     });
+const addFarmlandData = async () => {
+  try {
+    const response = await fetch('/nongtian/zzz.geojson');
+    const geojson = await response.json();
+    const features = geojson.features;
 
+    const CHUNK_SIZE = 20; // ✅ 一批加载20个模型，防止卡顿
+    let index = 0;
+
+    const dataSource = new Cesium.CustomDataSource('farmland');
+    viewer.dataSources.add(dataSource);
+
+    function getFeatureCenter(feature) {
+      const coords = feature.geometry.coordinates;
+      const type = feature.geometry.type;
+      let vertices = [];
+
+      if (type === 'Polygon') {
+        vertices = coords[0];
+      } else if (type === 'MultiPolygon') {
+        vertices = coords[0][0];
+      } else {
+        console.warn('❌ 不支持的几何类型:', type);
+        return null;
+      }
+
+      const { lonSum, latSum } = vertices.reduce((acc, [lon, lat]) => {
+        acc.lonSum += lon;
+        acc.latSum += lat;
+        return acc;
+      }, { lonSum: 0, latSum: 0 });
+
+      const centerLon = lonSum / vertices.length;
+      const centerLat = latSum / vertices.length;
+
+      return [centerLon, centerLat];
+    }
+
+    async function processChunk() {
+      if (index >= features.length) {
+        console.log('✅ 所有农田模型加载完成');
+        viewer.zoomTo(dataSource);
+        return;
+      }
+
+      const chunk = features.slice(index, index + CHUNK_SIZE);
+
+      chunk.forEach((feature, i) => {
+        const center = getFeatureCenter(feature);
+        if (!center) return;
+
+        const [lon, lat] = center;
+
+        const entity = new Cesium.Entity({
+          name: '草模型农田',
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, 0),
+          model: {
+            uri: '/nongtian/grass.glb', // ✅ 正确模型路径
+            scale: 0.2,                 // ✅ 控制模型大小，防止拉伸
+            minimumPixelSize: 20,
+            maximumScale: 200
+          },
+          properties: feature.properties
+        });
+
+        dataSource.entities.add(entity);
+      });
+
+      index += CHUNK_SIZE;
+
+      // ✅ 分帧加载，不卡顿
+      setTimeout(processChunk, 100);
+    }
+
+    processChunk();
+  } catch (err) {
+    console.error('❌ 加载农田模型失败:', err);
+  }
+};
+
+// 初始化完再加载模型
+await addFarmlandData();
        
     
     await initializeterrain();
@@ -362,7 +443,24 @@ async function initializeCesium() {
 
     // // 平移 添加鼠标右键  鼠标右键旋转
     // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
+// 将生成的 Primitive 添加到场景中，并缩放至目标区域
+    
+    // 设置最小缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
 
+    // 设置最大缩放距离（以米为单位）
+    viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+
+      let position=Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106,0);
+      let model=viewer.entities.add({
+        id:'model',
+        position:position,
+        //orientation:orientation,
+        model:{
+            uri:'./building/building.glb',
+        }
+      })
+      viewer.zoomTo(model)
 
     //隐藏logo
     viewer._cesiumWidget._creditContainer.style.display = "none";
@@ -1522,5 +1620,10 @@ async function rotate()
     to {
         opacity: 1;
     }
+}
+.farmland-polygon {
+  stroke-width: 2px;
+  stroke: #f00a0a;
+  fill: rgba(0, 255, 0, 0.1);
 }
 </style>
