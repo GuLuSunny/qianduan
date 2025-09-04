@@ -72,7 +72,7 @@
                 <li @click="selectAllSluicesDatas(); selectAllPumpDatas()">智慧水体</li>
                 <li>智慧林地</li>
                 <li>智能农田</li>
-                <li>数据总览</li>
+                <li @click="goToModelView">数据菜单</li>
             </ul>
         </div>
 
@@ -140,6 +140,8 @@ import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
 import WetLandView from './charts/WetLandView.vue' /* 湿地 */
 import {selectAllSluicesByConditions} from '@/api/getData';
 import {selectAllPumpingStationByConditions} from '@/api/getData'
+import router from '@/router';
+import { resolve } from 'path';
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
@@ -195,6 +197,94 @@ onMounted(async () => {
         })
     }
 })
+
+function goToModelView()
+{
+    console.log(localStorage);
+    setTimeout(resolve,10000);
+    router.push('/mainMenu')
+}
+
+function selectAllSluicesDatas() {
+    selectAllSluicesByConditions({})
+        .then((res) => {
+            const result = res.response.value;
+            console.log(result);
+            if (result.code === 'SUCCESS') {
+                sluiceDatas.value = result.body;
+                console.log(sluiceDatas);
+                
+                // 遍历每个水闸数据并加载GLB模型
+                sluiceDatas.value.forEach((sluice) => {
+                    // 从geog字段中提取经纬度
+                    const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
+                    const match = sluice.geog.match(pointRegex);
+                    
+                    if (match && match.length === 3) {
+                        const longitude = parseFloat(match[1]);
+                        const latitude = parseFloat(match[2]);
+                        const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
+                        
+                        // 添加模型实体
+                        viewer.entities.add({
+                            position: position,
+                            model: {
+                                uri: './sluice/sluice.glb', // GLB模型路径
+                                scale: 10.0, // 缩放比例
+                                minimumPixelSize:32, // 最小像素大小，确保远距离可见
+                                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                            },
+                            show: true
+                        });
+                    }
+                });
+                
+            } else {
+                message.error(result.msg);
+            }
+        })
+        
+}
+function selectAllPumpDatas() {
+    selectAllPumpingStationByConditions({})
+        .then((res) => {
+            const result = res.response.value;
+            console.log(result);
+            if (result.code === 'SUCCESS') {
+                pumpDatas.value = result.body;
+                console.log(pumpDatas);
+                
+                // 遍历每个泵站数据并加载GLB模型
+                pumpDatas.value.forEach((pump) => {
+                    // 从geog字段中提取经纬度
+                    const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
+                    const match = pump.geog.match(pointRegex);
+                    
+                    if (match && match.length === 3) {
+                        const longitude = parseFloat(match[1]);
+                        const latitude = parseFloat(match[2]);
+                        const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
+                        
+                        // 添加模型实体
+                        viewer.entities.add({
+                            position: position,
+                            model: {
+                                uri: './pump/pump.glb', // GLB模型路径
+                                scale: 10.0, // 缩放比例
+                                minimumPixelSize:32, // 最小像素大小，确保远距离可见
+                                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                            },
+                            show: true
+                        });
+                    }
+                });
+                
+            } else {
+                message.error(result.msg);
+            }
+        })
+        
+}
 
 function checkCesiumLoaded() {
 
@@ -452,15 +542,15 @@ await addFarmlandData();
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
 
       let position=Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106,0);
-      let model=viewer.entities.add({
-        id:'model',
-        position:position,
-        //orientation:orientation,
-        model:{
-            uri:'./building/building.glb',
-        }
-      })
-      viewer.zoomTo(model)
+    //   let model=viewer.entities.add({
+    //     id:'model',
+    //     position:position,
+    //     //orientation:orientation,
+    //     model:{
+    //         uri:'./building/building.glb',
+    //     }
+    //   })
+    //   viewer.zoomTo(model)
 
     //隐藏logo
     viewer._cesiumWidget._creditContainer.style.display = "none";
@@ -553,86 +643,6 @@ async function initializeterrain()
 {
     viewer.terrain =new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
     console.log("地形导入");
-}
-function selectAllSluicesDatas() {
-    selectAllSluicesByConditions({})
-        .then((res) => {
-            const result = res.response.value;
-            console.log(result);
-            if (result.code === 'SUCCESS') {
-                sluiceDatas.value = result.body;
-                console.log(sluiceDatas);
-                
-                // 遍历每个水闸数据并加载GLB模型
-                sluiceDatas.value.forEach((sluice) => {
-                    // 从geog字段中提取经纬度
-                    const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
-                    const match = sluice.geog.match(pointRegex);
-                    
-                    if (match && match.length === 3) {
-                        const longitude = parseFloat(match[1]);
-                        const latitude = parseFloat(match[2]);
-                        const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
-                        
-                        // 添加模型实体
-                        viewer.entities.add({
-                            position: position,
-                            model: {
-                                uri: './sluice/sluice.glb', // GLB模型路径
-                                scale: 10.0, // 缩放比例
-                                minimumPixelSize:32, // 最小像素大小，确保远距离可见
-                                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                            },
-                            show: true
-                        });
-                    }
-                });
-                
-            } else {
-                message.error(result.msg);
-            }
-        })
-        
-}
-function selectAllPumpDatas() {
-    selectAllPumpingStationByConditions({})
-        .then((res) => {
-            const result = res.response.value;
-            console.log(result);
-            if (result.code === 'SUCCESS') {
-                pumpDatas.value = result.body;
-                console.log(pumpDatas);
-                
-                // 遍历每个泵站数据并加载GLB模型
-                pumpDatas.value.forEach((pump) => {
-                    // 从geog字段中提取经纬度
-                    const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
-                    const match = pump.geog.match(pointRegex);
-                    
-                    if (match && match.length === 3) {
-                        const longitude = parseFloat(match[1]);
-                        const latitude = parseFloat(match[2]);
-                        const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
-                        
-                        // 添加模型实体
-                        viewer.entities.add({
-                            position: position,
-                            model: {
-                                uri: './pump/pump.glb',
-                                scale: 10.0, 
-                                minimumPixelSize:32,
-                                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                            },
-                            show: true
-                        });
-                    }
-                });
-                
-            } else {
-                message.error(result.msg);
-            }
-        })
-        
 }
 // 初始化失败--待处理
 // 初始化地球
