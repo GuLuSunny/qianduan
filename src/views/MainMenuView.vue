@@ -80,6 +80,7 @@ import configManagement from './menu/configManagementMenu/ConfigManagement.vue'
 import RemoteSensingQuery from './menu/remoteSensingMenu/RemoteSensingQuery.vue'
 import GeographicIdentificationUpload from './menu/geographicIdentificationMenu/GeographicIdentificationUpload.vue'
 import LandIdentification from './menu/geographicIdentificationMenu/LandIdentification.vue'
+import ShpFileUpload from './menu/geographicIdentificationMenu/ShpFileUpload.vue'
 import WaterIdentification from './menu/geographicIdentificationMenu/WaterIdentification.vue'
 import PlantCoverIdentification from './menu/geographicIdentificationMenu/PlantCoverIdentification.vue'
 import { title } from 'process'
@@ -264,6 +265,21 @@ const menus_pre = [
         component: LandIdentification,
         breadcrumb: ['地类识别','植被覆盖'] ,
         pressionKey: 'menu_subE_d'
+      }
+    ]
+  },
+  {
+    key: 'sub6',
+    pressionKey: 'menu_subF',
+    title: 'SHP文件提交',
+    icon: MenuFoldOutlined,
+    items: [
+      {
+        key: '21',
+        title: 'SHP文件上传',
+        component: ShpFileUpload,
+        breadcrumb: ['SHP文件提交', '文件上传'],
+        pressionKey: 'menu_subF_a'
       }
     ]
   }

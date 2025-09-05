@@ -69,7 +69,7 @@
         <div class="boxMenuView">
             <ul>
                 <li @click="initializeBuildings">智慧建筑</li>
-                <li @click="selectAllSluicesDatas(); selectAllPumpDatas()">智慧水体</li>
+                <li @click="toggleWaterFeatures">智慧水体</li>
                 <li>智慧林地</li>
                 <li>智能农田</li>
                 <li @click="goToModelView">数据菜单</li>
@@ -205,6 +205,19 @@ function goToModelView()
     router.push('/mainMenu')
 }
 
+
+function toggleWaterFeatures() {
+    if (loadedWater.value == false) {
+        // 加载水体
+        selectAllSluicesDatas();
+        selectAllPumpDatas();
+        loadedWater.value = true;
+    } else {
+        // 简单的方法：清除所有实体
+        viewer.entities.removeAll();
+        loadedWater.value = false;
+    }
+}
 function selectAllSluicesDatas() {
     selectAllSluicesByConditions({})
         .then((res) => {
