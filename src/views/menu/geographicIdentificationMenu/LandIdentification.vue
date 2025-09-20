@@ -152,7 +152,21 @@
                   <el-checkbox label="class_stats">类别统计</el-checkbox>
                   <el-checkbox label="heatmap">热力图</el-checkbox>
                   <el-checkbox label="evaluate">评估指标</el-checkbox>
+
                 </el-checkbox-group>
+              </el-form-item>
+              
+                <!-- 添加颜色选择器 -->
+              <el-form-item 
+                label="类别颜色" 
+                v-if="predictOptions.includes('preview_png')"
+              >
+                <div class="color-picker-container">
+                  <div v-for="(color, classId) in colorMap" :key="classId" class="color-picker-item">
+                    <span class="class-label">{{ classNames[classId] }}:</span>
+                    <el-color-picker v-model="colorMap[classId]" show-alpha :predefine="predefineColors" />
+                  </div>
+                </div>
               </el-form-item>
 
               <div class="button-group">
@@ -242,7 +256,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { watch,ref, onMounted, computed } from 'vue'
 import { message, Upload } from 'ant-design-vue'
 import { InboxOutlined } from '@ant-design/icons-vue'
 import { Check, Picture, Download, Back, Refresh, ZoomIn } from '@element-plus/icons-vue'
@@ -311,6 +325,47 @@ const predictLoading = ref(false)
 const loadingResults = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
+
+// 新增颜色映射状态
+const colorMap = ref({
+  "-1": "#CCCCCC",
+  0: '#FFFF00', // 农田 - 黄色
+  1: '#008000', // 林地 - 深绿色
+  2: '#0000FF', // 水体 - 蓝色
+  3: '#FF0000'  // 城市 - 红色
+})
+
+// 类别名称映射
+const classNames = {
+  "-1": "无效/边界区域",
+  0: '农田',
+  1: '林地', 
+  2: '水体',
+  3: '城市'
+}
+
+// 监听选择的模型变化
+watch(selectedModel, (newVal) => {
+  if (!newVal) return
+  
+  // 获取当前选择的模型
+  const currentModel = models.value.find(m => m.modelName === newVal)
+  if (!currentModel || !currentModel.functions) return
+  
+  // 将功能字符串转换为数组
+  const availableFunctions = currentModel.functions.split(',')
+  
+  // 过滤预测选项，只保留可用的功能
+  predictOptions.value = predictOptions.value.filter(option => 
+    availableFunctions.includes(option)
+  )
+  
+  // 过滤结果选项，只保留可用的功能
+  resultOptions.value = resultOptions.value.filter(option => 
+    availableFunctions.includes(option)
+  )
+})
+
 
 // 计算是否有可下载文件
 const hasDownloadableFiles = computed(() => {
@@ -504,6 +559,11 @@ const handlePredict = () => {
     createUserId: userinfo.id
   }
 
+    // 如果选择了预览图并且有自定义颜色，添加颜色参数
+  if (predictOptions.value.includes('preview_png') && colorMap.value) {
+    params.color_map = JSON.stringify(colorMap.value)
+  }
+
   predictLoading.value = true
   error.value = ''
 
@@ -675,6 +735,23 @@ const handlePredictContinue = () => {
 </script>
 
 <style scoped>
+
+.color-picker-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.color-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.class-label {
+  min-width: 50px;
+}
+
 /* 功能选项卡样式 */
 .feature-tabs {
   display: flex;
