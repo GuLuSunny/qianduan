@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="feature-container">
     <!-- 进度栏 -->
     <div class="steps-container">
-      <a-steps :current="current">
+      <a-steps :current="uploadCurrent">
         <a-step title="填写资料信息" />
         <a-step title="确认资料信息" />
         <a-step title="完成" />
@@ -17,7 +17,7 @@
     </div>
 
     <!-- 表单填写页面 -->
-    <div class="form-container" v-if="current === 0">
+    <div class="form-container" v-if="uploadCurrent === 0">
       <!-- 文件上传部分 -->
       <div class="upload-container">
         <Dragger :multiple="true" accept=".tif,.zip,.rar" style="margin-top: 20px" :beforeUpload="beforeUpload"
@@ -53,10 +53,16 @@
           ></el-date-picker>
         </el-form-item>
       </el-form>
+      
+      <!-- 按钮组 -->
+      <div class="button-group">
+        <el-button @click="handleCancel" class="cancel-button">取消</el-button>
+        <el-button @click="handleSubmit" class="submit-button" type="primary">下一步</el-button>
+      </div>
     </div>
 
     <!-- 文件确认页面 -->
-    <div class="form-container" v-if="current === 1">
+    <div class="form-container" v-if="uploadCurrent === 1">
       <!-- 资料确认 -->
       <el-table :data="infoData" style="width: 60%; margin: 0 auto" border
         :header-cell-style="{ backgroundColor: '#f2f2f2', fontWeight: 'bold' }">
@@ -85,7 +91,7 @@
     </div>
 
     <!-- 上传完成页面 -->
-    <div class="form-container" v-if="current === 2">
+    <div class="form-container" v-if="uploadCurrent === 2">
       <div class="completion-icon">
         <el-icon size="60" color="#fff">
           <Check />
@@ -97,17 +103,11 @@
         <el-button @click="handleContinue" class="submit-button" type="primary">继续提交</el-button>
       </div>
     </div>
-
-    <!-- 按钮组 -->
-    <div class="button-group" v-if="current === 0">
-      <el-button @click="handleCancel" class="cancel-button">取消</el-button>
-      <el-button @click="handleSubmit" class="submit-button" type="primary">下一步</el-button>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { message, Upload } from 'ant-design-vue'
 import { InboxOutlined } from '@ant-design/icons-vue'
 import { Check } from '@element-plus/icons-vue'
@@ -120,12 +120,17 @@ import {
   ElButton,
   ElLoading,
   ElLink,
-  ElIcon
+  ElIcon,
+  ElDatePicker
 } from 'element-plus'
 import { modelFilesUpload } from '@/api/getData'
 
 const { Dragger } = Upload
 
+// 定义emit事件
+const emit = defineEmits(['cancel', 'continue'])
+
+// 上传功能相关状态
 const className = ref('land')
 const loadingoptions = {
   target: '.layoutLoading',
@@ -133,25 +138,32 @@ const loadingoptions = {
   text: '数据上传中...'
 }
 const userinfo = JSON.parse(localStorage.getItem('Userinfo'))
-const current = ref(0)
+const uploadCurrent = ref(0)
 const infoVisible = ref(true)
 const files = ref([])
 const publisher = ref(userinfo?.username || '')
 const dataDescription = ref('')
-// 添加观测日期变量
 const observationDate = ref('')
 const infoData = ref([
   { title: '数据简介', value: dataDescription.value },
   { title: '发布人', value: publisher.value }
 ])
 
+// 计算属性
+const form = computed(() => ({
+  dataDescription: dataDescription.value,
+  publisher: publisher.value,
+  observationDate: observationDate.value
+}))
+
+// 生命周期
 onMounted(() => {
-  // 初始化用户信息
   if (userinfo) {
     publisher.value = userinfo.username || ''
   }
 })
 
+// 方法
 function beforeUpload(file) {
   const validTypes = ['.tif', '.zip', '.rar']
   const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
@@ -161,7 +173,6 @@ function beforeUpload(file) {
     return false
   }
   
-  // 检查文件大小 (最大100MB)
   const isLt100M = file.size / 1024 / 1024 < 1000
   if (!isLt100M) {
     message.error('文件大小不能超过 1000MB')
@@ -190,7 +201,6 @@ function handleCustomRequest({ file, onSuccess, onError }) {
 }
 
 function handleSubmit() {
-  // 添加观测日期校验
   if (!publisher.value || !dataDescription.value || !observationDate.value) {
     message.error('请填写完整表单信息')
     return
@@ -201,25 +211,25 @@ function handleSubmit() {
     return
   }
   
-  // 更新确认信息（添加观测日期）
   infoData.value = [
     { title: '数据简介', value: dataDescription.value || '无' },
     { title: '发布人', value: publisher.value },
-    { title: '观测日期', value: observationDate.value } // 添加观测日期显示
+    { title: '观测日期', value: observationDate.value }
   ]
   
-  current.value = 1
+  uploadCurrent.value = 1
 }
 
 function handleCancel() {
   publisher.value = userinfo?.username || ''
   dataDescription.value = ''
-  observationDate.value = '' // 重置观测日期
+  observationDate.value = ''
   files.value = []
+  emit('cancel')
 }
 
 function handlePrevious() {
-  current.value = 0
+  uploadCurrent.value = 0
 }
 
 async function handleConfirm() {
@@ -233,24 +243,23 @@ async function handleConfirm() {
   try {
     for (const file of files.value) {
       const formData = new FormData()
-      formData.append('fileMul', file)
+      formData.append('tiffile', file)
       formData.append('createUserId', userinfo?.id || '')
       formData.append('userName', publisher.value)
       formData.append('dataIntroduction', dataDescription.value)
       formData.append('className', className.value)
-      // 添加观测日期到表单数据
       formData.append('observationTime', observationDate.value)
       
       const res = await modelFilesUpload(formData)
       
-      if (res.code === 'SUCCESS') {
+      if (res.response.value.code === 'SUCCESS') {
         message.success(`${file.name} 上传成功`)
       } else {
         message.error(`${file.name} 上传失败: ${res.msg}`)
       }
     }
     
-    current.value = 2
+    uploadCurrent.value = 2
   } catch (error) {
     console.error('上传失败:', error)
     message.error('上传过程中发生错误')
@@ -262,8 +271,9 @@ async function handleConfirm() {
 function handleContinue() {
   files.value = []
   dataDescription.value = ''
-  observationDate.value = '' // 重置观测日期
-  current.value = 0
+  observationDate.value = ''
+  uploadCurrent.value = 0
+  emit('continue')
 }
 
 function hideInfo() {
@@ -272,7 +282,11 @@ function hideInfo() {
 </script>
 
 <style scoped>
-/* 原有样式保持不变 */
+.feature-container {
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
 .steps-container {
   display: flex;
   justify-content: center;
@@ -410,5 +424,16 @@ function hideInfo() {
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 992px) {
+  .upload-container,
+  .info-box {
+    width: 90%;
+  }
+  
+  .form-container {
+    width: 95%;
+  }
 }
 </style>
