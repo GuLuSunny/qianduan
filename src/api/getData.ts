@@ -1037,7 +1037,7 @@ export function waterModelPredict(data: any) {
  * 植被覆盖脚本调用
  * @returns UseAxiosReturn
  */
-export function plantCover(data: any) {
+export function plantCoverPredict(data: any) {
   return useAxiosApi('/api/plantCover', {
     method: 'POST',
     data: data,
@@ -1141,6 +1141,28 @@ export function getLandResultConfusionMatrix(data: any) {
  */ 
 export function getLandResultConfusionMatrixClassStats(data: any) {
   return useAxiosApi('/api/modelFile/download/class_stats', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+/**api/model/getTrainData
+ * 获取植被分布结果
+ * @returns UseAxiosReturn
+ */ 
+export function getPlantResultByType(data: any) {
+  return useAxiosApi('/api/modelFile/PlantDownload', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+/**
+ * 植被数据集上传接口
+ * @returns UseAxiosReturn
+ */ 
+export function uploadPlantTrainData(data: any) {
+  return useAxiosApi('/api/model/getTrainData', {
     method: 'POST',
     data: data,
     responseType: 'blob'

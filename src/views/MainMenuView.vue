@@ -88,43 +88,44 @@ import { title } from 'process'
 // 权限过滤后菜单配置数组
 const menus = ref([])
 // 权限过滤前菜单配置数组
-const menus_pre = [
+const menus_pre = [  
   {
     key: 'sub1',
-    pressionKey: 'menu_subA',
-    title: '数据获取',
-    icon: DashboardOutlined,
-    items: [
+    pressionKey: 'menu_subE',
+    title: '地类识别',
+    icon: MenuFoldOutlined,
+    items:[
       {
-        key: '1',
-        title: '自动观测数据',
-        component: AutoDetect,
-        breadcrumb: ['数据获取', '自动观测数据'],
-        pressionKey: 'menu_subA_a'
+        key:'17',
+        title: '文件上传',
+        component: GeographicIdentificationUpload,
+        breadcrumb: ['地类识别','文件提交'] ,
+        pressionKey: 'menu_subE_a'
       },
       {
-        key: '2',
-        title: '人工观测数据',
-        component: Manua,
-        breadcrumb: ['数据获取', '人工观测数据'],
-        pressionKey: 'menu_subA_b'
+        key:'18',
+        title: '土地分类',
+        component: LandIdentification,
+        breadcrumb: ['地类识别','土地分类'] ,
+        pressionKey: 'menu_subE_b'
       },
       {
-        key: '3',
-        title: '实验室分析数据',
-        component: LaboratoryAnalysis,
-        breadcrumb: ['数据获取', '实验室分析数据'],
-        pressionKey: 'menu_subA_c'
+        key:'19',
+        title: '水域地域',
+        component: LandIdentification,
+        breadcrumb: ['地类识别','水域地域'] ,
+        pressionKey: 'menu_subE_c'
       },
       {
-        key: '4',
-        title: '研究数据',
-        component: researchData,
-        breadcrumb: ['数据获取', '研究数据'],
-        pressionKey: 'menu_subA_d'
+        key:'20',
+        title: '植被覆盖',
+        component: PlantCoverIdentification,
+        breadcrumb: ['地类识别','植被覆盖'] ,
+        pressionKey: 'menu_subE_d'
       }
     ]
   },
+  
   {
     key: 'sub2',
     pressionKey: 'menu_subB',
@@ -232,39 +233,39 @@ const menus_pre = [
       }
     ]
   },
-  {
+{
     key: 'sub5',
-    pressionKey: 'menu_subE',
-    title: '地类识别',
-    icon: MenuFoldOutlined,
-    items:[
+    pressionKey: 'menu_subA',
+    title: '数据获取',
+    icon: DashboardOutlined,
+    items: [
       {
-        key:'17',
-        title: '文件上传',
-        component: GeographicIdentificationUpload,
-        breadcrumb: ['地类识别','文件提交'] ,
-        pressionKey: 'menu_subE_a'
+        key: '1',
+        title: '自动观测数据',
+        component: AutoDetect,
+        breadcrumb: ['数据获取', '自动观测数据'],
+        pressionKey: 'menu_subA_a'
       },
       {
-        key:'18',
-        title: '土地分类',
-        component: LandIdentification,
-        breadcrumb: ['地类识别','土地分类'] ,
-        pressionKey: 'menu_subE_b'
+        key: '2',
+        title: '人工观测数据',
+        component: Manua,
+        breadcrumb: ['数据获取', '人工观测数据'],
+        pressionKey: 'menu_subA_b'
       },
       {
-        key:'19',
-        title: '水域地域',
-        component: LandIdentification,
-        breadcrumb: ['地类识别','水域地域'] ,
-        pressionKey: 'menu_subE_c'
+        key: '3',
+        title: '实验室分析数据',
+        component: LaboratoryAnalysis,
+        breadcrumb: ['数据获取', '实验室分析数据'],
+        pressionKey: 'menu_subA_c'
       },
       {
-        key:'20',
-        title: '植被覆盖',
-        component: LandIdentification,
-        breadcrumb: ['地类识别','植被覆盖'] ,
-        pressionKey: 'menu_subE_d'
+        key: '4',
+        title: '研究数据',
+        component: researchData,
+        breadcrumb: ['数据获取', '研究数据'],
+        pressionKey: 'menu_subA_d'
       }
     ]
   },
