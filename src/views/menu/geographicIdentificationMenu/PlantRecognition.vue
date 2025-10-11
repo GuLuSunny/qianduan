@@ -101,6 +101,51 @@
                 获取预测结果
               </el-button>
             </div>
+
+            <!-- 模型文件下载区域 -->
+            <el-divider />
+
+            <el-form-item label="训练模型下载">
+              <el-select v-model="selectedTrainModel" placeholder="请选择训练模型" style="width: 100%">
+                <el-option 
+                  v-for="model in trainModels" 
+                  :key="model.id" 
+                  :label="model.modelInfo || model.modelName"
+                  :value="model.modelName"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="下载步骤" v-if="selectedTrainModel === '1DResnet'">
+              <el-radio-group v-model="downloadStep">
+                <el-radio :label="0">步骤1</el-radio>
+                <el-radio :label="1">步骤2</el-radio>
+              </el-radio-group>
+              <div class="step-tips">
+                <el-text type="info">1DResnet模型需要分两步下载，请依次下载两个文件</el-text>
+              </div>
+            </el-form-item>
+
+            <div class="button-group">
+              <el-button 
+                @click="handleDownloadModel" 
+                type="warning" 
+                :loading="downloadLoading" 
+                :disabled="!selectedTrainModel"
+              >
+                {{ selectedTrainModel === '1DResnet' ? `下载步骤${downloadStep + 1}文件` : '下载模型文件' }}
+              </el-button>
+              
+              <!-- 1DResnet模型专用的一键下载按钮 -->
+              <el-button 
+                v-if="selectedTrainModel === '1DResnet'"
+                @click="handleBatchDownload" 
+                type="warning" 
+                :loading="batchDownloadLoading"
+              >
+                一键下载全部文件
+              </el-button>
+            </div>
           </div>
         </div>
       </el-form>
@@ -187,12 +232,14 @@ import {
   ElColorPicker,
   ElDatePicker,
   ElRadioGroup,
-  ElRadio
+  ElRadio,
+  ElText
 } from 'element-plus'
 import { 
   getModelByClassName, 
   plantCoverPredict,
-  getPlantResultByType
+  getPlantResultByType,
+  DownloadPlantTrainModelFiles
 } from '@/api/getData'
 
 // 定义emit事件
@@ -206,6 +253,13 @@ const observationDate = ref('')
 const currentModelFunctions = ref([])
 const resultType = ref('png')
 const pngType = ref('simple')
+
+// 模型下载相关状态
+const trainModels = ref([])
+const selectedTrainModel = ref('')
+const downloadStep = ref(0)
+const downloadLoading = ref(false)
+const batchDownloadLoading = ref(false)
 
 // 所有可用的选项配置
 const allPredictOptions = ref([
@@ -334,7 +388,24 @@ const fetchModels = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        models.value = response?.body || []
+        const allModels = response?.body || []
+        
+        // 过滤预测模型
+        models.value = allModels.filter(model => {
+          if (!model.functions) return false
+          const functionList = model.functions.split(',').map(func => func.trim())
+          // 排除纯训练模型，只保留包含预测功能的模型
+          return !functionList.includes('train') && 
+                 functionList.some(func => 
+                   ['preview_png', 'confusion_matrix', 'class_stats', 'heatmaps_summary'].includes(func)
+                 )
+        })
+
+        // 过滤训练模型
+        trainModels.value = allModels.filter(model => {
+          if (!model.functions) return false
+          return model.functions === 'train'
+        })
 
         if (models.value.length > 0) {
           selectedModel.value = models.value[0].modelName
@@ -343,7 +414,11 @@ const fetchModels = () => {
             currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
           }
         } else {
-          message.warning('未找到可用模型')
+          message.warning('未找到可用预测模型')
+        }
+
+        if (trainModels.value.length > 0) {
+          selectedTrainModel.value = trainModels.value[0].modelName
         }
       } else {
         const msg = response?.msg || '获取模型失败'
@@ -418,7 +493,6 @@ const handlePredict = () => {
 }
 
 // 获取结果文件 - 直接处理文件流响应
-// 获取结果文件 - 直接处理文件流响应
 const fetchResultFiles = () => {
   if (!selectedModel.value) {
     message.error('请选择模型')
@@ -482,6 +556,7 @@ const fetchResultFiles = () => {
       loadingResults.value = false
     })
 }
+
 // 统一的错误处理方法
 const handleErrorResponse = (errorData) => {
   if (errorData instanceof Blob) {
@@ -531,11 +606,157 @@ const downloadResultFile = () => {
   setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 }
 
+// 下载模型文件
+const handleDownloadModel = () => {
+  if (!selectedTrainModel.value) {
+    message.error('请选择训练模型')
+    return
+  }
+
+  const userData = localStorage.getItem('Userinfo')
+  if (!userData) {
+    message.error('用户信息未找到，请重新登录')
+    return
+  }
+
+  const userinfo = JSON.parse(userData)
+
+  downloadLoading.value = true
+
+  const params = {
+    userName: userinfo.username,
+    modelName: selectedTrainModel.value,
+    createUserId: userinfo.id,
+    observationTime: observationDate.value,
+    type: 'train',
+    DownloadStep: downloadStep.value
+  }
+
+  DownloadPlantTrainModelFiles(params)
+    .then((res) => {
+      console.log('下载文件响应:', res)
+
+      const response = res?.response?.value || res?.value || res
+
+      // 确定文件扩展名
+      let fileExtension = '.pkl'
+      if (selectedTrainModel.value === '1DResnet') {
+        fileExtension = downloadStep.value === 0 ? '.h5' : '.pkl'
+      }
+
+      // 创建文件名
+      const fileName = `${selectedTrainModel.value}_step${downloadStep.value + 1}${fileExtension}`
+      
+      // 创建下载链接
+      const blob = new Blob([response],{type:'application/octet-stream'})
+      const downloadUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // 清理URL对象
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
+
+      message.success(`模型文件 ${fileName} 下载成功`)
+
+      // 如果是1DResnet模型且当前是第一步，提示用户下载第二步
+      if (selectedTrainModel.value === '1DResnet' && downloadStep.value === 0) {
+        message.info('请继续下载步骤2的文件以获取完整模型')
+        downloadStep.value = 1
+      }
+    })
+    .catch((err) => {
+      console.error('下载模型文件失败:', err)
+      handleErrorResponse(err.response?.data || err.message)
+    })
+    .finally(() => {
+      downloadLoading.value = false
+    })
+}
+
+// 批量下载1DResnet模型的所有文件
+const handleBatchDownload = () => {
+  if (selectedTrainModel.value !== '1DResnet') {
+    message.error('批量下载仅适用于1DResnet模型')
+    return
+  }
+
+  const userData = localStorage.getItem('Userinfo')
+  if (!userData) {
+    message.error('用户信息未找到，请重新登录')
+    return
+  }
+
+  const userinfo = JSON.parse(userData)
+  batchDownloadLoading.value = true
+
+  const step1Params = {
+    userName: userinfo.username,
+    modelName: selectedTrainModel.value,
+    createUserId: userinfo.id,
+    observationTime: observationDate.value,
+    type: 'train',
+    DownloadStep: 0
+  }
+
+  // 先下载第一步
+  DownloadPlantTrainModelFiles(step1Params)
+    .then((step1Response) => {
+      // 下载第一步文件 (.h5)
+      const step1Blob = new Blob([step1Response.data])
+      const step1Url = URL.createObjectURL(step1Blob)
+      const step1Link = document.createElement('a')
+      step1Link.href = step1Url
+      step1Link.download = `${selectedTrainModel.value}_step1.h5`
+      document.body.appendChild(step1Link)
+      step1Link.click()
+      document.body.removeChild(step1Link)
+      setTimeout(() => URL.revokeObjectURL(step1Url), 100)
+
+      message.success('步骤1文件下载成功，开始下载步骤2文件...')
+
+      // 然后下载第二步
+      const step2Params = {
+        userName: userinfo.username,
+        modelName: selectedTrainModel.value,
+        createUserId: userinfo.id,
+        observationTime: observationDate.value,
+        type: 'train',
+        DownloadStep: 1
+      }
+
+      return DownloadPlantTrainModelFiles(step2Params)
+    })
+    .then((step2Response) => {
+      // 下载第二步文件 (.pkl)
+      const step2Blob = new Blob([step2Response.data])
+      const step2Url = URL.createObjectURL(step2Blob)
+      const step2Link = document.createElement('a')
+      step2Link.href = step2Url
+      step2Link.download = `${selectedTrainModel.value}_step2.pkl`
+      document.body.appendChild(step2Link)
+      step2Link.click()
+      document.body.removeChild(step2Link)
+      setTimeout(() => URL.revokeObjectURL(step2Url), 100)
+
+      message.success('1DResnet模型所有文件下载完成！')
+    })
+    .catch((err) => {
+      console.error('批量下载失败:', err)
+      handleErrorResponse(err.response?.data || err.message)
+    })
+    .finally(() => {
+      batchDownloadLoading.value = false
+    })
+}
+
 // 下载其他文件 - 保持原有实现
 const downloadFile = (type) => {
   message.warning('植物识别功能暂不支持此文件下载')
 }
-
 
 // 打开大图对话框
 const openImageDialog = () => {
@@ -799,6 +1020,10 @@ const handleBack = () => {
 
 .class-label {
   min-width: 50px;
+}
+
+.step-tips {
+  margin-top: 8px;
 }
 
 @media (max-width: 992px) {

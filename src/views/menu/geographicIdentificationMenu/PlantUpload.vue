@@ -16,17 +16,31 @@
       <el-button class="close-button" @click="hideInfo" type="text">×</el-button>
     </div>
 
+    <!-- 上传类型选择 -->
+    <div class="upload-type-selector" v-if="uploadCurrent === 0">
+      <el-radio-group v-model="uploadType" @change="handleUploadTypeChange">
+        <el-radio label="data">普通数据上传</el-radio>
+        <el-radio label="train">训练数据集上传</el-radio>
+      </el-radio-group>
+    </div>
+
     <!-- 表单填写页面 -->
     <div class="form-container" v-if="uploadCurrent === 0">
       <!-- 文件上传部分 -->
       <div class="upload-container">
-        <Dragger :multiple="true" accept=".tif,.zip,.rar" style="margin-top: 20px" :beforeUpload="beforeUpload"
-          :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
+        <Dragger :multiple="true" 
+          :accept="uploadType === 'data' ? '.tif,.zip,.rar' : '.zip,.xls,.xlsx'" 
+          style="margin-top: 20px" 
+          :beforeUpload="beforeUpload"
+          :customRequest="handleCustomRequest" 
+          :fileList="files" 
+          :onRemove="onRemove">
           <p class="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
           <p class="ant-upload-text">点击或将文件拖拽到这里上传</p>
-          <p class="ant-upload-hint">支持扩展名：.tif, .zip, .rar</p>
+          <p class="ant-upload-hint" v-if="uploadType === 'data'">支持扩展名：.tif, .zip, .rar</p>
+          <p class="ant-upload-hint" v-else>支持扩展名：.zip, .xls, .xlsx (训练数据集)</p>
           <p class="download-template">
             <el-link type="primary" :underline="false">下载模板文件</el-link>
           </p>
@@ -51,6 +65,18 @@
             value-format="YYYY-MM-DD"
             style="width: 100%"
           ></el-date-picker>
+        </el-form-item>
+
+        <!-- 训练数据集额外字段 -->
+        <el-form-item v-if="uploadType === 'train'" label="模型名称：" required>
+          <el-select v-model="trainModelName" placeholder="请选择训练模型" style="width: 100%">
+            <el-option 
+              v-for="model in availableTrainModels" 
+              :key="model.modelName" 
+              :label="model.modelInfo || model.modelName" 
+              :value="model.modelName"
+            ></el-option>
+          </el-select>
         </el-form-item>
       </el-form>
       
@@ -99,6 +125,21 @@
       </div>
       <h1 class="form-title">上传完成</h1>
       <p class="completion-tip">已成功上传 {{ files.length }} 个文件</p>
+      
+      <!-- 训练模型下载区域 -->
+      <div v-if="uploadType === 'train' && trainModelName" class="train-download-section">
+        <h3>训练模型文件下载</h3>
+        <p class="download-tip">训练完成后可在此下载模型文件</p>
+        <div class="download-buttons">
+          <el-button @click="downloadTrainModel('h5')" type="primary" plain icon="Download">
+            下载 .h5 模型文件
+          </el-button>
+          <el-button @click="downloadTrainModel('pkl')" type="primary" plain icon="Download">
+            下载 .pkl 模型文件
+          </el-button>
+        </div>
+      </div>
+
       <div class="button-group">
         <el-button @click="handleContinue" class="submit-button" type="primary">继续提交</el-button>
       </div>
@@ -110,7 +151,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { message, Upload } from 'ant-design-vue'
 import { InboxOutlined } from '@ant-design/icons-vue'
-import { Check } from '@element-plus/icons-vue'
+import { Check, Download } from '@element-plus/icons-vue'
 import {
   ElForm,
   ElFormItem,
@@ -121,9 +162,13 @@ import {
   ElLoading,
   ElLink,
   ElIcon,
-  ElDatePicker
+  ElDatePicker,
+  ElRadioGroup,
+  ElRadio,
+  ElSelect,
+  ElOption
 } from 'element-plus'
-import { modelFilesUpload } from '@/api/getData'
+import { modelFilesUpload, uploadPlantTrainData, getModelByClassName, DownloadPlantTrainModelFiles } from '@/api/getData'
 
 const { Dragger } = Upload
 
@@ -144,6 +189,9 @@ const files = ref([])
 const publisher = ref(userinfo?.username || '')
 const dataDescription = ref('')
 const observationDate = ref('')
+const uploadType = ref('data') // 'data' 或 'train'
+const trainModelName = ref('')
+const availableTrainModels = ref([])
 const infoData = ref([
   { title: '数据简介', value: dataDescription.value },
   { title: '发布人', value: publisher.value }
@@ -153,7 +201,9 @@ const infoData = ref([
 const form = computed(() => ({
   dataDescription: dataDescription.value,
   publisher: publisher.value,
-  observationDate: observationDate.value
+  observationDate: observationDate.value,
+  uploadType: uploadType.value,
+  trainModelName: trainModelName.value
 }))
 
 // 生命周期
@@ -161,11 +211,41 @@ onMounted(() => {
   if (userinfo) {
     publisher.value = userinfo.username || ''
   }
+  fetchTrainModels()
 })
+
+// 获取可用训练模型
+const fetchTrainModels = () => {
+  getModelByClassName({ className: "plant" })
+    .then((res) => {
+      const response = res?.response?.value || res?.value || res
+      if (response?.code === 'SUCCESS') {
+        // 过滤出支持训练的模型
+        availableTrainModels.value = (response?.body || []).filter(model => 
+          model.functions && model.functions.includes('train')
+        )
+      }
+    })
+    .catch((error) => {
+      console.error('获取训练模型失败:', error)
+    })
+}
+
+// 处理上传类型变化
+const handleUploadTypeChange = () => {
+  files.value = []
+  trainModelName.value = ''
+}
 
 // 方法
 function beforeUpload(file) {
-  const validTypes = ['.tif', '.zip', '.rar','xls','xlsx']
+  let validTypes = []
+  if (uploadType.value === 'data') {
+    validTypes = ['.tif', '.zip', '.rar']
+  } else {
+    validTypes = ['.zip', '.xls', '.xlsx']
+  }
+  
   const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
   
   if (!validTypes.includes(fileExt)) {
@@ -206,6 +286,11 @@ function handleSubmit() {
     return
   }
   
+  if (uploadType.value === 'train' && !trainModelName.value) {
+    message.error('请选择训练模型')
+    return
+  }
+  
   if (files.value.length === 0) {
     message.error('请至少上传一个文件')
     return
@@ -214,8 +299,13 @@ function handleSubmit() {
   infoData.value = [
     { title: '数据简介', value: dataDescription.value || '无' },
     { title: '发布人', value: publisher.value },
-    { title: '观测日期', value: observationDate.value }
+    { title: '观测日期', value: observationDate.value },
+    { title: '上传类型', value: uploadType.value === 'data' ? '普通数据' : '训练数据' }
   ]
+  
+  if (uploadType.value === 'train') {
+    infoData.value.push({ title: '训练模型', value: trainModelName.value })
+  }
   
   uploadCurrent.value = 1
 }
@@ -225,6 +315,8 @@ function handleCancel() {
   dataDescription.value = ''
   observationDate.value = ''
   files.value = []
+  uploadType.value = 'data'
+  trainModelName.value = ''
   emit('cancel')
 }
 
@@ -250,7 +342,13 @@ async function handleConfirm() {
       formData.append('className', className.value)
       formData.append('observationTime', observationDate.value)
       
-      const res = await modelFilesUpload(formData)
+      let res
+      if (uploadType.value === 'data') {
+        res = await modelFilesUpload(formData)
+      } else {
+        formData.append('modelName', trainModelName.value)
+        res = await uploadPlantTrainData(formData)
+      }
       
       if (res.response.value.code === 'SUCCESS') {
         message.success(`${file.name} 上传成功`)
@@ -268,10 +366,52 @@ async function handleConfirm() {
   }
 }
 
+// 下载训练模型文件
+const downloadTrainModel = async (fileType) => {
+  if (!trainModelName.value || !observationDate.value) {
+    message.error('模型名称或观测日期缺失')
+    return
+  }
+
+  try {
+    const params = {
+      userName: userinfo?.username || '',
+      modelName: trainModelName.value,
+      createUserId: userinfo?.id || '',
+      observationTime: observationDate.value,
+      type: 'train',
+      DownloadStep: 0,
+      fileType: fileType
+    }
+
+    const response = await DownloadPlantTrainModelFiles(params)
+    
+    // 处理文件下载
+    const blob = new Blob([response.data])
+    const downloadUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `${trainModelName.value}_model.${fileType}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // 清理URL对象
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
+    
+    message.success(`模型文件下载成功`)
+  } catch (error) {
+    console.error('下载训练模型失败:', error)
+    message.error('下载训练模型失败')
+  }
+}
+
 function handleContinue() {
   files.value = []
   dataDescription.value = ''
   observationDate.value = ''
+  uploadType.value = 'data'
+  trainModelName.value = ''
   uploadCurrent.value = 0
   emit('continue')
 }
@@ -293,6 +433,12 @@ function hideInfo() {
   align-items: center;
   margin: 30px auto;
   width: 80%;
+}
+
+.upload-type-selector {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
 }
 
 .info-box {
@@ -415,6 +561,32 @@ function hideInfo() {
   margin-bottom: 30px;
 }
 
+.train-download-section {
+  margin: 30px 0;
+  padding: 20px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background-color: #fafafa;
+  text-align: center;
+}
+
+.train-download-section h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.download-tip {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.download-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
 .el-form-item {
   margin-bottom: 22px;
 }
@@ -434,6 +606,11 @@ function hideInfo() {
   
   .form-container {
     width: 95%;
+  }
+  
+  .download-buttons {
+    flex-direction: column;
+    align-items: center;
   }
 }
 </style>

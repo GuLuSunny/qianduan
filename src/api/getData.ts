@@ -1146,6 +1146,17 @@ export function getLandResultConfusionMatrixClassStats(data: any) {
     responseType: 'blob'
   });
 }
+/**
+ * 获取土地分类结果热力图
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResultHeatmap(data: any) {
+  return useAxiosApi('/api/modelFile/download/heatmaps_summary', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
 /**api/model/getTrainData
  * 获取植被分布结果
  * @returns UseAxiosReturn
@@ -1163,6 +1174,19 @@ export function getPlantResultByType(data: any) {
  */ 
 export function uploadPlantTrainData(data: any) {
   return useAxiosApi('/api/model/getTrainData', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+
+
+/**
+ * 植被模型文件下载接口
+ * @returns UseAxiosReturn
+ */ 
+export function DownloadPlantTrainModelFiles(data: any) {
+  return useAxiosApi('/api/model/plantTrainResult', {
     method: 'POST',
     data: data,
     responseType: 'blob'

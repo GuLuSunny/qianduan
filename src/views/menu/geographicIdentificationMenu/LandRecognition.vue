@@ -128,9 +128,14 @@
                       @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button>
-            <el-button v-if="downloadFiles.evaluate && isOptionAvailable('evaluate', 'result')" 
+            <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')" 
                       @click="downloadFile('evaluate')" type="primary" plain icon="Download">
               评估指标
+            </el-button>
+
+            <el-button v-if="downloadFiles.heatmaps_summary && isOptionAvailable('heatmaps_summary', 'result')" 
+                      @click="downloadFile('heatmap')" type="primary" plain icon="Download">
+              热力图
             </el-button>
           </div>
         </div>
@@ -181,7 +186,8 @@ import {
   getLandResult, 
   getLandResultPreview, 
   getLandResultConfusionMatrix, 
-  getLandResultConfusionMatrixClassStats 
+  getLandResultConfusionMatrixClassStats,
+  getLandResultHeatmap
 } from '@/api/getData'
 
 // 定义emit事件
@@ -205,11 +211,12 @@ const allPredictOptions = ref([
 const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
   { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '评估指标' } // class_stats对应评估指标
+  { value: 'evaluate', label: '评估指标' } , // class_stats对应评估指标
+  { value: 'heatmap', label: '热力图' }, 
 ])
 
 const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
-const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate'])
+const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate','tif'])
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -262,7 +269,7 @@ const form = computed(() => ({
 }))
 
 const hasDownloadableFiles = computed(() => {
-  return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate
+  return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate || downloadFiles.value.heatmap
 })
 
 // 检查选项是否可用
@@ -511,12 +518,14 @@ const loadPreviewImage = () => {
 const downloadFile = (type) => {
   const fileNameMap = {
     confusion_matrix: `${selectedModel.value}_confusion_matrix.png`,
-    evaluate: `${selectedModel.value}_evaluate.txt` // evaluate对应评估指标文件
+    evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应评估指标文件
+    heatmap:`class_heatmaps_summary.png`
   }
 
   const apiCallMap = {
     confusion_matrix: getLandResultConfusionMatrix,
-    evaluate: getLandResultConfusionMatrixClassStats // evaluate对应class_stats接口
+    evaluate: getLandResultConfusionMatrixClassStats ,// evaluate对应class_stats接口  
+    heatmap:getLandResultHeatmap
   }
 
   const apiCall = apiCallMap[type]
@@ -542,7 +551,7 @@ const downloadFile = (type) => {
       const response = res?.response?.value || res?.value || res
 
       const blob = new Blob([response], {
-        type: type.includes('matrix') ? 'image/png' : 'text/plain'
+        type: type.includes('evaluate') ?   'text/plain':'image/png'
       })
 
       const downloadUrl = URL.createObjectURL(blob)
