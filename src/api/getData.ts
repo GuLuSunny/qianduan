@@ -1168,6 +1168,7 @@ export function getPlantResultByType(data: any) {
     responseType: 'blob'
   });
 }
+
 /**
  * 植被数据集上传接口
  * @returns UseAxiosReturn
@@ -1179,7 +1180,27 @@ export function uploadPlantTrainData(data: any) {
     responseType: 'blob'
   });
 }
+/**
+ * 获取水体识别结果
+ * @returns UseAxiosReturn
+ */ 
+export function getWaterResult(data: any) {
+  return useAxiosApi('/api/waterExtract', {
+    method: 'POST',
+    data: data
+  });
+}
 
+/**
+ * 获取水体变化识别结果
+ * @returns UseAxiosReturn
+ */
+export function getWaterChangeResult(data: any) {
+  return useAxiosApi('/api/waterChange', {
+    method: 'POST',
+    data: data
+  });
+}
 
 /**
  * 植被模型文件下载接口
