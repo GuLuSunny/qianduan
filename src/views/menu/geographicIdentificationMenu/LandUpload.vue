@@ -241,6 +241,8 @@ async function handleConfirm() {
   const loadingInstance = ElLoading.service(loadingoptions)
   
   try {
+    let allSuccess = true // 新增：记录所有文件是否都上传成功
+    
     for (const file of files.value) {
       const formData = new FormData()
       formData.append('tiffile', file)
@@ -256,13 +258,20 @@ async function handleConfirm() {
         message.success(`${file.name} 上传成功`)
       } else {
         message.error(`${file.name} 上传失败: ${res.msg}`)
+        allSuccess = false // 标记有文件上传失败
       }
     }
     
-    uploadCurrent.value = 2
+    // 只有当所有文件都上传成功时才跳转到完成页面
+    if (allSuccess) {
+      uploadCurrent.value = 2
+    } else {
+      message.error('部分文件上传失败，请检查后重新提交')
+    }
   } catch (error) {
     console.error('上传失败:', error)
     message.error('上传过程中发生错误')
+    // catch 块中不跳转页面
   } finally {
     loadingInstance.close()
   }

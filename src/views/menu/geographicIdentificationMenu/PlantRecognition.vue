@@ -532,25 +532,45 @@ const fetchResultFiles = () => {
       console.log('获取文件响应:', res)
       
       // 检查响应状态
-        const blob = res.data
-        const response = res?.response?.value || res?.value || res
-        if (resultType.value === 'png') {
-          // 对于PNG格式，创建对象URL用于图片显示
-          const blob = new Blob([response], { type: 'image/png' })
-          const imageUrl = URL.createObjectURL(blob)
-          previewData.value = imageUrl
-          downloadFiles.value.result_file = blob
-          message.success('PNG图片获取成功')
-        } else if (resultType.value === 'tif') {
-          // 对于TIF格式，只提供下载，不显示预览
-          downloadFiles.value.result_file = blob
-          message.success('TIF文件获取成功，请点击下载')
+      const blob = res.data
+      const response = res?.response?.value || res?.value || res
+      
+      // 首先检查是否返回错误信息
+      if (response instanceof Blob && response.type === 'application/json') {
+        // 如果是JSON类型的Blob，说明是错误信息
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const errorJson = JSON.parse(reader.result)
+            message.error(errorJson.msg || '获取结果文件失败')
+          } catch (e) {
+            message.error('获取结果文件失败')
+          }
         }
-        predictCurrent.value = 1
+        reader.readAsText(response)
+        return // 不跳转页面
+      }
+
+      // 成功获取文件
+      if (resultType.value === 'png') {
+        // 对于PNG格式，创建对象URL用于图片显示
+        const blob = new Blob([response], { type: 'image/png' })
+        const imageUrl = URL.createObjectURL(blob)
+        previewData.value = imageUrl
+        downloadFiles.value.result_file = blob
+        message.success('PNG图片获取成功')
+        predictCurrent.value = 1 // 只有成功时才跳转
+      } else if (resultType.value === 'tif') {
+        // 对于TIF格式，只提供下载，不显示预览
+        downloadFiles.value.result_file = blob
+        message.success('TIF文件获取成功，请点击下载')
+        predictCurrent.value = 1 // 只有成功时才跳转
+      }
     })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       handleErrorResponse(err.response?.data || err.message)
+      // catch块中不跳转页面
     })
     .finally(() => {
       loadingResults.value = false

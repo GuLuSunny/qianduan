@@ -1157,6 +1157,19 @@ export function getLandResultHeatmap(data: any) {
     responseType: 'blob'
   });
 }
+
+/**
+ * 获取土地分类结果tif
+ * @returns UseAxiosReturn
+ */ 
+export function getLandResultTif(data: any) {
+  return useAxiosApi('/api/modelFile/download/tif', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+}
+
 /**api/model/getTrainData
  * 获取植被分布结果
  * @returns UseAxiosReturn

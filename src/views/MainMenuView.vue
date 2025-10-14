@@ -92,7 +92,7 @@ const menus_pre = [
   {
     key: 'sub1',
     pressionKey: 'menu_subE',
-    title: '地类识别',
+    title: '地类信息智能反演',
     icon: MenuFoldOutlined,
     items:[
       {
@@ -112,7 +112,7 @@ const menus_pre = [
       {
         key:'19',
         title: '水域地域',
-        component: LandIdentification,
+        component: WaterIdentification,
         breadcrumb: ['地类识别','水域地域'] ,
         pressionKey: 'menu_subE_c'
       },

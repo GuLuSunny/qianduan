@@ -81,7 +81,7 @@
                   v-for="option in allResultOptions" 
                   :key="option.value"
                   :label="option.value"
-                  :disabled="!isOptionAvailable(option.value, 'result')"
+                  :disabled="!isOptionAvailable(option.value, 'result') && option.value !== 'tif'"
                 >
                   {{ option.label }}
                 </el-checkbox>
@@ -124,6 +124,11 @@
         <div class="download-section" v-if="hasDownloadableFiles">
           <h3>结果文件下载</h3>
           <div class="download-buttons">
+            <!-- TIF文件下载按钮 - 始终可用 -->
+            <el-button @click="downloadFile('tif')" type="success" plain icon="Download">
+              TIF文件
+            </el-button>
+
             <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
                       @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
@@ -133,7 +138,8 @@
               评估指标
             </el-button>
 
-            <el-button v-if="downloadFiles.heatmaps_summary && isOptionAvailable('heatmaps_summary', 'result')" 
+            <!-- 热力图下载按钮 - 仅当模型为xgbv1且heatmaps_summary为true时可用 -->
+            <el-button v-if="canDownloadHeatmap" 
                       @click="downloadFile('heatmap')" type="primary" plain icon="Download">
               热力图
             </el-button>
@@ -187,7 +193,8 @@ import {
   getLandResultPreview, 
   getLandResultConfusionMatrix, 
   getLandResultConfusionMatrixClassStats,
-  getLandResultHeatmap
+  getLandResultHeatmap,
+  getLandResultTif  // 添加TIF下载接口
 } from '@/api/getData'
 
 // 定义emit事件
@@ -212,11 +219,12 @@ const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
   { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' } , // class_stats对应评估指标
-  { value: 'heatmap', label: '热力图' }, 
+  { value: 'heatmap', label: '热力图' },
+  { value: 'tif', label: 'TIF文件' }  // 添加TIF选项
 ])
 
 const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
-const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate','tif'])
+const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'tif']) // 默认包含tif
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -272,9 +280,19 @@ const hasDownloadableFiles = computed(() => {
   return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate || downloadFiles.value.heatmap
 })
 
+// 检查是否可以下载热力图（模型为xgbv1且heatmaps_summary为true）
+const canDownloadHeatmap = computed(() => {
+  return selectedModel.value === 'xgbv1' && 
+         predictOptions.value.includes('heatmap') && 
+         isOptionAvailable('heatmap', 'predict')
+})
+
 // 检查选项是否可用
 const isOptionAvailable = (optionValue, type) => {
   if (!selectedModel.value || currentModelFunctions.value.length === 0) return false
+  
+  // TIF文件始终可用
+  if (optionValue === 'tif') return true
   
   // 功能映射：将前端选项值映射到后端功能名称
   const functionMap = {
@@ -304,13 +322,13 @@ watch(selectedModel, (newVal) => {
   // 解析功能字符串为数组
   currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
   
-  // 过滤不可用的选项
+  // 过滤不可用的选项（除了tif）
   predictOptions.value = predictOptions.value.filter(option => 
     isOptionAvailable(option, 'predict')
   )
   
   resultOptions.value = resultOptions.value.filter(option => 
-    isOptionAvailable(option, 'result')
+    isOptionAvailable(option, 'result') || option === 'tif'
   )
 })
 
@@ -466,17 +484,20 @@ const fetchResultFiles = () => {
         }
 
         message.success('结果获取成功')
+        // 只有在成功获取结果后才跳转到结果页面
         predictCurrent.value = 1
       } else {
         const msg = response?.msg || '获取结果文件失败'
         error.value = msg
         message.error(msg)
+        // 失败时不跳转页面，保持当前页面
       }
     })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       error.value = '获取结果文件失败: ' + err.message
       message.error('获取结果文件失败: ' + err.message)
+      // 失败时不跳转页面，保持当前页面
     })
     .finally(() => {
       loadingResults.value = false
@@ -517,15 +538,17 @@ const loadPreviewImage = () => {
 // 下载文件
 const downloadFile = (type) => {
   const fileNameMap = {
+    tif: `${selectedModel.value}_result.tif`,
     confusion_matrix: `${selectedModel.value}_confusion_matrix.png`,
     evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应评估指标文件
-    heatmap:`class_heatmaps_summary.png`
+    heatmap: `class_heatmaps_summary.png`
   }
 
   const apiCallMap = {
+    tif: getLandResultTif, // 添加TIF下载接口
     confusion_matrix: getLandResultConfusionMatrix,
-    evaluate: getLandResultConfusionMatrixClassStats ,// evaluate对应class_stats接口  
-    heatmap:getLandResultHeatmap
+    evaluate: getLandResultConfusionMatrixClassStats, // evaluate对应class_stats接口  
+    heatmap: getLandResultHeatmap
   }
 
   const apiCall = apiCallMap[type]
@@ -550,8 +573,11 @@ const downloadFile = (type) => {
 
       const response = res?.response?.value || res?.value || res
 
+      const contentType = type === 'tif' ? 'image/tiff' : 
+                         type === 'evaluate' ? 'text/plain' : 'image/png'
+      
       const blob = new Blob([response], {
-        type: type.includes('evaluate') ?   'text/plain':'image/png'
+        type: contentType
       })
 
       const downloadUrl = URL.createObjectURL(blob)
