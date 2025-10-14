@@ -71,7 +71,7 @@
                 <li @click="initializeBuildings">智慧建筑</li>
                 <li @click="toggleWaterFeatures">智慧水体</li>
                 <li>智慧林地</li>
-                <li>智能农田</li>
+                <li @click="FarmLandChange">智能农田</li>
                 <li @click="goToModelView">数据菜单</li>
             </ul>
         </div>
@@ -218,6 +218,17 @@ function toggleWaterFeatures() {
         loadedWater.value = false;
     }
 }
+async function FarmLandChange()
+{
+    if (loadedFarmLand.value == false)
+    {
+     await addFarmlandData();
+     loadedFarmLand.value=true
+    }else{
+        viewer.entities.removeAll();
+        loadedFarmLand.value=false;
+    }
+}
 function selectAllSluicesDatas() {
     selectAllSluicesByConditions({})
         .then((res) => {
@@ -298,7 +309,86 @@ function selectAllPumpDatas() {
         })
         
 }
+//农田加载函数
+const addFarmlandData = async () => {
+  try {
+    const response = await fetch('/nongtian/zzz.geojson');
+    const geojson = await response.json();
+    const features = geojson.features;
 
+    const CHUNK_SIZE = 20; // ✅ 一批加载20个模型，防止卡顿
+    let index = 0;
+
+    const dataSource = new Cesium.CustomDataSource('farmland');
+    viewer.dataSources.add(dataSource);
+
+    function getFeatureCenter(feature) {
+      const coords = feature.geometry.coordinates;
+      const type = feature.geometry.type;
+      let vertices = [];
+
+      if (type === 'Polygon') {
+        vertices = coords[0];
+      } else if (type === 'MultiPolygon') {
+        vertices = coords[0][0];
+      } else {
+        console.warn('❌ 不支持的几何类型:', type);
+        return null;
+      }
+
+      const { lonSum, latSum } = vertices.reduce((acc, [lon, lat]) => {
+        acc.lonSum += lon;
+        acc.latSum += lat;
+        return acc;
+      }, { lonSum: 0, latSum: 0 });
+
+      const centerLon = lonSum / vertices.length;
+      const centerLat = latSum / vertices.length;
+
+      return [centerLon, centerLat];
+    }
+
+    async function processChunk() {
+      if (index >= features.length) {
+        console.log('✅ 所有农田模型加载完成');
+        viewer.zoomTo(dataSource);
+        return;
+      }
+
+      const chunk = features.slice(index, index + CHUNK_SIZE);
+
+      chunk.forEach((feature, i) => {
+        const center = getFeatureCenter(feature);
+        if (!center) return;
+
+        const [lon, lat] = center;
+
+        const entity = new Cesium.Entity({
+          name: '草模型农田',
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, 0),
+          model: {
+            uri: '/nongtian/grass.glb', // ✅ 正确模型路径
+            scale: 0.2,                 // ✅ 控制模型大小，防止拉伸
+            minimumPixelSize: 20,
+            maximumScale: 200
+          },
+          properties: feature.properties
+        });
+
+        dataSource.entities.add(entity);
+      });
+
+      index += CHUNK_SIZE;
+
+      // ✅ 分帧加载，不卡顿
+      setTimeout(processChunk, 100);
+    }
+
+    processChunk();
+  } catch (err) {
+    console.error('❌ 加载农田模型失败:', err);
+  }
+};
 function checkCesiumLoaded() {
 
     // 设置定时器，每隔一段时间检查Cesium对象是否存在
@@ -437,88 +527,9 @@ async function initializeCesium() {
         //     tileMatrixSetID: "GoogleMapsCompatible",
         // })
     });
-const addFarmlandData = async () => {
-  try {
-    const response = await fetch('/nongtian/zzz.geojson');
-    const geojson = await response.json();
-    const features = geojson.features;
 
-    const CHUNK_SIZE = 20; // ✅ 一批加载20个模型，防止卡顿
-    let index = 0;
-
-    const dataSource = new Cesium.CustomDataSource('farmland');
-    viewer.dataSources.add(dataSource);
-
-    function getFeatureCenter(feature) {
-      const coords = feature.geometry.coordinates;
-      const type = feature.geometry.type;
-      let vertices = [];
-
-      if (type === 'Polygon') {
-        vertices = coords[0];
-      } else if (type === 'MultiPolygon') {
-        vertices = coords[0][0];
-      } else {
-        console.warn('❌ 不支持的几何类型:', type);
-        return null;
-      }
-
-      const { lonSum, latSum } = vertices.reduce((acc, [lon, lat]) => {
-        acc.lonSum += lon;
-        acc.latSum += lat;
-        return acc;
-      }, { lonSum: 0, latSum: 0 });
-
-      const centerLon = lonSum / vertices.length;
-      const centerLat = latSum / vertices.length;
-
-      return [centerLon, centerLat];
-    }
-
-    async function processChunk() {
-      if (index >= features.length) {
-        console.log('✅ 所有农田模型加载完成');
-        viewer.zoomTo(dataSource);
-        return;
-      }
-
-      const chunk = features.slice(index, index + CHUNK_SIZE);
-
-      chunk.forEach((feature, i) => {
-        const center = getFeatureCenter(feature);
-        if (!center) return;
-
-        const [lon, lat] = center;
-
-        const entity = new Cesium.Entity({
-          name: '草模型农田',
-          position: Cesium.Cartesian3.fromDegrees(lon, lat, 0),
-          model: {
-            uri: '/nongtian/grass.glb', // ✅ 正确模型路径
-            scale: 0.2,                 // ✅ 控制模型大小，防止拉伸
-            minimumPixelSize: 20,
-            maximumScale: 200
-          },
-          properties: feature.properties
-        });
-
-        dataSource.entities.add(entity);
-      });
-
-      index += CHUNK_SIZE;
-
-      // ✅ 分帧加载，不卡顿
-      setTimeout(processChunk, 100);
-    }
-
-    processChunk();
-  } catch (err) {
-    console.error('❌ 加载农田模型失败:', err);
-  }
-};
-
-// 初始化完再加载模型
-await addFarmlandData();
+    // 初始化完再加载模型
+    //await addFarmlandData();
        
     
     await initializeterrain();
