@@ -9,7 +9,7 @@
     >
       <a-tab-pane key="1" tab="土地类型"  v-if="$hasPermission('menu_subE_a_a')"/>
       <a-tab-pane key="2" tab="水体水域"  v-if="$hasPermission('menu_subE_a_b')"/>
-      <a-tab-pane key="2" tab="植被覆盖"  v-if="$hasPermission('menu_subE_a_c')"/>
+      <a-tab-pane key="3" tab="植被覆盖"  v-if="$hasPermission('menu_subE_a_c')"/>
     </a-tabs>
 
     <!-- 下方动态切换的组件区域 -->

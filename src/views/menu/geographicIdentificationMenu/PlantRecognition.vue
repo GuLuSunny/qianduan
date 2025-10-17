@@ -626,7 +626,7 @@ const downloadResultFile = () => {
   setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 }
 
-// 下载模型文件
+// 下载模型文件 - 修复版本
 const handleDownloadModel = () => {
   if (!selectedTrainModel.value) {
     message.error('请选择训练模型')
@@ -653,10 +653,27 @@ const handleDownloadModel = () => {
   }
 
   DownloadPlantTrainModelFiles(params)
-    .then((res) => {
-      console.log('下载文件响应:', res)
-
-      const response = res?.response?.value || res?.value || res
+    .then((response) => {
+      console.log('下载文件响应:', response)
+      
+      // 确保我们获取到的是响应数据
+      const res = response?.data || response?.response?.value || response?.value || response
+      
+      // 检查是否是错误响应
+      if (res instanceof Blob && res.type === 'application/json') {
+        // 如果是JSON类型的Blob，说明是错误信息
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const errorJson = JSON.parse(reader.result)
+            message.error(errorJson.msg || '下载模型文件失败')
+          } catch (e) {
+            message.error('下载模型文件失败')
+          }
+        }
+        reader.readAsText(res)
+        return
+      }
 
       // 确定文件扩展名
       let fileExtension = '.pkl'
@@ -667,8 +684,15 @@ const handleDownloadModel = () => {
       // 创建文件名
       const fileName = `${selectedTrainModel.value}_step${downloadStep.value + 1}${fileExtension}`
       
-      // 创建下载链接
-      const blob = new Blob([response],{type:'application/octet-stream'})
+      // 创建下载链接 - 确保正确处理Blob
+      let blob
+      if (res instanceof Blob) {
+        blob = res
+      } else {
+        // 如果不是Blob，转换为Blob
+        blob = new Blob([res], { type: 'application/octet-stream' })
+      }
+      
       const downloadUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
@@ -690,14 +714,21 @@ const handleDownloadModel = () => {
     })
     .catch((err) => {
       console.error('下载模型文件失败:', err)
-      handleErrorResponse(err.response?.data || err.message)
+      // 改进错误处理
+      if (err.response?.data) {
+        handleErrorResponse(err.response.data)
+      } else if (err.message) {
+        message.error('下载失败: ' + err.message)
+      } else {
+        message.error('下载模型文件失败')
+      }
     })
     .finally(() => {
       downloadLoading.value = false
     })
 }
 
-// 批量下载1DResnet模型的所有文件
+// 批量下载1DResnet模型的所有文件 - 修复版本
 const handleBatchDownload = () => {
   if (selectedTrainModel.value !== '1DResnet') {
     message.error('批量下载仅适用于1DResnet模型')
@@ -713,60 +744,72 @@ const handleBatchDownload = () => {
   const userinfo = JSON.parse(userData)
   batchDownloadLoading.value = true
 
-  const step1Params = {
-    userName: userinfo.username,
-    modelName: selectedTrainModel.value,
-    createUserId: userinfo.id,
-    observationTime: observationDate.value,
-    type: 'train',
-    DownloadStep: 0
+  const downloadStepFile = (step) => {
+    const params = {
+      userName: userinfo.username,
+      modelName: selectedTrainModel.value,
+      createUserId: userinfo.id,
+      observationTime: observationDate.value,
+      type: 'train',
+      DownloadStep: step
+    }
+
+    return DownloadPlantTrainModelFiles(params)
+      .then((response) => {
+        const res = response?.data || response?.response?.value || response?.value || response
+        
+        // 检查错误
+        if (res instanceof Blob && res.type === 'application/json') {
+          const reader = new FileReader()
+          return new Promise((resolve, reject) => {
+            reader.onload = () => {
+              try {
+                const errorJson = JSON.parse(reader.result)
+                reject(new Error(errorJson.msg || `下载步骤${step + 1}文件失败`))
+              } catch (e) {
+                reject(new Error(`下载步骤${step + 1}文件失败`))
+              }
+            }
+            reader.readAsText(res)
+          })
+        }
+
+        const fileExtension = step === 0 ? '.h5' : '.pkl'
+        const fileName = `${selectedTrainModel.value}_step${step + 1}${fileExtension}`
+        
+        let blob
+        if (res instanceof Blob) {
+          blob = res
+        } else {
+          blob = new Blob([res], { type: 'application/octet-stream' })
+        }
+        
+        const downloadUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
+
+        return fileName
+      })
   }
 
-  // 先下载第一步
-  DownloadPlantTrainModelFiles(step1Params)
-    .then((step1Response) => {
-      // 下载第一步文件 (.h5)
-      const step1Blob = new Blob([step1Response.data])
-      const step1Url = URL.createObjectURL(step1Blob)
-      const step1Link = document.createElement('a')
-      step1Link.href = step1Url
-      step1Link.download = `${selectedTrainModel.value}_step1.h5`
-      document.body.appendChild(step1Link)
-      step1Link.click()
-      document.body.removeChild(step1Link)
-      setTimeout(() => URL.revokeObjectURL(step1Url), 100)
-
-      message.success('步骤1文件下载成功，开始下载步骤2文件...')
-
-      // 然后下载第二步
-      const step2Params = {
-        userName: userinfo.username,
-        modelName: selectedTrainModel.value,
-        createUserId: userinfo.id,
-        observationTime: observationDate.value,
-        type: 'train',
-        DownloadStep: 1
-      }
-
-      return DownloadPlantTrainModelFiles(step2Params)
+  // 依次下载两个步骤的文件
+  downloadStepFile(0)
+    .then((fileName1) => {
+      message.success(`文件 ${fileName1} 下载成功，开始下载步骤2文件...`)
+      return downloadStepFile(1)
     })
-    .then((step2Response) => {
-      // 下载第二步文件 (.pkl)
-      const step2Blob = new Blob([step2Response.data])
-      const step2Url = URL.createObjectURL(step2Blob)
-      const step2Link = document.createElement('a')
-      step2Link.href = step2Url
-      step2Link.download = `${selectedTrainModel.value}_step2.pkl`
-      document.body.appendChild(step2Link)
-      step2Link.click()
-      document.body.removeChild(step2Link)
-      setTimeout(() => URL.revokeObjectURL(step2Url), 100)
-
+    .then((fileName2) => {
+      message.success(`文件 ${fileName2} 下载成功`)
       message.success('1DResnet模型所有文件下载完成！')
     })
     .catch((err) => {
       console.error('批量下载失败:', err)
-      handleErrorResponse(err.response?.data || err.message)
+      message.error(err.message || '批量下载失败')
     })
     .finally(() => {
       batchDownloadLoading.value = false
