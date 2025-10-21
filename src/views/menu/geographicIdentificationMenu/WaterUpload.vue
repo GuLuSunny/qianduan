@@ -233,7 +233,7 @@ async function handleConfirm() {
   try {
     for (const file of files.value) {
       const formData = new FormData()
-      formData.append('fileMul', file)
+      formData.append('tiffile', file)
       formData.append('createUserId', userinfo?.id || '')
       formData.append('userName', publisher.value)
       formData.append('dataIntroduction', dataDescription.value)
