@@ -92,35 +92,35 @@ const menus_pre = [
   {
     key: 'sub1',
     pressionKey: 'menu_subE',
-    title: '地类信息智能反演',
+    title: '水生态要素提取',
     icon: MenuFoldOutlined,
     items:[
       {
         key:'17',
         title: '文件上传',
         component: GeographicIdentificationUpload,
-        breadcrumb: ['地类识别','文件提交'] ,
+        breadcrumb: ['水生态要素提取','文件提交'] ,
         pressionKey: 'menu_subE_a'
       },
       {
         key:'18',
         title: '土地分类',
         component: LandIdentification,
-        breadcrumb: ['地类识别','土地分类'] ,
+        breadcrumb: ['水生态要素提取','土地分类'] ,
         pressionKey: 'menu_subE_b'
       },
       {
         key:'19',
         title: '水域地域',
         component: WaterIdentification,
-        breadcrumb: ['地类识别','水域地域'] ,
+        breadcrumb: ['水生态要素提取','水域地域'] ,
         pressionKey: 'menu_subE_c'
       },
       {
         key:'20',
         title: '植被覆盖',
         component: PlantCoverIdentification,
-        breadcrumb: ['地类识别','植被覆盖'] ,
+        breadcrumb: ['水生态要素提取','植被覆盖'] ,
         pressionKey: 'menu_subE_d'
       }
     ]
