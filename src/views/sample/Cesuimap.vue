@@ -9,7 +9,7 @@
             </div>
         </transition>
 
-        <!-- ====================== 旧模块组（原6个模块）====================== -->
+    <!-- ====================== 旧模块组（原6个模块）====================== -->
     <div v-if="currentModuleGroup === 'old'">
       <!-- 旧左1：水位 -->
       <div
@@ -73,9 +73,9 @@
       </div>
     </div>
 
-    <!-- ====================== 新模块组（左3+右3复制）====================== -->
+    <!-- ====================== 新模块组（修改后：左2+右2）====================== -->
     <div v-else-if="currentModuleGroup === 'new'">
-      <!-- 新左1：各月份水体 -->
+      <!-- 新左1：各月份水体（保留） -->
       <div
         class="dataBoxView"
         :class="{
@@ -86,7 +86,6 @@
         <div class="titleIcon"></div>
         <div class="boxTitle">各月份水体</div>
         <div class="dataCenter">
-          <!-- 选择控件区域 -->
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
               <el-date-picker
@@ -100,7 +99,6 @@
               />
             </div>
           </div>
-          <!-- 图片显示区域 -->
           <div class="custom-border-box">
             <div class="img-container">
               <img
@@ -115,7 +113,8 @@
           </div>
         </div>
       </div>
-<!-- 新左2：年间水体变化 -->
+
+      <!-- 新左2：年间水体变化（保留原左2） -->
       <div
         class="dataBoxView"
         style="top: 37%"
@@ -178,47 +177,7 @@
         </div>
       </div>
 
-      <!-- 新左3：水体面积折线图 -->
-      <div
-        class="dataBoxView"
-        style="top: 67%"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-left': !newDataBoxShow,
-        }"
-      >
-        <div class="titleIcon"></div>
-        <div class="boxTitle">水体面积折线图</div>
-        <div class="dataCenter">
-          <div class="custom-border-box" style="margin-bottom: 10px">
-            <div class="new-module-controls">
-              <el-select
-                v-model="areaChartType"
-                placeholder="选择类型"
-                @change="updateAreaChartImg"
-              >
-                <el-option label="时序" value="时序" />
-                <el-option label="月份" value="月份" />
-              </el-select>
-            </div>
-          </div>
-          <div class="custom-border-box">
-            <div class="img-container2">
-              <img
-                v-if="areaChartImgSrc"
-                :src="areaChartImgSrc"
-                alt="水体面积折线图"
-                @error="handleImgError('area')"
-                @click="enlargeImg(areaChartImgSrc)"
-              />
-              <div v-else class="img-placeholder">请选择类型加载图片</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ====================== 新右3模块（复制左3模块，仅改定位）====================== -->
-      <!-- 新右1：各月份水体（复制左1） -->
+      <!-- 新右1：水体面积折线图（从原左3移动） -->
       <div
         class="dataBoxView"
         style="right: 20px; left: auto"
@@ -228,109 +187,6 @@
         }"
       >
         <div class="titleIcon"></div>
-        <div class="boxTitle">各月份水体</div>
-        <div class="dataCenter">
-          <div class="custom-border-box" style="margin-bottom: 10px">
-            <div class="new-module-controls">
-              <el-date-picker
-                v-model="monthlyWaterDate"
-                placeholder="选择年月日"
-                :clearable="false"
-                type="date"
-                :format="datePickerFormat.format"
-                :value-format="datePickerFormat.valueFormat"
-                @change="updateMonthlyWaterImg"
-              />
-            </div>
-          </div>
-          <div class="custom-border-box">
-            <div class="img-container">
-              <img
-                v-if="monthlyWaterImgSrc"
-                :src="monthlyWaterImgSrc"
-                alt="各月份水体图片"
-                @error="handleImgError('monthly')"
-                @click="enlargeImg(monthlyWaterImgSrc)"
-              />
-              <div v-else class="img-placeholder">请选择日期加载图片</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 新右2：年间水体变化（复制左2） -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto; top: 37%"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-right': !newDataBoxShow,
-        }"
-      >
-        <div class="titleIcon"></div>
-        <div class="boxTitle">年间水体变化</div>
-        <div class="dataCenter">
-          <div class="custom-border-box" style="margin-bottom: 10px">
-            <div class="new-module-controls yearly-controls">
-              <el-date-picker
-                v-model="yearlyChangeStartYear"
-                placeholder="开始年"
-                :clearable="false"
-                type="year"
-                format="YYYY"
-                value-format="YYYY"
-                @change="handleYearChange"
-              />
-              <span style="margin: 0 10px">-</span>
-              <el-date-picker
-                v-model="yearlyChangeEndYear"
-                placeholder="结束年"
-                :clearable="false"
-                type="year"
-                format="YYYY"
-                value-format="YYYY"
-                @change="handleYearChange"
-                :disabled="!yearlyChangeStartYear"
-              />
-              <el-tooltip
-                v-if="yearError"
-                content="仅支持相邻两年"
-                placement="top"
-              >
-                <i
-                  class="el-icon-warning"
-                  style="color: #ff4d4f; margin-left: 10px"
-                ></i>
-              </el-tooltip>
-            </div>
-          </div>
-          <div class="custom-border-box">
-            <div class="img-container">
-              <img
-                v-if="yearlyChangeImgSrc && !yearError"
-                :src="yearlyChangeImgSrc"
-                alt="年间水体变化图片"
-                @error="handleImgError('yearly')"
-                @click="enlargeImg(yearlyChangeImgSrc)"
-              />
-              <div v-else class="img-placeholder">
-                {{ yearError ? "请选择相邻两年" : "请选择年份范围加载图片" }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 新右3：水体面积折线图（复制左3） -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto; top: 67%"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-right': !newDataBoxShow,
-        }"
-      >
-        <div class="titleIcon"></div>
         <div class="boxTitle">水体面积折线图</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
@@ -355,6 +211,47 @@
                 @click="enlargeImg(areaChartImgSrc)"
               />
               <div v-else class="img-placeholder">请选择类型加载图片</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新增：新右2：各月份地物（添加feature-img-container类名缩小图片） -->
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto; top: 37%"
+        :class="{
+          'slide-in': newDataBoxShow,
+          'slide-out-right': !newDataBoxShow,
+        }"
+      >
+        <div class="titleIcon"></div>
+        <div class="boxTitle">各月份地物</div>
+        <div class="dataCenter">
+          <div class="custom-border-box" style="margin-bottom: 10px">
+            <div class="new-module-controls">
+              <el-date-picker
+                v-model="monthlyFeatureDate"
+                placeholder="选择年月日"
+                :clearable="false"
+                type="date"
+                :format="datePickerFormat.format"
+                :value-format="datePickerFormat.valueFormat"
+                @change="updateMonthlyFeatureImg"
+              />
+            </div>
+          </div>
+          <div class="custom-border-box">
+            <!-- 关键：添加feature-img-container类名，用于单独控制地物图片大小 -->
+            <div class="img-container feature-img-container">
+              <img
+                v-if="monthlyFeatureImgSrc"
+                :src="monthlyFeatureImgSrc"
+                alt="各月份地物图片"
+                @error="handleImgError('feature')"
+                @click="enlargeImg(monthlyFeatureImgSrc)"
+              />
+              <div v-else class="img-placeholder">请选择日期加载图片</div>
             </div>
           </div>
         </div>
@@ -505,7 +402,7 @@ window.CESIUM_BASE_URL = "/static/Cesium";
 const currentModuleGroup = ref("old");
 // 2. 新模块滑入/滑出控制
 const newDataBoxShow = ref(false);
-
+// 3. 新模块1：各月份水体 
 const monthlyWaterDate = ref("2025-06-24");
 const monthlyWaterImgSrc = ref("/images/各月份水体/25-0624.png");
 const datePickerFormat = {
@@ -520,7 +417,10 @@ const yearError = ref(false);
 // 5. 新模块3：水体面积折线图 - 默认选择“时序”
 const areaChartType = ref("时序");
 const areaChartImgSrc = ref("/images/水体面积折线图/水域面积时序.png");
-// 6. 图片放大功能
+// 6. 新模块4：各月份地物（新增）
+const monthlyFeatureDate = ref("2025-06-15");
+const monthlyFeatureImgSrc = ref("/images/地物/25-0615.png"); // 对应本地F盘路径
+// 7. 图片放大功能
 const enlargedImgSrc = ref("");
 const showEnlargeModal = ref(false);
 
@@ -532,6 +432,7 @@ onMounted(async () => {
             console.log("实体化完成。");
             checkCesiumLoaded();
             updateAreaChartImg(); // 初始化水体面积折线图（默认时序）
+            updateMonthlyFeatureImg(); // 初始化各月份地物图片
         })
     }
 })
@@ -654,7 +555,43 @@ function updateAreaChartImg() {
 }
 
 /**
- * 4. 图片加载失败处理
+ * 4. 新模块4：更新各月份地物图片路径（新增）
+ */
+function updateMonthlyFeatureImg() {
+  if (!monthlyFeatureDate.value) {
+    monthlyFeatureImgSrc.value = "/images/地物/25-0615.jpg";
+    return;
+  }
+
+  const dateParts = monthlyFeatureDate.value.split("-");
+  if (dateParts.length !== 3) {
+    console.error("无效日期格式，需为 YYYY-MM-DD");
+    return;
+  }
+
+  const year = dateParts[0];
+  const month = dateParts[1];
+  const day = dateParts[2];
+
+  if (
+    !year ||
+    !month ||
+    !day ||
+    year.length !== 4 ||
+    month.length !== 2 ||
+    day.length !== 2
+  ) {
+    console.error("日期组件格式不正确");
+    return;
+  }
+
+  const shortYear = year.slice(2);
+  monthlyFeatureImgSrc.value = `/images/地物/${shortYear}-${month}${day}.jpg`;
+  console.log("更新各月份地物图片:", monthlyFeatureImgSrc.value);
+}
+
+/**
+ * 5. 图片加载失败处理（补充地物类型）
  */
 function handleImgError(type) {
   if (type === "monthly") {
@@ -671,10 +608,15 @@ function handleImgError(type) {
     areaChartImgSrc.value = "/images/水体面积折线图/水域面积时序.png";
     areaChartType.value = "时序";
   }
+    // 地物图片错误处理
+  if (type === "feature") {
+    monthlyFeatureImgSrc.value = "/images/地物/25-0615.png";
+    monthlyFeatureDate.value = "2025-06-15";
+  }
 }
 
 /**
- * 5. 图片点击放大功能
+ * 6. 图片点击放大功能
  */
 function enlargeImg(src) {
   enlargedImgSrc.value = src;
@@ -691,7 +633,7 @@ watch([yearlyChangeStartYear, yearlyChangeEndYear], handleYearChange);
 watch(monthlyWaterDate, updateMonthlyWaterImg);
 // 监听折线图类型变化，确保联动更新
 watch(areaChartType, updateAreaChartImg);
-
+watch(monthlyFeatureDate, updateMonthlyFeatureImg); // 新增地物监听
 function toggleWaterFeatures() {
     if (loadedWater.value == false) {
         // 加载水体
@@ -909,79 +851,43 @@ function checkCesiumLoaded() {
 }
 
 async function boxesSlidein() {
-    // 添加淡出动画
-    const boxes = document.querySelectorAll('.dataBoxView');
-    boxes.forEach(box => {
-        box.classList.add('fade-out');
-    });
-
-
-    // 分别在不同时间点触发滑入和淡出效果
-    setTimeout(() => {
-        boxes[0].classList.remove('slide-out-left');
-        boxes[3].classList.remove('slide-out-right');
-        boxes[0].classList.add('slide-in');
-        boxes[3].classList.add('slide-in');
-    }, 1000);
-
-    setTimeout(() => {
-        boxes[1].classList.remove('slide-out-left');
-        boxes[4].classList.remove('slide-out-right');
-        boxes[1].classList.add('slide-in');
-        boxes[4].classList.add('slide-in');
-    }, 1500);
-
-    setTimeout(() => {
-        boxes[2].classList.remove('slide-out-left');
-        boxes[5].classList.remove('slide-out-right');
-        boxes[2].classList.add('slide-in');
-        boxes[5].classList.add('slide-in');
-    }, 2000);
-
-    // 菜单特效
-    const lis = document.querySelectorAll('.boxMenuView ul li');
-    lis.forEach((li, index) => {
-        li.style.animation = `fadeInUp 3s ease forwards`;
-        li.style.animationDelay = `${index * 0.3}s`;
-    });
+  const boxes = document.querySelectorAll(".dataBoxView");
+  boxes.forEach((box) => box.classList.add("fade-out"));
+  setTimeout(() => {
+    boxes[0].classList.remove("slide-out-left");
+    boxes[2].classList.remove("slide-out-right"); // 对应新右1（折线图）
+    boxes[0].classList.add("slide-in");
+    boxes[2].classList.add("slide-in");
+  }, 1000);
+  setTimeout(() => {
+    boxes[1].classList.remove("slide-out-left");
+    boxes[3].classList.remove("slide-out-right"); // 对应新右2（地物）
+    boxes[1].classList.add("slide-in");
+    boxes[3].classList.add("slide-in");
+  }, 1500);
 }
 
+
 async function boxesSlideOut() {
-    // 添加淡出动画
-    const boxes = document.querySelectorAll('.dataBoxView');
-    boxes.forEach(box => {
-        box.classList.add('fade-out');
-    });
-
-
-    // 分别在不同时间点触发滑入和淡出效果
-    setTimeout(() => {
-        boxes[0].classList.remove('slide-in');
-        boxes[3].classList.remove('slide-in');
-        boxes[0].classList.add('slide-out-left');
-        boxes[3].classList.add('slide-out-right');
-    }, 1000);
-
-    setTimeout(() => {
-        boxes[1].classList.remove('slide-in');
-        boxes[4].classList.remove('slide-in');
-        boxes[1].classList.add('slide-out-left');
-        boxes[4].classList.add('slide-out-right');
-    }, 1500);
-
-    setTimeout(() => {
-        boxes[2].classList.remove('slide-in');
-        boxes[5].classList.remove('slide-in');
-        boxes[2].classList.add('slide-out-left');
-        boxes[5].classList.add('slide-out-right');
-    }, 2000);
-
-    // 菜单特效
-    const lis = document.querySelectorAll('.boxMenuView ul li');
-    lis.forEach((li, index) => {
-        li.style.animation = `fadeInUp 2s ease reverse`;
-        li.style.animationDelay = `${index * 0.3}s`;
-    });
+  const boxes = document.querySelectorAll(".dataBoxView");
+  boxes.forEach((box) => box.classList.add("fade-out"));
+  setTimeout(() => {
+    boxes[0].classList.remove("slide-in");
+    boxes[2].classList.remove("slide-in");
+    boxes[0].classList.add("slide-out-left");
+    boxes[2].classList.add("slide-out-right");
+  }, 1000);
+  setTimeout(() => {
+    boxes[1].classList.remove("slide-in");
+    boxes[3].classList.remove("slide-in");
+    boxes[1].classList.add("slide-out-left");
+    boxes[3].classList.add("slide-out-right");
+  }, 1500);
+  const lis = document.querySelectorAll(".boxMenuView ul li");
+  lis.forEach((li, index) => {
+    li.style.animation = `fadeInUp 2s ease reverse`;
+    li.style.animationDelay = `${index * 0.3}s`;
+  });
 }
 async function initializeCesium() {
     // 请自己去cesium官网注册申请一个token替换
@@ -1730,6 +1636,16 @@ async function rotate()
     padding: 20px;
   }
 }
+
+/* 新增：地物模块图片容器专属样式（缩小图片至45%，实现左右对称） */
+.feature-img-container {
+  img {
+    max-width: 45%; /* 比左侧模块小15%，视觉更对称，可根据需求微调 */
+    max-height: 45%;
+  }
+}
+
+/* 水体面积折线图容器样式（保持不变） */
 .img-container2 {
   width: 100%;
   height: calc(100% - 10px); /* 减去顶部控件高度 */
