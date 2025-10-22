@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 // create an axios instance
 const instance = axios.create({
   withCredentials: false,
-  timeout: 40000
+  timeout: 100000
 })
 
 // 为所有请求添加默认header

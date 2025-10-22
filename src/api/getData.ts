@@ -1226,3 +1226,16 @@ export function DownloadPlantTrainModelFiles(data: any) {
     responseType: 'blob'
   });
 }
+
+/**
+ * 新增获取水域面积图片的方法
+ * @returns UseAxiosReturn
+ */
+export function getWaterAreaImage(data: any) {
+  return useAxiosApi('/api/image/process', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
