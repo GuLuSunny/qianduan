@@ -83,6 +83,7 @@ import LandIdentification from './menu/geographicIdentificationMenu/LandIdentifi
 import ShpFileUpload from './menu/geographicIdentificationMenu/ShpFileUpload.vue'
 import WaterIdentification from './menu/geographicIdentificationMenu/WaterIdentification.vue'
 import PlantCoverIdentification from './menu/geographicIdentificationMenu/PlantCoverIdentification.vue'
+import ProductsData from './menu/ModelProductsMenu/ProductsData.vue'
 import { title } from 'process'
 
 // 权限过滤后菜单配置数组
@@ -122,6 +123,13 @@ const menus_pre = [
         component: PlantCoverIdentification,
         breadcrumb: ['水生态要素提取','植被覆盖'] ,
         pressionKey: 'menu_subE_d'
+      },
+      {
+        key:'22',
+        title: '产品获取',
+        component: ProductsData,
+        breadcrumb: ['水生态要素提取','产品获取'] ,
+        pressionKey: 'menu_subE_e'
       }
     ]
   },
@@ -139,13 +147,13 @@ const menus_pre = [
         breadcrumb: ['数据查询', '气象'],
         pressionKey: 'menu_subB_a'
       },
-      // {
-      //   key: '6',
-      //   title: '水鸟',
-      //   component: Birdsdata,
-      //   breadcrumb: ['数据查询', '水鸟'],
-      //   pressionKey: 'menu_subB_b'
-      // },
+      {
+        key: '6',
+        title: '水鸟',
+        component: Birdsdata,
+        breadcrumb: ['数据查询', '水鸟'],
+        pressionKey: 'menu_subB_b'
+      },
       {
         key: '7',
         title: '理化',
@@ -174,13 +182,13 @@ const menus_pre = [
         breadcrumb: ['数据查询', '径流'],
         pressionKey: 'menu_subB_f'
       },
-      // {
-      //   key: '11',
-      //   title: '湿地',
-      //   component: WetlandMonitoringQuery,
-      //   breadcrumb: ['数据查询', '湿地'],
-      //   pressionKey: 'menu_subB_g'
-      // },
+      {
+        key: '11',
+        title: '湿地',
+        component: WetlandMonitoringQuery,
+        breadcrumb: ['数据查询', '湿地'],
+        pressionKey: 'menu_subB_g'
+      },
       {
         key: '16',
         title: '遥感',
@@ -202,13 +210,13 @@ const menus_pre = [
         component: dataUploadMenu,
         breadcrumb: ['数据共享', '数据管理'],
         pressionKey: 'menu_subC_a'
-      }
-      /* {
+      },
+      {
         key: "13",
         title: "数据申请",
         component: dataDownloadMenu,
         breadcrumb: ["数据共享", "数据申请"],
-      }, */
+      }, 
     ]
   },
   {

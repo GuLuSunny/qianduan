@@ -1228,6 +1228,63 @@ export function DownloadPlantTrainModelFiles(data: any) {
 }
 
 /**
+ * 预测产品信息更改接口
+ * @returns UseAxiosReturn
+ */
+export function insertModelProducts(data: any) {
+  return useAxiosApi('/api/modelFile/insertModelProducts', {
+    method: 'POST',
+    data: data
+  });
+
+}
+
+/**
+ * 多类型产品获取接口
+ * @returns UseAxiosReturn
+ */
+export function getFilesByConditions(data: any) {
+  return useAxiosApi('api/modelFile/getFilesByConditions', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
+/**
+ * 产品信息数据获取接口
+ * @returns UseAxiosReturn
+ */
+export function getAllProductByConditions(data: any) {
+  return useAxiosApi('/api/modelFile/getAllProductByConditions', {
+    method: 'POST',
+    data: data
+  });
+
+}
+/**
+ * 产品信息 删除接口
+ * @returns UseAxiosReturn
+ */
+export function deleteProductsByConditions(data: any) {
+  return useAxiosApi('api/modelFile/deleteByConditions', {
+    method: 'POST',
+    data: data
+  });
+
+}
+/**
+ * 产品信息 分页查询
+ * @returns UseAxiosReturn
+ */
+export function getProductPageData(data: any) {
+  return useAxiosApi('/api/modelFile/getProductPageByConditions', {
+    method: 'POST',
+    data: data
+  });
+
+}
+/**
  * 新增获取水域面积图片的方法
  * @returns UseAxiosReturn
  */
