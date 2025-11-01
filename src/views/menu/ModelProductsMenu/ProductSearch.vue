@@ -98,48 +98,50 @@
       </el-form>
     </div>
 
-    <!-- 表格部分 - 修复表头居中对齐 -->
-    <el-table
-      :data="tableData"
-      stripe
-      style="width: 100%"
-      show-overflow-tooltip
-      max-height="600px"
-      @selection-change="handleSelectionChange"
-      v-loading="loading"
-      class="custom-table"
-    >
-      <el-table-column type="selection" width="auto" ></el-table-column>
-      <el-table-column prop="owner" label="所有者" width="auto"  />
-      <el-table-column prop="filename" label="文件名称" width="auto" show-overflow-tooltip   />
-      <el-table-column prop="className" label="产品分类" width="auto"  />
-      <el-table-column prop="type" label="文件类型" width="auto"  />
-      <el-table-column prop="observationTime" label="观测时间" width="auto"  />
-      <el-table-column prop="startTime" label="开始时间" width="auto"  />
-      <el-table-column prop="endTime" label="结束时间" width="auto" />
-      <el-table-column label="操作" width="200" fixed="right" align="center">
-        <template #default="scope">
-          <el-button @click="downloadFile(scope.row)" type="primary" size="small"
-            >下载</el-button
-          >
-          <el-button @click="confirmDeleteRow(scope.row)" size="small"
-            >删除</el-button
-          >
-        </template>
-      </el-table-column>
-    </el-table>
-    
-    <!-- 分页 -->
-    <div class="demo-pagination-block">
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="currentPage"
-        :page-sizes="[10, 15, 30, 50, 100]"
-        :page-size="pageSize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="totalItems"
-      />
+    <!-- 表格区域增加顶部间距，避免遮盖表单 -->
+    <div class="table-container">
+      <el-table
+        :data="tableData"
+        stripe
+        style="width: 100%"
+        show-overflow-tooltip
+        max-height="600px"
+        @selection-change="handleSelectionChange"
+        v-loading="loading"
+        class="custom-table"
+      >
+        <el-table-column type="selection" width="auto" ></el-table-column>
+        <el-table-column prop="owner" label="所有者" width="auto"  />
+        <el-table-column prop="filename" label="文件名称" width="auto" show-overflow-tooltip   />
+        <el-table-column prop="className" label="产品分类" width="auto"  />
+        <el-table-column prop="type" label="文件类型" width="auto"  />
+        <el-table-column prop="observationTime" label="观测时间" width="auto"  />
+        <el-table-column prop="startTime" label="开始时间" width="auto"  />
+        <el-table-column prop="endTime" label="结束时间" width="auto" />
+        <el-table-column label="操作" width="200" fixed="right" align="center">
+          <template #default="scope">
+            <el-button @click="downloadFile(scope.row)" type="primary" size="small"
+              >下载</el-button
+            >
+            <el-button @click="confirmDeleteRow(scope.row)" size="small"
+              >删除</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 分页 -->
+      <div class="demo-pagination-block">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="[10, 15, 30, 50, 100]"
+          :page-size="pageSize"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="totalItems"
+        />
+      </div>
     </div>
     
     <!-- 导出对话框 -->
@@ -335,21 +337,36 @@ function handleSelectionChange(val) {
   selectedRows.value = val.map(item => item.id)
 }
 
+// 修复下载功能 - 跨平台兼容
 function downloadFile(row) {
   const loadingInstance = ElLoading.service(loadingOptions)
+  
   getFilesByConditions({
     ids: [row.id]
   })
     .then((res) => {
       loadingInstance.close()
+      
+      // 创建 Blob 对象
+      const blob = new Blob([res.response?.value || res], { 
+        type: getMimeType(row.filename) 
+      })
+      
       // 创建下载链接
-      const url = window.URL.createObjectURL(new Blob([res]))
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', row.filename)
+      
+      // 设置下载文件名 - 兼容 Linux 和 Windows
+      const fileName = row.filename || `download_${row.id}`
+      link.setAttribute('download', fileName)
+      
+      // 兼容不同平台的下载方式
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      
+      // 释放 URL 对象
       window.URL.revokeObjectURL(url)
       ElMessage.success('下载成功')
     })
@@ -358,6 +375,23 @@ function downloadFile(row) {
       console.error('下载失败:', error)
       ElMessage.error('下载失败，请稍后再试')
     })
+}
+
+// 根据文件名获取 MIME 类型
+function getMimeType(filename) {
+  const ext = filename.split('.').pop().toLowerCase()
+  const mimeTypes = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'zip': 'application/zip'
+  }
+  return mimeTypes[ext] || 'application/octet-stream'
 }
 
 function confirmDeleteRow(row) {
@@ -428,25 +462,43 @@ function showExportDialog() {
   exportDialogVisible.value = true
 }
 
+// 修复导出功能 - 跨平台兼容
 function exportData() {
   if (!exportDate.value) {
     ElMessage.warning('请选择导出日期')
     return
   }
 
+  const loadingInstance = ElLoading.service(loadingOptions)
+  
   getFilesByConditions({ observationTime: exportDate.value })
     .then((res) => {
-      const url = window.URL.createObjectURL(new Blob([res]))
+      loadingInstance.close()
+      
+      // 创建 Blob 对象
+      const blob = new Blob([res], { 
+        type: 'application/vnd.ms-excel' 
+      })
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
+      
+      // 设置下载文件名
       link.setAttribute('download', `${exportDate.value}产品数据.xls`)
+      
+      // 兼容不同平台的下载方式
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      
+      // 释放 URL 对象
       window.URL.revokeObjectURL(url)
       ElMessage.success('导出成功')
     })
     .catch((error) => {
+      loadingInstance.close()
       console.error('导出失败:', error)
       ElMessage.error('导出失败，请稍后再试')
     })
@@ -473,6 +525,16 @@ function exportData() {
 .controls {
   width: 100%;
   margin-bottom: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 表格容器 - 增加顶部间距避免遮盖表单 */
+.table-container {
+  width: 100%;
+  margin-top: 20px;
   background: white;
   padding: 20px;
   border-radius: 8px;
@@ -515,14 +577,13 @@ function exportData() {
   width: 100%;
 }
 
-/* 表格样式优化 */
+/* 简化表格样式 */
 :deep(.custom-table) {
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 修复表格头居中对齐 */
+/* 表格头居中对齐 */
 :deep(.custom-table .el-table__header-wrapper th) {
   text-align: center;
   background-color: #f5f7fa;
@@ -555,25 +616,6 @@ function exportData() {
   overflow: auto;
 }
 
-:deep(.custom-table .el-table__body-wrapper::-webkit-scrollbar) {
-  width: 6px;
-  height: 6px;
-}
-
-:deep(.custom-table .el-table__body-wrapper::-webkit-scrollbar-track) {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-:deep(.custom-table .el-table__body-wrapper::-webkit-scrollbar-thumb) {
-  background: #c0c4cc;
-  border-radius: 3px;
-}
-
-:deep(.custom-table .el-table__body-wrapper::-webkit-scrollbar-thumb:hover) {
-  background: #909399;
-}
-
 /* 斑马纹样式优化 */
 :deep(.custom-table .el-table--striped .el-table__body tr.el-table__row--striped td) {
   background-color: #fafafa;
@@ -584,22 +626,9 @@ function exportData() {
   background-color: #f5f7fa !important;
 }
 
-/* 按钮组样式优化 */
-:deep(.el-button-group) {
-  display: flex;
-  gap: 8px;
-}
-
 /* 分页样式优化 */
 :deep(.el-pagination) {
   padding: 16px 0;
-}
-
-:deep(.el-pagination .btn-prev),
-:deep(.el-pagination .btn-next),
-:deep(.el-pagination .number),
-:deep(.el-pagination .more) {
-  border-radius: 4px;
 }
 
 :deep(.el-pagination .number.active) {

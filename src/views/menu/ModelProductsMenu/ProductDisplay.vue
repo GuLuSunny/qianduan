@@ -183,7 +183,7 @@ const fetchImageFromApi = (product) => {
     ids: [product.id]
   })
     .then((res) => {
-      const blob = new Blob([res])
+      const blob = new Blob([res.response?.value || res])
       const url = window.URL.createObjectURL(blob)
       // 直接更新缓存，不触发响应式更新
       imageUrlCache.value[product.id] = url
@@ -297,7 +297,7 @@ function changePageSize(newSize) {
   fetchAllProducts()
 }
 
-// 下载文件
+// 下载文件 - 修复跨平台兼容性
 function downloadFile(product) {
   const loadingInstance = ElLoading.service(loadingOptions)
   getFilesByConditions({
@@ -305,14 +305,29 @@ function downloadFile(product) {
   })
     .then((res) => {
       loadingInstance.close()
-      const url = window.URL.createObjectURL(new Blob([res]))
+      
+      // 创建 Blob 对象，设置正确的 MIME 类型
+      const blob = new Blob([res], { 
+        type: getMimeType(product.filename) 
+      })
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', product.filename)
+      
+      // 设置下载文件名 - 兼容 Linux 和 Windows
+      const fileName = product.filename || `download_${product.id}`
+      link.setAttribute('download', fileName)
+      
+      // 兼容不同平台的下载方式
       document.body.appendChild(link)
       link.click()
-      link.parentNode.removeChild(link)
+      document.body.removeChild(link)
+      
+      // 释放 URL 对象
       window.URL.revokeObjectURL(url)
+      
       ElMessage({
         showClose: true,
         message: '下载成功',
@@ -322,8 +337,29 @@ function downloadFile(product) {
     })
     .catch((error) => {
       loadingInstance.close()
+      console.error('下载失败:', error)
       ElMessage.error('下载失败，请稍后再试')
     })
+}
+
+// 根据文件名获取 MIME 类型
+function getMimeType(filename) {
+  const ext = filename.split('.').pop().toLowerCase()
+  const mimeTypes = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'bmp': 'image/bmp',
+    'webp': 'image/webp',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'zip': 'application/zip'
+  }
+  return mimeTypes[ext] || 'application/octet-stream'
 }
 
 // 获取产品分类数据
@@ -358,6 +394,7 @@ onMounted(() => {
   min-height: 500px;
   padding: 20px;
   box-sizing: border-box;
+  background-color: #f5f7fa;
 }
 
 .row {
@@ -368,6 +405,10 @@ onMounted(() => {
   width: 100%;
   margin-bottom: 20px;
   gap: 16px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .el-form-item {
@@ -378,17 +419,28 @@ onMounted(() => {
 
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-  padding: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
 .image-item {
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
   overflow: hidden;
   text-align: center;
-  padding: 10px;
+  padding: 16px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.image-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .image-item img {
@@ -396,28 +448,31 @@ onMounted(() => {
   height: 200px;
   object-fit: cover;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .file-icon {
   padding: 20px;
   cursor: pointer;
+  color: #909399;
 }
 
 .file-icon-large {
   text-align: center;
   padding: 40px;
+  color: #909399;
 }
 
 .image-placeholder {
   padding: 40px 20px;
   text-align: center;
-  color: #999;
+  color: #c0c4cc;
 }
 
 .image-placeholder-large {
   text-align: center;
   padding: 80px 40px;
-  color: #999;
+  color: #c0c4cc;
 }
 
 .detail-view {
@@ -425,6 +480,10 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
 .detail-content {
@@ -445,11 +504,13 @@ onMounted(() => {
 .product-image {
   width: 450px;
   height: auto;
+  border-radius: 8px;
 }
 
 .info-text {
   font-size: 16px;
-  margin: 10px 0;
+  margin: 12px 0;
+  color: #606266;
 }
 
 .info-section {
@@ -457,26 +518,29 @@ onMounted(() => {
   text-align: left;
 }
 
+.info-section h3 {
+  color: #303133;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .title {
-  margin: 10px 0;
-  font-size: 32px;
+  margin: 10px 0 30px 0;
+  font-size: 28px;
   text-align: center;
   width: 100%;
+  color: #303133;
 }
 
 .return-button {
   margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #1890ff;
-  color: white;
-  border: none;
-  cursor: pointer;
+  padding: 12px 24px;
 }
 
 .pagination {
@@ -484,9 +548,13 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
-.searchButton {
-  background-color: aliceblue;
+.searchButton:hover {
+  background-color: #66b1ff;
 }
 </style>

@@ -3,87 +3,50 @@
     <div class="controls">
       <el-form :model="searchInfo">
         <div class="row">
-          <el-form-item label="所属目名">
+          <el-form-item label="所有者">
+            <el-input
+              v-model="searchInfo.owner"
+              placeholder="请输入所有者"
+              @input="handleInputChange"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="文件名称">
+            <el-input
+              v-model="searchInfo.filename"
+              placeholder="请输入文件名称"
+              @input="handleInputChange"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="产品分类">
             <el-select
-              id="order"
-              v-model="searchInfo.selectedOrder"
+              v-model="searchInfo.selectedClass"
               placeholder="请选择"
               @change="handleInputChange"
-              :empty-values="[null, undefined]"
+              clearable
             >
               <el-option
-                v-for="order in [{ name: '所有', id: '' }, ...orders]"
-                :key="order.id"
-                :value="order.id"
-                :label="order.name"
-                >{{ order.name }}</el-option
-              >
+                v-for="classItem in classOptions"
+                :key="classItem.value"
+                :value="classItem.value"
+                :label="classItem.label"
+              ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="所属科名">
+          <el-form-item label="文件类型">
             <el-select
-              id="family"
-              v-model="searchInfo.selectedFamily"
+              v-model="searchInfo.selectedType"
               placeholder="请选择"
               @change="handleInputChange"
-              :empty-values="[null, undefined]"
+              clearable
             >
               <el-option
-                v-for="family in [{id: '', name: '所有'}, ...filteredFamilies]"
-                :key="family.id"
-                :value="family.id"
-                :label="family.name"
-                >{{ family.name }}</el-option
-              >
-            </el-select>
-          </el-form-item>
-          <el-form-item label="水鸟种别">
-            <el-select
-              id="species"
-              v-model="searchInfo.selectedSpecies"
-              placeholder="请选择"
-              @change="handleInputChange"
-              :empty-values="[null, undefined]"
-            >
-              <el-option
-                v-for="species in [{id: '', name: '所有'}, ...filteredSpecies]"
-                :key="species.id"
-                :value="species.id"
-                :label="species.name"
-                ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="生境类型">
-            <el-select
-              id="location"
-              v-model="searchInfo.selectedHabitatType"
-              placeholder="请选择"
-              @change="handleInputChange"
-              :empty-values="[null, undefined]"
-            >
-              <el-option
-                v-for="habitatType in ['', ...habitatTypes]"
-                :key="habitatType"
-                :value="habitatType"
-                :label="habitatType === '' ? '所有' : habitatType"
-                ></el-option
-              >
-            </el-select>
-          </el-form-item>
-          <el-form-item label="组别">
-            <el-select
-              id="group"
-              v-model="searchInfo.selectedGroup"
-              placeholder="请选择"
-              @change="handleInputChange"
-              :empty-values="[null, undefined]"
-            >
-              <el-option
-                v-for="group in [{groupId: '', groupName: '所有'}, ...groups]"
-                :key="group.groupId"
-                :value="group.groupId"
-                :label="group.groupName"
-                ></el-option>
+                v-for="fileType in fileTypeOptions"
+                :key="fileType.value"
+                :value="fileType.value"
+                :label="fileType.label"
+              ></el-option>
             </el-select>
           </el-form-item>
         </div>
@@ -96,45 +59,37 @@
               value-format="YYYY-MM-DD"
               @change="handleInputChange"
               placeholder="选择观测日期"
-              :disabled-date="(time) => disabledDate(time)"
+              :disabled-date="disabledDate"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="观测时间">
-            <el-time-picker
-              v-model="searchInfo.observationTimeRange"
-              is-range
-              range-separator="至"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-              format="HH:mm:ss"
-              value-format="HH:mm:ss"
+          <el-form-item label="开始日期">
+            <el-date-picker
+              v-model="searchInfo.startDate"
+              type="date"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               @change="handleInputChange"
-              :value-on-clear="() => []"
+              placeholder="选择开始日期"
             />
           </el-form-item>
-          <el-form-item label="观测地点">
-            <el-select
-              id="location"
-              v-model="searchInfo.selectedLocation"
-              placeholder="请选择"
+          <el-form-item label="结束日期">
+            <el-date-picker
+              v-model="searchInfo.endDate"
+              type="date"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               @change="handleInputChange"
-              :empty-values="[null, undefined]"
-            >
-              <el-option
-                v-for="location in ['', ...locations]"
-                :key="location"
-                :value="location"
-                :label="location === '' ? '所有' : location"
-              ></el-option>
-            </el-select>
+              placeholder="选择结束日期"
+            />
           </el-form-item>
           <el-form-item>
-            <el-button @click="searchBird" class="searchButton">
+            <el-button @click="searchProducts" class="searchButton">
               <el-icon> <Search /> </el-icon>搜索
             </el-button>
             <el-button
               @click="deleteSelectedRows"
-              :disabled="!isButtonDelDisabled"
+              :disabled="!selectedRows.length"
               >批量删除</el-button
             >
             <el-button @click="showExportDialog">导出数据</el-button>
@@ -143,175 +98,121 @@
       </el-form>
     </div>
 
-    <el-table
-      :data="tableData"
-      stripe
-      style="width: 100%"
-      show-overflow-tooltip
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="auto"></el-table-column>
-      <el-table-column prop="orderId" label="所属目名" width="auto" />
-      <el-table-column prop="familyId" label="所属科名" width="auto" />
-      <el-table-column prop="speciesId" label="水鸟种别" width="auto" />
-      <el-table-column prop="number" label="水鸟数量" width="auto" />
-      <el-table-column prop="habitatType" label="生境类型" width="auto" />
-      <el-table-column prop="observationTime" label="观测日期" width="auto" />
-      <el-table-column
-        prop="observationPeriodBegin"
-        label="开始时间"
-        width="auto"
-      />
-      <el-table-column
-        prop="observationPeriodEnd"
-        label="结束时间"
-        width="auto"
-      />
-      <el-table-column
-        prop="observationAddress"
-        label="观测地点"
-        width="auto"
-      />
-      <el-table-column prop="watchPiId" label="观测组别" width="auto" />
-      <el-table-column prop="weather" label="天气" width="auto" />
-      <el-table-column label="操作" width="auto" fixed="right" align="center">
-        <template #default="scope">
-          <el-button @click="confirmDeleteRow(scope.row, scope.$index)"
-            >删除</el-button
-          >
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="[10, 15, 30, 50, 100]"
-      :page-size="pageSize"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="totalItems"
-    >
-    </el-pagination>
+    <!-- 表格区域增加顶部间距，避免遮盖表单 -->
+    <div class="table-container">
+      <el-table
+        :data="tableData"
+        stripe
+        style="width: 100%"
+        show-overflow-tooltip
+        max-height="600px"
+        @selection-change="handleSelectionChange"
+        v-loading="loading"
+        class="custom-table"
+      >
+        <el-table-column type="selection" width="auto" ></el-table-column>
+        <el-table-column prop="owner" label="所有者" width="auto"  />
+        <el-table-column prop="filename" label="文件名称" width="auto" show-overflow-tooltip   />
+        <el-table-column prop="className" label="产品分类" width="auto"  />
+        <el-table-column prop="type" label="文件类型" width="auto"  />
+        <el-table-column prop="observationTime" label="观测时间" width="auto"  />
+        <el-table-column prop="startTime" label="开始时间" width="auto"  />
+        <el-table-column prop="endTime" label="结束时间" width="auto" />
+        <el-table-column label="操作" width="200" fixed="right" align="center">
+          <template #default="scope">
+            <el-button @click="downloadFile(scope.row)" type="primary" size="small"
+              >下载</el-button
+            >
+            <el-button @click="confirmDeleteRow(scope.row)" size="small"
+              >删除</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 分页 -->
+      <div class="demo-pagination-block">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="[10, 15, 30, 50, 100]"
+          :page-size="pageSize"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="totalItems"
+        />
+      </div>
+    </div>
+    
     <!-- 导出对话框 -->
-    <el-dialog title="请选择您要导出哪天的数据" v-model="exportDialogVisible">
+    <el-dialog title="请选择您要导出哪天的数据" v-model="exportDialogVisible" width="400px">
       <el-date-picker
         v-model="exportDate"
         type="date"
         placeholder="选择日期"
         format="YYYY-MM-DD"
         value-format="YYYY-MM-DD"
-        @visible-change="(visibility) => handleVisibleChange(visibility)"
-        :disabled-date="(time) => disabledDate(time)"
+        :disabled-date="disabledDate"
+        style="width: 100%"
       />
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="exportDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="exportData">确认</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="exportDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="exportData">确认</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import {
-  birdPageQuery,
-  birdDelByIds,
-  getBirdExcelByDate,
-  getBirdData,
-  getBirdDate,
-  queryDeviceByMultiWord
+  getProductPageData,
+  deleteProductsByConditions,
+  getFilesByConditions,
+  getModelClassName,
+  getTimesByType
 } from '@/api/getData'
 
-const loadingoptions = {
-  // 加载配置
-  target: '.layoutLoading',
-  background: 'rgba(0, 0, 0, 0.7)',
-  text: '数据加载中...'
+// 修复：正确的选项格式
+const classOptions = computed(() => [
+  { label: '所有', value: '' },
+  ...classNames.value.map(item => ({ label: item, value: item }))
+])
+
+const fileTypeOptions = [
+  { label: '所有', value: '' },
+  { label: 'png', value: 'png' },
+  { label: 'jpg', value: 'jpg' },
+  { label: 'pdf', value: 'pdf' },
+  { label: 'doc', value: 'doc' },
+  { label: 'xls', value: 'xls' },
+  { label: 'zip', value: 'zip' }
+]
+
+const loadingOptions = {
+  lock: true,
+  text: '数据加载中...',
+  background: 'rgba(0, 0, 0, 0.7)'
 }
 
 const searchInfo = ref({
-  selectedOrder: '',
-  selectedFamily: '',
-  selectedSpecies: '',
-  selectedHabitatType: '',
-  observationTimeRange: ['', ''],
-  selectedLocation: '',
-  selectedGroup: '',
-  observationDate: ''
+  owner: '',
+  filename: '',
+  selectedClass: '',
+  selectedType: '',
+  observationDate: '',
+  startDate: '',
+  endDate: ''
 })
 
-const orders = ref([])
-const orderIdToName = ref({})
-const locations = ref([])
-const groups = ref([])
-const birdFamilies = ref({})
-const birdSpeciesMap = ref({})
+const classNames = ref([])
+const showDateArr = ref([])
 
-const habitatTypes = [
-  '水中、空中飞过',
-  '水中、空中飞过、岸上',
-  '滩涂',
-  '水中',
-  '空中飞过、岸上',
-  '水中、空中飞过、其他',
-  '岸上',
-  '空中飞过',
-  '滩涂、空中飞过',
-  '树上',
-  '滩涂、空中飞过、其他',
-  '水中、岸上',
-  '其他',
-  '无'
-]
-
-const filteredFamilies = computed(() => {
-  if (searchInfo.value.selectedOrder === '') {
-    return [...new Set(Object.values(birdFamilies.value).flat())]
-  }
-  return [
-    ...(birdFamilies.value[
-      orderIdToName.value[searchInfo.value.selectedOrder]
-    ] || [])
-  ]
-})
-
-const filteredSpecies = computed(() => {
-  if (searchInfo.value.selectedFamily === '') {
-    if (searchInfo.value.selectedOrder === '') {
-      return [...new Set(Object.values(birdSpeciesMap.value).flat())]
-    } else {
-      const families =
-        birdFamilies.value[
-          orderIdToName.value[searchInfo.value.selectedOrder]
-        ] || []
-      const species = families.flatMap(
-        (family) => birdSpeciesMap.value[family.name] || []
-      )
-      return [...species]
-    }
-  } else {
-    return [
-      ...(birdSpeciesMap.value[
-        filteredFamilies.value.find(
-          (family) => family.id === searchInfo.value.selectedFamily
-        )?.name
-      ] || [])
-    ]
-  }
-})
-
-watch(filteredFamilies, (newData) => {
-  searchInfo.value.selectedFamily = ''
-  searchInfo.value.selectedSpecies = ''
-})
-
-watch(filteredSpecies, (newData) => {
-  searchInfo.value.selectedSpecies = ''
-})
-
-const isButtonDelDisabled = ref(false)
+const loading = ref(false)
 const tableData = ref([])
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -321,280 +222,213 @@ const exportDialogVisible = ref(false)
 const exportDate = ref('')
 
 onMounted(() => {
-  const instance = getCurrentInstance()
-  if (instance) {
-    instance.proxy.$nextTick(() => {
-      searchBird()
-      fetchDeviceOptions()
-      getBirdDataFunc()
-      handleVisibleChange()
-    })
-  }
+  fetchClassNames()
+  fetchAvailableDates()
 })
 
-const showDateArr = ref([])
 // 可用日期
-function disabledDate (time) {
-  if (showDateArr.value == null || showDateArr.value.length === 0) {
-    return true
+function disabledDate(time) {
+  if (!showDateArr.value || showDateArr.value.length === 0) {
+    return false
   }
-  const customString = `${time.getFullYear()}-${(time.getMonth() + 1)
+  const dateString = `${time.getFullYear()}-${(time.getMonth() + 1)
     .toString()
     .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
-  const isTimeInArray = showDateArr.value.includes(customString)
-  return !isTimeInArray
+  return !showDateArr.value.includes(dateString)
 }
+
 // 请求日期
-function handleVisibleChange () {
-  getBirdDate({})
+function fetchAvailableDates() {
+  getTimesByType({
+    type: 'modelproducts',
+    searchTimeType: 'day'
+  })
     .then((res) => {
-      const result = res.response.value
+      const result = res.response?.value || res
       if (result.code === 'SUCCESS') {
-        const date = result.body.observationTime
-        showDateArr.value = date
+        showDateArr.value = result.body?.date || []
       } else {
-        // 处理失败的响应
         ElMessage({
-          showClose: true,
-          message: result.msg,
-          center: true
+          message: result.msg || '获取日期数据失败',
+          type: 'warning'
         })
       }
     })
     .catch((error) => {
-      ElMessage({
-        showClose: true,
-        message: '获取数据失败，请稍后再试',
-        center: true,
-        type: 'error'
-      })
+      console.error('获取日期数据失败:', error)
+      ElMessage.error('获取日期数据失败，请稍后再试')
     })
 }
 
-function handleInputChange () {
-  // 搜索框内容变化时执行
-  isButtonDelDisabled.value = false
+function handleInputChange() {
+  // 移除可能导致循环更新的逻辑
 }
 
-function getBirdDataFunc () {
-  getBirdData()
+function fetchClassNames() {
+  getModelClassName()
     .then((res) => {
-      const response = res.response.value
+      const response = res.response?.value || res
       if (response.code === 'SUCCESS') {
-        const body = response.body
-        orders.value = body.orders.map((order) => ({
-          name: order.name,
-          id: order.id
-        }))
-        body.orders.forEach((order) => {
-          orderIdToName.value[order.id] = order.name
-        })
-        body.familyToorder.forEach((item) => {
-          item.familyName.forEach((family, index) => {
-            if (!birdFamilies.value[item.orderName]) {
-              birdFamilies.value[item.orderName] = []
-            }
-            birdFamilies.value[item.orderName].push({
-              name: family,
-              id: item.familyId[index]
-            })
-          })
-        })
-        body.speciesTofamily.forEach((item) => {
-          item.speciesName.forEach((speciesName, index) => {
-            if (!birdSpeciesMap.value[item.familyName]) {
-              birdSpeciesMap.value[item.familyName] = []
-            }
-            birdSpeciesMap.value[item.familyName].push({
-              name: speciesName,
-              id: item.speciesId[index]
-            })
-          })
-        })
-        groups.value = body.groups[0].groupName.map((name, index) => ({
-          groupName: name,
-          groupId: body.groups[0].groupId[index]
-        }))
+        classNames.value = response.body || []
+        searchProducts()
       } else {
-        ElMessage({ showClose: true, message: result.msg, center: true })
+        ElMessage.warning(response.msg || '获取分类数据失败')
       }
     })
     .catch((error) => {
-      ElMessage.error('获取水鸟数据失败，请稍后再试')
+      console.error('获取分类数据失败:', error)
+      ElMessage.error('获取分类数据失败，请稍后再试')
     })
 }
 
-function fetchDeviceOptions () {
-  queryDeviceByMultiWord({ type: '09' })
-    .then((res) => {
-      if (res.response.value.code === 'SUCCESS') {
-        locations.value = res.response.value.body.map((item) => item.deviceName)
-      } else {
-        ElMessage.error(res.response.value.msg)
-      }
-    })
-    .catch(() => {
-      ElMessage.error('获取设备数据失败，请稍后再试')
-    })
-}
-
-function searchBird () {
+// 修复：避免循环调用的搜索函数
+function searchProducts() {
   currentPage.value = 1
-  getBirdDataPage()
+  getProductDataPage()
 }
 
-function getBirdDataPage () {
+function getProductDataPage() {
   const params = {
     currentPage: currentPage.value,
     pageSize: pageSize.value,
-    orderId: searchInfo.value.selectedOrder,
-    familyId: searchInfo.value.selectedFamily,
-    speciesId: searchInfo.value.selectedSpecies,
-    watchPiId: searchInfo.value.selectedGroup,
+    owner: searchInfo.value.owner,
+    filename: searchInfo.value.filename,
+    className: searchInfo.value.selectedClass || null,
+    type: searchInfo.value.selectedType || null,
     observationTime: searchInfo.value.observationDate,
-    observationPeriodBegin: searchInfo.value.observationTimeRange[0],
-    observationPeriodEnd: searchInfo.value.observationTimeRange[1],
-    observationAddress: searchInfo.value.selectedLocation,
-    habitatType: searchInfo.value.selectedHabitatType
+    startTime: searchInfo.value.startDate,
+    endTime: searchInfo.value.endDate
   }
-  const loadingInstance = ElLoading.service(loadingoptions)
-  birdPageQuery(params)
+  
+  loading.value = true
+  getProductPageData(params)
     .then((res) => {
-      loadingInstance.close()
-      const result = res.response.value
+      const result = res.response?.value || res
       if (result.code === 'SUCCESS') {
-        tableData.value = result.body.records
-        currentPage.value = result.body.current
-        totalItems.value = result.body.total
-        pageSize.value = result.body.size
-        isButtonDelDisabled.value = true
+        tableData.value = result.body?.records || []
+        currentPage.value = result.body?.current || 1
+        totalItems.value = result.body?.total || 0
+        pageSize.value = result.body?.size || 10
       } else {
-        ElMessage({
-          showClose: true,
-          message: result.msg,
-          center: true
-        })
+        ElMessage.warning(result.msg || '获取数据失败')
       }
     })
     .catch((error) => {
-      loadingInstance.close()
-      ElMessage({
-        showClose: true,
-        message: '获取数据失败，请稍后再试',
-        center: true,
-        type: 'error'
-      })
+      console.error('获取数据失败:', error)
+      ElMessage.error('获取数据失败，请稍后再试')
+    })
+    .finally(() => {
+      loading.value = false
     })
 }
 
-function handleSizeChange (val) {
+function handleSizeChange(val) {
   pageSize.value = val
-  if (totalItems.value === 0) {
-    return
-  }
-  getBirdDataPage()
+  currentPage.value = 1
+  getProductDataPage()
 }
 
-function handleCurrentChange (val) {
+function handleCurrentChange(val) {
   currentPage.value = val
-  if (totalItems.value === 0) {
-    return
-  }
-  getBirdDataPage()
+  getProductDataPage()
 }
 
-function handleSelectionChange (val) {
-  const list = []
-  for (let i = 0; i < val.length; i++) {
-    list.push(val[i].id)
-  }
-  selectedRows.value = list
+function handleSelectionChange(val) {
+  selectedRows.value = val.map(item => item.id)
 }
 
-function confirmDeleteRow (row, index) {
-  ElMessageBox.confirm('此操作将永久删除该行数据, 是否继续?', '提示', {
+// 修复下载功能 - 跨平台兼容
+function downloadFile(row) {
+  const loadingInstance = ElLoading.service(loadingOptions)
+  
+  getFilesByConditions({
+    ids: [row.id]
+  })
+    .then((res) => {
+      loadingInstance.close()
+      
+      // 创建 Blob 对象
+      const blob = new Blob([res], { 
+        type: getMimeType(row.filename) 
+      })
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      // 设置下载文件名 - 兼容 Linux 和 Windows
+      const fileName = row.filename || `download_${row.id}`
+      link.setAttribute('download', fileName)
+      
+      // 兼容不同平台的下载方式
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // 释放 URL 对象
+      window.URL.revokeObjectURL(url)
+      ElMessage.success('下载成功')
+    })
+    .catch((error) => {
+      loadingInstance.close()
+      console.error('下载失败:', error)
+      ElMessage.error('下载失败，请稍后再试')
+    })
+}
+
+// 根据文件名获取 MIME 类型
+function getMimeType(filename) {
+  const ext = filename.split('.').pop().toLowerCase()
+  const mimeTypes = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'zip': 'application/zip'
+  }
+  return mimeTypes[ext] || 'application/octet-stream'
+}
+
+function confirmDeleteRow(row) {
+  ElMessageBox.confirm('此操作将永久删除该产品数据, 是否继续?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   })
     .then(() => {
-      birdDelByIds({ ids: [row.id] })
+      deleteProductsByConditions({ ids: [row.id] })
         .then((res) => {
-          if (res.response.value.code === 'SUCCESS') {
-            getBirdDataPage()
-            ElMessage({
-              showClose: true,
-              message: '删除成功',
-              center: true,
-              type: 'success'
-            })
+          const result = res.response?.value || res
+          if (result.code === 'SUCCESS') {
+            getProductDataPage()
+            ElMessage.success('删除成功')
           } else {
-            ElMessage({
-              showClose: true,
-              message: res.response.value.msg,
-              center: true,
-              type: 'error'
-            })
+            ElMessage.error(result.msg || '删除失败')
           }
         })
         .catch((error) => {
-          ElMessage({
-            showClose: true,
-            message: '删除失败，请稍后再试',
-            center: true,
-            type: 'error'
-          })
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败，请稍后再试')
         })
     })
     .catch(() => {
-      ElMessage({
-        showClose: true,
-        message: '已取消删除',
-        center: true,
-        type: 'info'
-      })
+      ElMessage.info('已取消删除')
     })
 }
 
-function deleteSelectedRows () {
-  const requestObject = {
-    ids: selectedRows.value,
-    orderId: searchInfo.value.selectedOrder,
-    familyId: searchInfo.value.selectedFamily,
-    speciesId: searchInfo.value.selectedSpecies,
-    watchPiId: searchInfo.value.selectedGroup,
-    observationPeriodBegin: searchInfo.value.observationTimeRange[0],
-    observationPeriodEnd: searchInfo.value.observationTimeRange[1],
-    observationAddress: searchInfo.value.selectedLocation,
-    habitatType: searchInfo.value.selectedHabitatType
-  }
-
-  if (
-    selectedRows.value.length === 0 &&
-    !requestObject.orderId &&
-    !requestObject.familyId &&
-    !requestObject.speciesId &&
-    !requestObject.habitatType &&
-    !requestObject.observationPeriodBegin &&
-    !requestObject.observationPeriodEnd &&
-    !requestObject.observationAddress &&
-    !requestObject.watchPiId
-  ) {
-    ElMessage({
-      showClose: true,
-      message: '请选择要删除的行',
-      center: true,
-      type: 'warning'
-    })
+function deleteSelectedRows() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要删除的产品')
     return
   }
 
   ElMessageBox.confirm(
-    `此操作将永久删除选中的 ${
-      selectedRows.value.length === 0
-        ? totalItems.value
-        : selectedRows.value.length
-    } 条数据, 是否继续?`,
+    `此操作将永久删除选中的 ${selectedRows.value.length} 条产品数据, 是否继续?`,
     '提示',
     {
       confirmButtonText: '确定',
@@ -603,129 +437,228 @@ function deleteSelectedRows () {
     }
   )
     .then(() => {
-      birdDelByIds(requestObject)
+      deleteProductsByConditions({ ids: selectedRows.value })
         .then((res) => {
-          if (res.response.value.code === 'SUCCESS') {
-            getBirdDataPage()
-            ElMessage({
-              showClose: true,
-              message: '删除成功',
-              center: true,
-              type: 'success'
-            })
+          const result = res.response?.value || res
+          if (result.code === 'SUCCESS') {
+            getProductDataPage()
+            selectedRows.value = []
+            ElMessage.success('删除成功')
           } else {
-            ElMessage({
-              showClose: true,
-              message: res.response.value.msg,
-              center: true,
-              type: 'error'
-            })
+            ElMessage.error(result.msg || '删除失败')
           }
         })
         .catch((error) => {
-          ElMessage({
-            showClose: true,
-            message: '删除失败，请稍后再试',
-            center: true,
-            type: 'error'
-          })
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败，请稍后再试')
         })
-      selectedRows.value = []
     })
     .catch(() => {
-      ElMessage({
-        showClose: true,
-        message: '已取消删除',
-        center: true,
-        type: 'info'
-      })
+      ElMessage.info('已取消删除')
     })
 }
 
-function showExportDialog () {
+function showExportDialog() {
   exportDialogVisible.value = true
 }
 
-function exportData () {
+// 修复导出功能 - 跨平台兼容
+function exportData() {
   if (!exportDate.value) {
-    ElMessage({
-      showClose: true,
-      message: '请选择导出日期',
-      center: true,
-      type: 'warning'
-    })
+    ElMessage.warning('请选择导出日期')
     return
   }
 
-  getBirdExcelByDate({ observationTime: exportDate.value })
+  const loadingInstance = ElLoading.service(loadingOptions)
+  
+  getFilesByConditions({ observationTime: exportDate.value })
     .then((res) => {
-      // 处理下载文件逻辑
-      const url = window.URL.createObjectURL(new Blob([res.response.value]))
+      loadingInstance.close()
+      
+      // 创建 Blob 对象
+      const blob = new Blob([res], { 
+        type: 'application/vnd.ms-excel' 
+      })
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', exportDate.value + '鸟类数据.xls')
+      
+      // 设置下载文件名
+      link.setAttribute('download', `${exportDate.value}产品数据.xls`)
+      
+      // 兼容不同平台的下载方式
       document.body.appendChild(link)
       link.click()
-      link.parentNode.removeChild(link)
+      document.body.removeChild(link)
+      
+      // 释放 URL 对象
       window.URL.revokeObjectURL(url)
-      ElMessage({
-        showClose: true,
-        message: '导出成功',
-        center: true,
-        type: 'success'
-      })
+      ElMessage.success('导出成功')
     })
     .catch((error) => {
-      ElMessage({
-        showClose: true,
-        message: '导出失败，请稍后再试',
-        center: true,
-        type: 'error'
-      })
+      loadingInstance.close()
+      console.error('导出失败:', error)
+      ElMessage.error('导出失败，请稍后再试')
     })
 
   exportDialogVisible.value = false
+  exportDate.value = ''
 }
 </script>
 
 <style scoped>
+/* 优化样式 */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #f5f7fa;
+  min-height: 100vh;
 }
 
 .controls {
-  margin-left: 1%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   width: 100%;
-  margin-bottom: 50px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 表格容器 - 增加顶部间距避免遮盖表单 */
+.table-container {
+  width: 100%;
+  margin-top: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .row {
   display: flex;
-  justify-content: flex-start;
+  flex-wrap: wrap;
   align-items: center;
-  width: 100%;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .el-form-item {
-  margin-right: 20px;
+  margin-bottom: 0;
+  min-width: 180px;
+  flex: 1;
 }
 
-.el-select {
-  width: 150px;
-}
-
-.el-date-picker {
-  background-color: white;
+.el-form-item:last-child {
+  flex: none;
+  min-width: auto;
 }
 
 .searchButton {
-  background-color: aliceblue;
+  background-color: #409eff;
+  color: white;
+  border: none;
+}
+
+.searchButton:hover {
+  background-color: #66b1ff;
+}
+
+.demo-pagination-block {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 简化表格样式 */
+:deep(.custom-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 表格头居中对齐 */
+:deep(.custom-table .el-table__header-wrapper th) {
+  text-align: center;
+  background-color: #f5f7fa;
+  font-weight: 600;
+  color: #303133;
+}
+
+:deep(.custom-table .el-table__header-wrapper th .cell) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* 表格内容居中对齐 */
+:deep(.custom-table .el-table__body-wrapper td) {
+  text-align: center;
+}
+
+:deep(.custom-table .el-table__body-wrapper td .cell) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* 表格滚动条样式优化 */
+:deep(.custom-table .el-table__body-wrapper) {
+  max-height: 600px;
+  overflow: auto;
+}
+
+/* 斑马纹样式优化 */
+:deep(.custom-table .el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background-color: #fafafa;
+}
+
+/* 鼠标悬停效果 */
+:deep(.custom-table .el-table__body tr:hover > td) {
+  background-color: #f5f7fa !important;
+}
+
+/* 分页样式优化 */
+:deep(.el-pagination) {
+  padding: 16px 0;
+}
+
+:deep(.el-pagination .number.active) {
+  background-color: #409eff;
+  color: white;
+}
+
+/* 对话框样式优化 */
+:deep(.el-dialog) {
+  border-radius: 8px;
+}
+
+:deep(.el-dialog__header) {
+  padding: 20px 20px 10px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 10px 20px 20px;
+  border-top: 1px solid #e4e7ed;
+}
+
+/* 表单标签样式优化 */
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #606266;
+}
+
+/* 加载状态优化 */
+:deep(.el-loading-mask) {
+  border-radius: 8px;
 }
 </style>
