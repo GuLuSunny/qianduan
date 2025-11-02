@@ -363,6 +363,9 @@ const clickPopupShowRight = ref(true); // 控制弹窗显示与隐藏
 
 //是否加载水体
 const loadedWater=ref(false);
+// 存储水闸和泵站实体的引用，便于后续删除
+const sluiceEntities = ref([]);
+const pumpEntities = ref([]);
 
 //是否加载建筑物
 const loadedBuildings=ref(false);
@@ -634,31 +637,27 @@ watch(monthlyWaterDate, updateMonthlyWaterImg);
 // 监听折线图类型变化，确保联动更新
 watch(areaChartType, updateAreaChartImg);
 watch(monthlyFeatureDate, updateMonthlyFeatureImg); // 新增地物监听
+
 function toggleWaterFeatures() {
-    if (loadedWater.value == false) {
+    if (loadedWater.value === false) {
         // 加载水体
         selectAllSluicesDatas();
         selectAllPumpDatas();
         initializeWater();
         loadedWater.value = true;
     } else {
-        // 简单的方法：清除所有实体
-        viewer.entities.removeAll();
+        // 只清除水闸和泵站模型
+        clearSluiceAndPumpModels();
         loadedWater.value = false;
     }
 }
-async function FarmLandChange()
-{
-    if (loadedFarmLand.value == false)
-    {
-     await addFarmlandData();
-     loadedFarmLand.value=true
-    }else{
-        viewer.entities.removeAll();
-        loadedFarmLand.value=false;
-    }
-}
 function selectAllSluicesDatas() {
+    // 先清除已有的水闸模型，避免重复加载
+    sluiceEntities.value.forEach(entity => {
+        viewer.entities.remove(entity);
+    });
+    sluiceEntities.value = [];
+    
     selectAllSluicesByConditions({})
         .then((res) => {
             const result = res.response.value;
@@ -678,17 +677,21 @@ function selectAllSluicesDatas() {
                         const latitude = parseFloat(match[2]);
                         const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
                         
-                        // 添加模型实体
-                        viewer.entities.add({
+                        // 添加模型实体并保存引用
+                        const entity = viewer.entities.add({
                             position: position,
                             model: {
                                 uri: './sluice/sluice.glb', // GLB模型路径
                                 scale: 10.0, // 缩放比例
-                                minimumPixelSize:32, // 最小像素大小，确保远距离可见
+                                minimumPixelSize: 32, // 最小像素大小，确保远距离可见
                                 heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                             },
-                            show: true
+                            show: true,
+                            type: 'sluice' // 添加类型标识
                         });
+                        
+                        // 保存实体引用，便于后续删除
+                        sluiceEntities.value.push(entity);
                     }
                 });
                 
@@ -698,7 +701,14 @@ function selectAllSluicesDatas() {
         })
         
 }
+
 function selectAllPumpDatas() {
+    // 先清除已有的泵站模型，避免重复加载
+    pumpEntities.value.forEach(entity => {
+        viewer.entities.remove(entity);
+    });
+    pumpEntities.value = [];
+    
     selectAllPumpingStationByConditions({})
         .then((res) => {
             const result = res.response.value;
@@ -718,17 +728,21 @@ function selectAllPumpDatas() {
                         const latitude = parseFloat(match[2]);
                         const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
                         
-                        // 添加模型实体
-                        viewer.entities.add({
+                        // 添加模型实体并保存引用
+                        const entity = viewer.entities.add({
                             position: position,
                             model: {
                                 uri: './pump/pump.glb', // GLB模型路径
                                 scale: 10.0, // 缩放比例
-                                minimumPixelSize:32, // 最小像素大小，确保远距离可见
+                                minimumPixelSize: 32, // 最小像素大小，确保远距离可见
                                 heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                             },
-                            show: true
+                            show: true,
+                            type: 'pump' // 添加类型标识
                         });
+                        
+                        // 保存实体引用，便于后续删除
+                        pumpEntities.value.push(entity);
                     }
                 });
                 
@@ -737,6 +751,21 @@ function selectAllPumpDatas() {
             }
         })
         
+}
+
+// 清除所有水闸和泵站模型
+function clearSluiceAndPumpModels() {
+    // 清除水闸模型
+    sluiceEntities.value.forEach(entity => {
+        viewer.entities.remove(entity);
+    });
+    sluiceEntities.value = [];
+    
+    // 清除泵站模型
+    pumpEntities.value.forEach(entity => {
+        viewer.entities.remove(entity);
+    });
+    pumpEntities.value = [];
 }
 //农田加载函数
 const addFarmlandData = async () => {
