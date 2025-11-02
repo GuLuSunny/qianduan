@@ -1013,6 +1013,13 @@ export function uploadreservoirByShpfiles(data: any) {
     data: data,
   });
 }
+//农田shp文件上传
+export function uploadFarmlandByShpfiles(data: any) {
+  return useAxiosApi('api/farmland/uploadByShpfiles', {
+    method: 'POST',
+    data: data,
+  });
+}
 /**
  * 地类模型调用
  * @returns UseAxiosReturn
