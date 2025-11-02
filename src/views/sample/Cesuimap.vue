@@ -998,6 +998,362 @@ async function initializeCesium() {
     //   })
     //   viewer.zoomTo(model)
 
+    class TreeDataLoader {
+        constructor(viewer, options = {}) {
+            this.viewer = viewer;
+            this.config = {
+                rangeUrl: './tree/TreeRange.geojson',
+                pointUrl: './tree/trees.geojson',
+                models: {
+                    high: {
+                        url: './tree/tree.glb',
+                        scale: 2.0,
+                        maxDistance: 20
+                    },
+                    low: {
+                        url: './tree/l_tree.glb',
+                        scale: 2.0,
+                        maxDistance: 6000
+                    }
+                },
+                heightThreshold: 5000,
+                chunkSize: 200,
+                idleTimeout: 15,
+                maximumScreenSpaceError: 2,
+                visibleDistance: 6000,
+                rangeStyle: {
+                    fill: Cesium.Color.GREEN.withAlpha(0.3),
+                    stroke: Cesium.Color.GREEN
+                }
+            };
+            Object.assign(this.config, options);
+
+            this.rangeDataSource = null;
+            this.pointDataSource = null;
+            this.allPoints = [];
+            this.loaded = false;
+            this.currentVisible = new Map();
+            
+            this.modelCaches = {
+                high: null,
+                low: null
+            };
+            this.modelInstances = new Map();
+            
+            this.lastCameraHeight = 0;
+            this.shouldShowModels = false;
+        }
+
+        async _preloadModels() {
+            try {
+                for (const [key, modelConfig] of Object.entries(this.config.models)) {
+                    this.modelCaches[key] = await Cesium.Model.fromGltfAsync({
+                        url: modelConfig.url,
+                        scale: modelConfig.scale,
+                        maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                    });
+                    console.log(`已预加载 ${key} 精度模型: ${modelConfig.url}`);
+                }
+            } catch (e) {
+                console.error('模型加载失败:', e);
+            }
+        }
+
+        _getAppropriateModel(distance) {
+            if (distance <= this.config.models.high.maxDistance) {
+                return 'high';
+            } else {
+                return 'low';
+            }
+        }
+
+        _isInViewFrustum(position) {
+            /*ry {
+                const camera = this.viewer.camera;
+                const cullingVolume = camera.frustum.computeCullingVolume(
+                    camera.position, 
+                    camera.direction, 
+                    camera.up
+                );
+                
+                const boundingSphere = new Cesium.BoundingSphere(position, 1.0);
+                const visibility = cullingVolume.computeVisibility(boundingSphere);
+                
+                return visibility !== Cesium.Intersect.OUTSIDE;
+            } catch (e) {
+                console.warn('视锥体检测出错:', e);
+                return true;
+            }*/
+           return true;
+        }
+
+        _syncModelVisibility(visiblePoints, cameraPosition) {
+            const newVisibleIds = new Set(visiblePoints.map(p => p.id));
+            const entitiesToHide = [];
+
+            this.currentVisible.forEach((entity, id) => {
+                if (!newVisibleIds.has(id)) {
+                    entitiesToHide.push(id);
+                }
+            });
+
+            entitiesToHide.forEach(id => {
+                const entity = this.currentVisible.get(id);
+                if (entity) {
+                    entity.show = false;
+                    entity._currentInView = false;
+                }
+            });
+
+            this._processVisiblePointsBatch(visiblePoints, cameraPosition, 0);
+        }
+
+        _processVisiblePointsBatch(visiblePoints, cameraPosition, startIndex) {
+            const batchSize = 50;
+            const endIndex = Math.min(startIndex + batchSize, visiblePoints.length);
+
+            for (let i = startIndex; i < endIndex; i++) {
+                const point = visiblePoints[i];
+                this._updateOrCreateEntity(point, cameraPosition);
+            }
+
+            if (endIndex < visiblePoints.length) {
+                requestIdleCallback(() => {
+                    this._processVisiblePointsBatch(visiblePoints, cameraPosition, endIndex);
+                }, { timeout: 50 });
+            }
+        }
+
+        _updateOrCreateEntity(point, cameraPosition) {
+            const inViewFrustum = this._isInViewFrustum(point.position);
+            
+            let entity = this.currentVisible.get(point.id);
+            
+            if (!inViewFrustum) {
+                if (entity) {
+                    entity.show = false;
+                    entity._currentInView = false;
+                }
+                return;
+            }
+
+            const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
+            const modelType = this._getAppropriateModel(distance);
+            
+            const currentModelType = this.modelInstances.get(point.id);
+
+            if (entity) {
+                if (currentModelType !== modelType) {
+                    this._updateEntityModel(entity, point, modelType);
+                    this.modelInstances.set(point.id, modelType);
+                }
+                entity.show = true;
+                entity._currentInView = true;
+            } else {
+                this._createEntity(point, modelType);
+            }
+        }
+
+        _createEntity(point, modelType) {
+            try {
+                const cachedModel = this.modelCaches[modelType];
+                if (!cachedModel) {
+                    console.warn(`模型缓存不存在: ${modelType}`);
+                    return;
+                }
+
+                const entity = this.pointDataSource.entities.add({
+                    id: point.id,
+                    position: point.position,
+                    model: {
+                        uri: this.config.models[modelType].url,
+                        scale: this.config.models[modelType].scale,
+                        maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                    },
+                    show: true
+                });
+
+                entity._currentInView = true;
+                
+                this.currentVisible.set(point.id, entity);
+                this.modelInstances.set(point.id, modelType);
+                
+            } catch (e) {
+                console.error('创建实体时出错:', e);
+            }
+        }
+
+        _updateEntityModel(entity, point, newModelType) {
+            try {
+                entity.model = new Cesium.ModelGraphics({
+                    uri: this.config.models[newModelType].url,
+                    scale: this.config.models[newModelType].scale,
+                    maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                });
+            } catch (e) {
+                console.error('更新实体模型时出错:', e);
+            }
+        }
+
+        async _loadRangeData() {
+            this.rangeDataSource = await Cesium.GeoJsonDataSource.load(
+                this.config.rangeUrl, 
+                { clampToGround: true, ...this.config.rangeStyle }
+            );
+            this.viewer.dataSources.add(this.rangeDataSource);
+        }
+
+        async _loadAllPoints() {
+            try {
+                const response = await fetch(this.config.pointUrl);
+                const geojson = await response.json();
+                this.pointDataSource = new Cesium.CustomDataSource('treeModels');
+                this.viewer.dataSources.add(this.pointDataSource);
+
+                await this._processPointsInBatches(geojson.features);
+                this.loaded = true;
+            } catch (e) {
+                console.error('点数据加载失败:', e);
+            }
+        }
+
+        _processPointsInBatches(features) {
+            return new Promise((resolve) => {
+                let processed = 0;
+                
+                const processBatch = (deadline) => {
+                    const startTime = performance.now();
+                    
+                    while (
+                        processed < features.length &&
+                        (deadline.timeRemaining() > 0 || deadline.didTimeout) &&
+                        (performance.now() - startTime < this.config.idleTimeout)
+                    ) {
+                        const feature = features[processed];
+                        if (feature.geometry?.coordinates) {
+                            const [lon, lat] = feature.geometry.coordinates;
+                            this.allPoints.push({
+                                id: `tree_${processed}`,
+                                position: Cesium.Cartesian3.fromDegrees(lon, lat)
+                            });
+                        }
+                        processed++;
+                    }
+
+                    if (processed < features.length) {
+                        requestIdleCallback(processBatch, { timeout: 50 });
+                    } else {
+                        console.log(`已加载 ${processed} 个树木位置`);
+                        resolve();
+                    }
+                };
+
+                requestIdleCallback(processBatch, { timeout: 50 });
+            });
+        }
+
+        _setupCameraListener() {
+            let lastUpdate = 0;
+            this.viewer.camera.changed.addEventListener(() => {
+                const now = Date.now();
+                if (now - lastUpdate < 300) return;
+                lastUpdate = now;
+                
+                this._updateVisibility();
+            });
+        }
+
+        _updateVisibility() {
+            const currentHeight = this.viewer.camera.positionCartographic.height;
+            
+            const shouldShowNow = currentHeight < this.config.heightThreshold;
+            
+            // 如果高度状态发生变化
+            if (shouldShowNow !== this.shouldShowModels) {
+                this.shouldShowModels = shouldShowNow;
+                
+                // 更新范围数据显示状态
+                if (this.rangeDataSource) {
+                    this.rangeDataSource.show = !shouldShowNow;
+                }
+
+                if (!shouldShowNow) {
+                    // 高度超过阈值，隐藏所有模型
+                    this._hideAllModels();
+                }
+                return;
+            }
+
+            // 只有在应该显示模型时才进行后续处理
+            if (!this.shouldShowModels) {
+                return;
+            }
+
+            const cameraPosition = this.viewer.camera.position;
+            const visiblePoints = this._getPointsInView(cameraPosition);
+            this._syncModelVisibility(visiblePoints, cameraPosition);
+        }
+
+        _getPointsInView(cameraPosition) {
+            return this.allPoints.filter(point => {
+                const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
+                return distance <= this.config.visibleDistance;
+            });
+        }
+
+        _hideAllModels() {
+            this.currentVisible.forEach((entity, id) => {
+                try {
+                    entity.show = false;
+                    entity._currentInView = false;
+                } catch (e) {
+                    console.warn('隐藏实体时出错:', e);
+                }
+            });
+        }
+
+        async init() {
+            await this._loadRangeData();
+            await this._preloadModels();
+            await this._loadAllPoints();
+            this._setupCameraListener();
+        }
+
+        destroy() {
+            if (this.pointDataSource) {
+                this.viewer.dataSources.remove(this.pointDataSource);
+            }
+            if (this.rangeDataSource) {
+                this.viewer.dataSources.remove(this.rangeDataSource);
+            }
+            this.currentVisible.clear();
+            this.allPoints = [];
+        }
+    }
+
+    // 使用示例
+    const treeLoader = new TreeDataLoader(viewer, {
+        heightThreshold: 3000,
+        models: {
+            high: {
+                url: './tree/tree.glb',
+                scale: 2.0,
+                maxDistance: 20
+            },
+            low: {
+                url: './tree/l_tree.glb',
+                scale: 2.0,
+                maxDistance: 6000
+            }
+        },
+        maximumScreenSpaceError: 4,
+        visibleDistance: 6000
+    });
+    treeLoader.init();
+
     //隐藏logo
     viewer._cesiumWidget._creditContainer.style.display = "none";
     // 设置最小缩放距离（以米为单位）
