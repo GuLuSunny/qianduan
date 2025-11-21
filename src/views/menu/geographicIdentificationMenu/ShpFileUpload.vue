@@ -12,6 +12,7 @@
           <a-select-option value="channel">渠道数据</a-select-option>
           <a-select-option value="reservoir">水库数据</a-select-option>
           <a-select-option value="farmland">农田数据</a-select-option>
+          <a-select-option value="forest">森林数据</a-select-option>
         </a-select>
       </a-form-item>
     </a-form>
@@ -102,7 +103,8 @@ import {
   uploadlakesByShpfiles,
   uploadChannelByShpfiles,
   uploadreservoirByShpfiles,
-  uploadFarmlandByShpfiles
+  uploadFarmlandByShpfiles,
+  uploadForestByShpfiles
 } from '@/api/getData'
 
 // 响应式数据
@@ -200,7 +202,8 @@ const getSubmitTypeText = () => {
     'lakes': '湖泊数据',
     'channel': '渠道数据',
     'reservoir': '水库数据',
-    'farmland': '农田数据'
+    'farmland': '农田数据',
+    'forest': '森林数据',
   }
   return typeMap[formState.submitType] || '未知类型'
 }
@@ -361,7 +364,8 @@ const getApiBySubmitType = () => {
     'lakes': uploadlakesByShpfiles,
     'channel': uploadChannelByShpfiles,
     'reservoir': uploadreservoirByShpfiles,
-    'farmland': uploadFarmlandByShpfiles
+    'farmland': uploadFarmlandByShpfiles,
+    'forest': uploadForestByShpfiles
   }
   return apiMap[formState.submitType]
 }

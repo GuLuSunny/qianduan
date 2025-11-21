@@ -1020,6 +1020,14 @@ export function uploadFarmlandByShpfiles(data: any) {
     data: data,
   });
 }
+//树林shp文件上传
+
+export function uploadForestByShpfiles(data: any) {
+  return useAxiosApi('api/forest/uploadByShpfiles', {
+    method: 'POST',
+    data: data,
+  });
+}
 /**
  * 地类模型调用
  * @returns UseAxiosReturn
