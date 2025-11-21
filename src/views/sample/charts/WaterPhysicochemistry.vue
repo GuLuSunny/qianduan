@@ -1,6 +1,7 @@
 <!-- 动态上下翻滚的表格 -->
 <template>
   <div class="table-wrap" style="width: 100%">
+    <div class="water-title">{{ title }}</div>
     <div class="titleContent">
       <div class="tit">样点</div>
       <div class="tit">水温</div>
@@ -47,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, defineComponent, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, defineComponent, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import { Vue3SeamlessScroll } from 'vue3-seamless-scroll'
 import data from '@/../public/json/fullscreenSampleJson/waterPhysicochemistry.json' // 注意路径，可能需要调整
 import { getWaterPhyBigScreen } from '@/api/getData' // 导入 API 请求方法
@@ -55,6 +56,20 @@ const periodDataList = ref([]) // 响应式数组用于保存水体数据
 const hasExtraScroll1 = ref(true)
 const hasExtraScroll2 = ref(false)
 const hasExtraScroll3 = ref(false)
+
+// 实时日期时间，用于标题显示
+const now = ref(new Date())
+
+const title = computed(() => {
+  const d = now.value
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${y}-${m}-${day}日黑岗口水库水体理化`
+})
 
 function formatNumber (number) {
   if (!isNaN(number) && number !== '') {
@@ -96,6 +111,7 @@ function changeSize () {
 onMounted(() => {
   changeSize()
   periodDataList.value = data
+  now.value = new Date()
 })
 onBeforeUnmount(() => {
   // 销毁实例
@@ -113,6 +129,7 @@ onBeforeUnmount(() => {
 
 .table-wrap {
   width: calc(100vw * 0.06);
+  margin-top: -16px; /* 整体上移一点 */
   /* height: calc(100vh * 0.2); */
   /* padding: 0 20px; */
   color: #ffffff;
@@ -172,5 +189,14 @@ onBeforeUnmount(() => {
 
 .countContent:nth-of-type(odd) .descr {
   border-right: 1px solid #247587;
+}
+</style>
+<style scoped>
+.water-title {
+  text-align: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 2px 0 4px 0; /* 减小底部间距，缩小标题与下方内容的间隔 */
 }
 </style>

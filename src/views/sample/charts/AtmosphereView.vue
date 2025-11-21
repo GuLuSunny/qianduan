@@ -1,5 +1,6 @@
 <template>
-  <div style="width: 100%; height: 100%">
+  <div class="atmosphere-wrap" style="width: 100%; height: 100%">
+    <div class="atmosphere-title">{{ title }}</div>
     <el-row :gutter="25">
       <el-col
         :span="8"
@@ -12,8 +13,8 @@
         ]"
       >
         <div class="grid-content">
-          风速(m/s)<br />
-          {{ formatNumber(atmosphereData.windSpeed) }}
+          <div class="box-label">风速(m/s)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.windSpeed) }}</div>
         </div>
       </el-col>
       <el-col
@@ -27,8 +28,8 @@
         ]"
       >
         <div class="grid-content">
-          雨量(mm)<br />
-          {{ formatNumber(atmosphereData.rainfall) }}
+          <div class="box-label">雨量(mm)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.rainfall) }}</div>
         </div>
       </el-col>
       <el-col
@@ -42,8 +43,8 @@
         ]"
       >
         <div class="grid-content">
-          大气温度(℃)<br />
-          {{ formatNumber(atmosphereData.atmosphereTemperature) }}
+          <div class="box-label">大气温度(℃)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.atmosphereTemperature) }}</div>
         </div>
       </el-col>
     </el-row>
@@ -59,8 +60,8 @@
         ]"
       >
         <div class="grid-content">
-          土壤温度(℃)<br />
-          {{ formatNumber(atmosphereData.soilTemperature) }}
+          <div class="box-label">土壤温度(℃)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.soilTemperature) }}</div>
         </div>
       </el-col>
       <el-col
@@ -74,8 +75,8 @@
         ]"
       >
         <div class="grid-content">
-          数字气压(hPa)<br />
-          {{ formatNumber(atmosphereData.digitalPressure) }}
+          <div class="box-label">数字气压(hPa)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
         </div>
       </el-col>
       <el-col
@@ -89,55 +90,8 @@
         ]"
       >
         <div class="grid-content">
-          简易总辐射(W/m2)<br />
-          {{ formatNumber(atmosphereData.simpleTotalRadiation) }}
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="25">
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          风向(°)<br />
-          {{ formatNumber(atmosphereData.windDirection) }}
-        </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          土壤湿度(%RH)<br />
-          {{ formatNumber(atmosphereData.soilHumidity) || 'N/A' }}
-        </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          大气湿度(%RH)<br />
-          {{ formatNumber(atmosphereData.atmosphereHumidity) }}
+          <div class="box-label">简易总辐射(W/m2)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.simpleTotalRadiation) }}</div>
         </div>
       </el-col>
     </el-row>
@@ -153,8 +107,8 @@
         ]"
       >
         <div class="grid-content">
-          PM2.5 (ug/m3)<br />
-          {{ formatNumber(atmosphereData.pm25) }}
+          <div class="box-label">风向(°)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
         </div>
       </el-col>
       <el-col
@@ -168,8 +122,8 @@
         ]"
       >
         <div class="grid-content">
-          盐分(mg/L)<br />
-          {{ formatNumber(atmosphereData.salinity) }}
+          <div class="box-label">土壤湿度(%RH)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.soilHumidity) || 'N/A' }}</div>
         </div>
       </el-col>
       <el-col
@@ -183,7 +137,55 @@
         ]"
       >
         <div class="grid-content">
-          PM10 (ug/m3)<br />{{ formatNumber(atmosphereData.pm10) }}
+          <div class="box-label">大气湿度(%RH)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.atmosphereHumidity) }}</div>
+        </div>
+      </el-col>
+    </el-row>
+    <el-row :gutter="25">
+      <el-col
+        :span="8"
+        :class="[
+          {
+            'extra-padding1': hasExtraPadding1,
+            'extra-padding2': hasExtraPadding2,
+            'extra-padding3': hasExtraPadding3
+          }
+        ]"
+      >
+        <div class="grid-content">
+          <div class="box-label">PM2.5 (ug/m3)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.pm25) }}</div>
+        </div>
+      </el-col>
+      <el-col
+        :span="8"
+        :class="[
+          {
+            'extra-padding1': hasExtraPadding1,
+            'extra-padding2': hasExtraPadding2,
+            'extra-padding3': hasExtraPadding3
+          }
+        ]"
+      >
+        <div class="grid-content">
+          <div class="box-label">盐分(mg/L)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.salinity) }}</div>
+        </div>
+      </el-col>
+      <el-col
+        :span="8"
+        :class="[
+          {
+            'extra-padding1': hasExtraPadding1,
+            'extra-padding2': hasExtraPadding2,
+            'extra-padding3': hasExtraPadding3
+          }
+        ]"
+      >
+        <div class="grid-content">
+          <div class="box-label">PM10 (ug/m3)</div>
+          <div class="box-value">{{ formatNumber(atmosphereData.pm10) }}</div>
         </div>
       </el-col>
     </el-row>
@@ -191,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch,onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import data from '@/../public/json/fullscreenSampleJson/atmosphere.json' // 注意路径，可能需要调整
 // 创建一个响应式变量来存储气象数据
 const atmosphereData = ref({
@@ -211,6 +213,15 @@ const atmosphereData = ref({
 const hasExtraPadding1 = ref(true)
 const hasExtraPadding2 = ref(false)
 const hasExtraPadding3 = ref(false)
+
+// 页面标题，显示当前日期 + 场所名称
+const title = computed(() => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}日 龙庭公园气象数据`
+})
 
 function formatNumber (number) {
   if (!isNaN(number) && number !== '') {
@@ -289,5 +300,17 @@ onBeforeUnmount(() => {
 }
 .extra-padding3 {
   margin-top: calc(100vh * 0.00001);
+}
+
+.atmosphere-title {
+  text-align: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0px 0 6px 0;
+}
+
+.atmosphere-wrap {
+  margin-top: -18px; /* 整体上移一点，与其他模块一致 */
 }
 </style>

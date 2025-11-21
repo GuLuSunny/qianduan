@@ -115,7 +115,7 @@ function updateChart () {
 
   const option = {
     title: {
-      text: '2021-05-20日陆浑湖水库光谱反射率曲线',
+      text: '2021-05-20日黑岗口水库光谱反射率曲线',
       left: 'center',
       textStyle: {
         color: '#ffffff',
