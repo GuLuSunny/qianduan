@@ -33,6 +33,7 @@
     "gifsicle": "^7.0.1",
     "graceful-fs": "^4.2.11",
     "https-browserify": "^1.0.0",
+    "jszip": "^3.10.1",
     "less": "^4.2.2",
     "less-loader": "^12.2.0",
     "node-polyfill-webpack-plugin": "^4.1.0",
