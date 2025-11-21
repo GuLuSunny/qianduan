@@ -157,9 +157,7 @@ const validateZipContent = async (file) => {
         const hasShp = fileNames.some(name => name.endsWith('.shp'))
         const hasShx = fileNames.some(name => name.endsWith('.shx'))
         const hasDbf = fileNames.some(name => name.endsWith('.dbf'))
-        
-        // 检查是否有嵌套目录（可选，根据需求调整）
-        const hasNestedDirectories = fileNames.some(name => name.includes('/') || name.includes('\\'))
+
         
         if (!hasShp || !hasShx || !hasDbf) {
           const missing = []
@@ -167,10 +165,6 @@ const validateZipContent = async (file) => {
           if (!hasShx) missing.push('.shx')
           if (!hasDbf) missing.push('.dbf')
           reject(`ZIP文件缺少必要的文件: ${missing.join(', ')}`)
-        } 
-        // 可选：检查是否有嵌套目录
-        else if (hasNestedDirectories) {
-          reject('ZIP文件不应包含嵌套目录，请将所有文件放在根目录下')
         } 
         else {
           resolve({ valid: true })
