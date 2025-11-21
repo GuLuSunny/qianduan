@@ -679,18 +679,6 @@ function selectAllPumpDatas() {
     })
 
 }
-Cesium.GeoJsonDataSource.load(
-    "http://localhost:8080/api/farmland/exportGeojson",
-    {
-        clampToGround: true,
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.YELLOW.withAlpha(0.4),
-        strokeWidth: 2
-    }
-).then(ds => {
-    viewer.dataSources.add(ds);
-    viewer.flyTo(ds);
-});
 
 
 // 清除所有水闸和泵站模型
