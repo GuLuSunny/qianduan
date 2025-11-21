@@ -1303,6 +1303,32 @@ export function getWaterAreaImage(data: any) {
   });
 
 }
+
+/**
+ * 植被专属上传接口
+ * @returns UseAxiosReturn
+ */
+export function plantFilesUpload(data: any) {
+  return useAxiosApi('/api/model/plantFilesUpload', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
+
+/**
+ * 地物多重上传接口
+ * @returns UseAxiosReturn
+ */
+export function landFilesUploadMul(data: any) {
+  return useAxiosApi('/api/modelFile/uploadMul', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
 /**
  * 新增将农田数据的shp字段转为geojson格式的geojson文件传入前端
  * @returns UseAxiosReturn
