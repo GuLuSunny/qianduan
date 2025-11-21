@@ -1303,3 +1303,15 @@ export function getWaterAreaImage(data: any) {
   });
 
 }
+/**
+ * 新增将农田数据的shp字段转为geojson格式的geojson文件传入前端
+ * @returns UseAxiosReturn
+ */
+export function getFarmlandgeojson(data: any) {
+  return useAxiosApi('/api/farmland/exportGeojson', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}

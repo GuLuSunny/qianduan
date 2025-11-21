@@ -78,7 +78,7 @@
             <div class="image-loader" :style="{ 'width': '400px', 'height': '240px', margin: 'auto  0 auto 0' }">
               <img v-if="(dataType === '06' || dataType === '07') && details.imageUrl" :src="details.imageUrl"
                 alt="数据图片" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-              <img v-else if="dataType === '06' || dataType === '07'" :src="getImageSrc(dataType)" alt="示例图片"
+              <img v-else-if="dataType === '06' || dataType === '07'" :src="getImageSrc(dataType)" alt="示例图片"
                 style="max-width: 100%; max-height: 100%; object-fit: contain;">
               <img v-else :src="getImageSrc(dataType)" alt="示例图片"
                 style="max-width: 100%; max-height: 100%; object-fit: contain;">

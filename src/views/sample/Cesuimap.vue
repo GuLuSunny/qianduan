@@ -346,10 +346,11 @@ import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反�
 import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体理化 */
 import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
 import WetLandView from './charts/WetLandView.vue' /* 湿地 */
-import {selectAllSluicesByConditions} from '@/api/getData';
+import {selectAllSluicesByConditions,getFarmlandgeojson} from '@/api/getData';
 import {selectAllPumpingStationByConditions} from '@/api/getData'
 import router from '@/router';
 import { resolve } from 'path';
+
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
@@ -426,6 +427,8 @@ const monthlyFeatureImgSrc = ref("/images/地物/25-0615.png"); // 对应本地F
 // 7. 图片放大功能
 const enlargedImgSrc = ref("");
 const showEnlargeModal = ref(false);
+let farmlandDataSource = null;
+
 
 
 onMounted(async () => {
@@ -752,6 +755,19 @@ function selectAllPumpDatas() {
         })
         
 }
+Cesium.GeoJsonDataSource.load(
+    "http://localhost:8080/api/farmland/exportGeojson",
+    {
+        clampToGround: true,
+        stroke: Cesium.Color.YELLOW,
+        fill: Cesium.Color.YELLOW.withAlpha(0.4),
+        strokeWidth: 2
+    }
+).then(ds => {
+    viewer.dataSources.add(ds);
+    viewer.flyTo(ds);
+});
+
 
 // 清除所有水闸和泵站模型
 function clearSluiceAndPumpModels() {
@@ -767,6 +783,26 @@ function clearSluiceAndPumpModels() {
     });
     pumpEntities.value = [];
 }
+function FarmLandChange() {
+  if (!loadedFarmLand.value) {
+    console.log("开始加载农田模型...");
+    addFarmlandData();   // 你的加载函数
+    loadedFarmLand.value = true;
+  } else {
+    console.log("移除农田模型...");
+    clearFarmland();     // 移除函数
+    loadedFarmLand.value = false;
+  }
+}
+
+function clearFarmland() {
+  if (farmlandDataSource) {
+    viewer.dataSources.remove(farmlandDataSource);
+    farmlandDataSource = null;
+    console.log("农田模型已清除");
+  }
+}
+
 //农田加载函数
 const addFarmlandData = async () => {
   try {
@@ -777,8 +813,9 @@ const addFarmlandData = async () => {
     const CHUNK_SIZE = 20; // ✅ 一批加载20个模型，防止卡顿
     let index = 0;
 
-    const dataSource = new Cesium.CustomDataSource('farmland');
-    viewer.dataSources.add(dataSource);
+   farmlandDataSource = new Cesium.CustomDataSource('farmland');
+viewer.dataSources.add(farmlandDataSource);
+
 
     function getFeatureCenter(feature) {
       const coords = feature.geometry.coordinates;
@@ -833,7 +870,8 @@ const addFarmlandData = async () => {
           properties: feature.properties
         });
 
-        dataSource.entities.add(entity);
+        farmlandDataSource.entities.add(entity);
+
       });
 
       index += CHUNK_SIZE;
