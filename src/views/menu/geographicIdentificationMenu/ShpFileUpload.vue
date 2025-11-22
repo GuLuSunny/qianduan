@@ -12,6 +12,7 @@
           <a-select-option value="channel">渠道数据</a-select-option>
           <a-select-option value="reservoir">水库数据</a-select-option>
           <a-select-option value="farmland">农田数据</a-select-option>
+          <a-select-option value="forest">森林数据</a-select-option>
         </a-select>
       </a-form-item>
     </a-form>
@@ -102,7 +103,8 @@ import {
   uploadlakesByShpfiles,
   uploadChannelByShpfiles,
   uploadreservoirByShpfiles,
-  uploadFarmlandByShpfiles
+  uploadFarmlandByShpfiles,
+  uploadForestByShpfiles
 } from '@/api/getData'
 
 // 响应式数据
@@ -157,9 +159,7 @@ const validateZipContent = async (file) => {
         const hasShp = fileNames.some(name => name.endsWith('.shp'))
         const hasShx = fileNames.some(name => name.endsWith('.shx'))
         const hasDbf = fileNames.some(name => name.endsWith('.dbf'))
-        
-        // 检查是否有嵌套目录（可选，根据需求调整）
-        const hasNestedDirectories = fileNames.some(name => name.includes('/') || name.includes('\\'))
+
         
         if (!hasShp || !hasShx || !hasDbf) {
           const missing = []
@@ -167,10 +167,6 @@ const validateZipContent = async (file) => {
           if (!hasShx) missing.push('.shx')
           if (!hasDbf) missing.push('.dbf')
           reject(`ZIP文件缺少必要的文件: ${missing.join(', ')}`)
-        } 
-        // 可选：检查是否有嵌套目录
-        else if (hasNestedDirectories) {
-          reject('ZIP文件不应包含嵌套目录，请将所有文件放在根目录下')
         } 
         else {
           resolve({ valid: true })
@@ -206,7 +202,8 @@ const getSubmitTypeText = () => {
     'lakes': '湖泊数据',
     'channel': '渠道数据',
     'reservoir': '水库数据',
-    'farmland': '农田数据'
+    'farmland': '农田数据',
+    'forest': '森林数据',
   }
   return typeMap[formState.submitType] || '未知类型'
 }
@@ -367,7 +364,8 @@ const getApiBySubmitType = () => {
     'lakes': uploadlakesByShpfiles,
     'channel': uploadChannelByShpfiles,
     'reservoir': uploadreservoirByShpfiles,
-    'farmland': uploadFarmlandByShpfiles
+    'farmland': uploadFarmlandByShpfiles,
+    'forest': uploadForestByShpfiles
   }
   return apiMap[formState.submitType]
 }
