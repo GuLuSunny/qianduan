@@ -28,19 +28,10 @@
     <div class="form-container" v-if="uploadCurrent === 0">
       <!-- 文件上传部分 -->
       <div class="upload-container">
-        <el-popover
-          placement="top"
-          trigger="hover"
-          width="400"
-        >
+        <el-popover placement="top" trigger="hover" width="400">
           <template #reference>
-            <Dragger :multiple="true" 
-              accept=".tif,.zip" 
-              style="margin-top: 20px" 
-              :beforeUpload="beforeUpload"
-              :customRequest="handleCustomRequest" 
-              :fileList="files" 
-              :onRemove="onRemove">
+            <Dragger :multiple="true" accept=".tif,.zip" style="margin-top: 20px" :beforeUpload="beforeUpload"
+              :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
               <p class="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
@@ -52,8 +43,7 @@
           <div class="file-requirements">
             <h4>{{ uploadType === 'dual' ? '双极化数据' : '全极化数据' }}所需文件：</h4>
             <ul>
-              <li v-for="file in requiredFiles" :key="file" 
-                  :class="{ 'missing': isFileMissing(file) }">
+              <li v-for="file in requiredFiles" :key="file" :class="{ 'missing': isFileMissing(file) }">
                 {{ file }}
                 <span v-if="isFileMissing(file)" class="missing-indicator">❌ 缺失</span>
                 <span v-else class="present-indicator">✅ 已上传</span>
@@ -76,29 +66,19 @@
         </el-form-item>
         <!-- 添加观测日期字段 -->
         <el-form-item label="观测日期：" required>
-          <el-date-picker 
-            v-model="observationDate" 
-            type="date" 
-            placeholder="选择日期" 
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 100%"
-          ></el-date-picker>
+          <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
         </el-form-item>
 
         <!-- 模型名称字段 -->
         <el-form-item label="模型名称：" required>
           <el-select v-model="modelName" placeholder="请选择模型" style="width: 100%" disabled>
-            <el-option 
-              v-for="model in availableModels" 
-              :key="model.value" 
-              :label="model.label" 
-              :value="model.value"
-            ></el-option>
+            <el-option v-for="model in availableModels" :key="model.value" :label="model.label"
+              :value="model.value"></el-option>
           </el-select>
         </el-form-item>
       </el-form>
-      
+
       <!-- 按钮组 -->
       <div class="button-group">
         <el-button @click="handleCancel" class="cancel-button">取消</el-button>
@@ -208,7 +188,7 @@ const dualPolarizationFiles = [
 const fullPolarizationFiles = [
   'HV.tif', 'VV.tif',
   'Pauli_b.tif',
-  'λ1.tif', 'Span.tif',
+  'l1.tif', 'Span.tif',
   'Alpha.tif', 'Entropy.tif', '1mH1mA.tif',
   'VZ_dbl.tif', 'VZ_vol.tif',
   'Free_vol.tif',
@@ -244,11 +224,11 @@ const requiredFiles = computed(() => {
 const hasMissingFiles = computed(() => {
   if (files.value.length === 0) return true
   if (files.value.some(file => file.name.toLowerCase().endsWith('.zip'))) return false
-  
-  const uploadedFileNames = files.value.map(file => 
+
+  const uploadedFileNames = files.value.map(file =>
     file.name.toLowerCase().replace('.tif', '')
   )
-  
+
   return requiredFiles.value.some(requiredFile => {
     const requiredName = requiredFile.toLowerCase().replace('.tif', '')
     return !uploadedFileNames.includes(requiredName)
@@ -259,8 +239,8 @@ const hasMissingFiles = computed(() => {
 const isFileMissing = (fileName) => {
   if (files.value.length === 0) return true
   if (files.value.some(file => file.name.toLowerCase().endsWith('.zip'))) return false
-  
-  const uploadedFileNames = files.value.map(file => 
+
+  const uploadedFileNames = files.value.map(file =>
     file.name.toLowerCase().replace('.tif', '')
   )
   const requiredName = fileName.toLowerCase().replace('.tif', '')
@@ -298,19 +278,19 @@ function beforeUpload(file) {
   // 检查文件类型
   const validTypes = ['.tif', '.zip']
   const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
-  
+
   if (!validTypes.includes(fileExt)) {
     message.error(`只能上传 ${validTypes.join(', ')} 格式的文件`)
     return false
   }
-  
+
   // 检查文件大小
   const isLt100M = file.size / 1024 / 1024 < 1000
   if (!isLt100M) {
     message.error('文件大小不能超过 1000MB')
     return false
   }
-  
+
   // 检查zip文件数量
   if (fileExt === '.zip') {
     const existingZip = files.value.find(f => f.name.toLowerCase().endsWith('.zip'))
@@ -318,7 +298,7 @@ function beforeUpload(file) {
       message.error('只能上传一个ZIP文件')
       return false
     }
-    
+
     // 如果有ZIP文件，清空其他文件
     files.value = [file]
   } else {
@@ -328,10 +308,10 @@ function beforeUpload(file) {
       message.error('已上传ZIP文件，不能同时上传TIF文件')
       return false
     }
-    
+
     files.value.push(file)
   }
-  
+
   return false
 }
 
@@ -357,19 +337,19 @@ function handleSubmit() {
     message.error('请填写完整表单信息')
     return
   }
-  
+
   if (files.value.length === 0) {
     message.error('请至少上传一个文件')
     return
   }
-  
+
   // 检查文件完整性（仅对多个TIF文件）
   const hasZip = files.value.some(file => file.name.toLowerCase().endsWith('.zip'))
   if (!hasZip && hasMissingFiles.value) {
     message.error('请上传所有必需的文件')
     return
   }
-  
+
   infoData.value = [
     { title: '数据简介', value: dataDescription.value || '无' },
     { title: '发布人', value: publisher.value },
@@ -377,7 +357,7 @@ function handleSubmit() {
     { title: '数据类型', value: uploadType.value === 'dual' ? '双极化数据' : '全极化数据' },
     { title: '模型名称', value: modelName.value }
   ]
-  
+
   uploadCurrent.value = 1
 }
 
@@ -400,9 +380,9 @@ async function handleConfirm() {
     message.error('没有可上传的文件')
     return
   }
-  
+
   const loadingInstance = ElLoading.service(loadingoptions)
-  
+
   try {
     const formData = new FormData()
     
@@ -410,7 +390,7 @@ async function handleConfirm() {
     files.value.forEach(file => {
       formData.append('files', file) // 注意字段名改为复数形式
     })
-    
+
     // 添加其他表单数据
     formData.append('createUserid', userinfo?.id || '')
     formData.append('userName', publisher.value)
@@ -418,16 +398,45 @@ async function handleConfirm() {
     formData.append('className', className.value)
     formData.append('observationTime', observationDate.value)
     formData.append('modelName', modelName.value)
-    
+
     // 一次性提交所有文件
-    const res = await plantFilesUpload(formData)
-    
-    if (res.response.value.code === 'SUCCESS') {
-      message.success(`成功上传 ${files.value.length} 个文件`)
-      uploadCurrent.value = 2
-    } else {
-      message.error(`上传失败: ${res.msg}`)
-    }
+    plantFilesUpload(formData)
+      .then((res) => {
+        const response = res.response.value
+
+        // 检查是否为Blob类型且可能是JSON错误响应
+        if (response instanceof Blob && response.type === 'application/json') {
+          // 读取Blob内容并解析
+          const reader = new FileReader()
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result)
+              if (!errorData.success) {
+                message.error(`上传失败: ${errorData.msg}`)
+              } else {
+                // 如果success为true，说明是成功响应
+                message.success(`成功上传 ${files.value.length} 个文件`)
+                uploadCurrent.value = 2
+              }
+            } catch (e) {
+              console.error('解析响应失败:', e)
+              message.error('上传过程中发生错误')
+            }
+          }
+          reader.readAsText(response)
+        } else {
+          // 正常成功响应
+          console.log(response)
+          message.success(`成功上传 ${files.value.length} 个文件`)
+          uploadCurrent.value = 2
+        }
+      })
+      .catch((error) => {
+        console.error('上传失败:', error)
+        message.error('上传过程中发生错误')
+      })
+
+
   } catch (error) {
     console.error('上传失败:', error)
     message.error('上传过程中发生错误')
@@ -644,11 +653,12 @@ function hideInfo() {
 }
 
 @media (max-width: 992px) {
+
   .upload-container,
   .info-box {
     width: 90%;
   }
-  
+
   .form-container {
     width: 95%;
   }
