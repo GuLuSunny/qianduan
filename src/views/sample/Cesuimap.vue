@@ -284,6 +284,8 @@ const loadedWater = ref(false);
 // 存储水闸和泵站实体的引用，便于后续删除
 const sluiceEntities = ref([]);
 const pumpEntities = ref([]);
+//存储水闸+泵站所有点位
+const waterPoints = ref([]); 
 
 //是否加载建筑物
 const loadedBuildings = ref(false);
@@ -572,6 +574,22 @@ function toggleWaterFeatures() {
     selectAllPumpDatas();
     initializeWater();
     loadedWater.value = true;
+
+    // 飞行到便于观察效果的坐标
+    const targetPosition = Cesium.Cartesian3.fromDegrees(
+      114.27387879, 
+      34.786476669,
+      6500
+    );
+
+    viewer.camera.flyTo({
+      destination: targetPosition,
+      duration: 3, // 飞行时间
+      easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+      complete: () => {
+        console.log("已飞行到智慧水体目标坐标");
+      }
+    });
   } else {
     // 只清除水闸和泵站模型
     clearSluiceAndPumpModels();
@@ -592,7 +610,7 @@ function selectAllSluicesDatas() {
       if (result.code === 'SUCCESS') {
         sluiceDatas.value = result.body;
         console.log(sluiceDatas);
-
+        const sluicePoints = [];
         // 遍历每个水闸数据并加载GLB模型
         sluiceDatas.value.forEach((sluice) => {
           // 从geog字段中提取经纬度
@@ -603,7 +621,16 @@ function selectAllSluicesDatas() {
             const longitude = parseFloat(match[1]);
             const latitude = parseFloat(match[2]);
             const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
-
+            
+            sluicePoints.push({
+              id: sluice.id,
+              name: sluice.name,
+              text: sluice.irrname, 
+              position: {
+                longitude: longitude,
+                latitude: latitude
+              }
+            });
             // 添加模型实体并保存引用
             const entity = viewer.entities.add({
               position: position,
@@ -621,6 +648,9 @@ function selectAllSluicesDatas() {
             sluiceEntities.value.push(entity);
           }
         });
+        // 将水闸点位合并到全局waterPoints
+        waterPoints.value = [...waterPoints.value, ...sluicePoints];
+        initializeEntites(waterPoints.value);
 
       } else {
         message.error(result.msg);
@@ -643,7 +673,7 @@ function selectAllPumpDatas() {
       if (result.code === 'SUCCESS') {
         pumpDatas.value = result.body;
         console.log(pumpDatas);
-        const points = [];
+        const pumpPoints = [];
         // 遍历每个泵站数据并加载GLB模型
         pumpDatas.value.forEach((pump) => {
           // 从geog字段中提取经纬度
@@ -655,7 +685,7 @@ function selectAllPumpDatas() {
             const latitude = parseFloat(match[2]);
             const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
             
-            points.push({
+            pumpPoints.push({
               id: pump.id,
               name: pump.name,
               text: pump.irrname,
@@ -682,7 +712,9 @@ function selectAllPumpDatas() {
             pumpEntities.value.push(entity);
           }
         });
-        initializeEntites(points);
+        // 将泵站点位合并到全局waterPoints
+        waterPoints.value = [...waterPoints.value, ...pumpPoints];
+        initializeEntites(waterPoints.value);
       } else {
         message.error(result.msg);
       }
@@ -708,24 +740,31 @@ function clearSluiceAndPumpModels() {
 
 async function initializeEntites(points) {
   // 创建带有图片的实体
-  viewer.entities.add({
-    id: '000000001',
-    name: '泵站',
-    position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
-    billboard: {
-      image: marker, // 图片路径
-      width: 40.85,  // 图片宽度（像素）
-      height: 95.8, // 图片高度（像素）
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,// 垂直方向上的对齐方式
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
-      pixelOffset: new Cesium.Cartesian2(0, 16) // 偏移量，单位为像素。这里的例子是向下偏移50像素
-    },
-    monitoItems: {
-      data: {
-        "name": "泵站位置"
-      }
-    },
-  });
+   try {
+    viewer.entities.add({
+      name: '泵站',
+      position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
+      billboard: {
+        image: marker,
+        width: 40.85,
+        height: 95.8,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        pixelOffset: new Cesium.Cartesian2(0, 16)
+      },
+      monitoItems: {
+        data: {
+          "name": "泵站位置"
+        }
+      },
+    });
+  } catch (error) {
+    if (error instanceof Cesium.DeveloperError && error.message.includes('already exists')) {
+      console.debug('忽略重复实体ID报错（功能正常）:', error.message); 
+      return; 
+    }
+    throw error;
+  }
 
   // 获取地图容器和 HTML 元素
   var cesiumContainer = document.getElementById('cesiumContainer');
@@ -805,7 +844,6 @@ async function initializeEntites(points) {
   // 点位信息
   points.forEach(res => {
     const entity = viewer.entities.add({
-      id: res.id,
       name: res.name,
       position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude, 0),
       billboard: {
