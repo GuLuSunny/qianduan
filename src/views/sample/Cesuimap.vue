@@ -579,7 +579,7 @@ function toggleWaterFeatures() {
     const targetPosition = Cesium.Cartesian3.fromDegrees(
       114.27387879, 
       34.786476669,
-      6500
+      15000
     );
 
     viewer.camera.flyTo({
@@ -736,6 +736,18 @@ function clearSluiceAndPumpModels() {
     viewer.entities.remove(entity);
   });
   pumpEntities.value = [];
+
+  //清除广告牌
+  const entities = viewer.entities.values;
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const entity = entities[i];
+    // 通过monitoItems.data判断是否为水闸/泵站相关实体
+    if (entity.monitoItems && entity.monitoItems.data && 
+        waterPoints.value.some(point => point.id === entity.monitoItems.data.id)) {
+      viewer.entities.remove(entity);
+    }
+  }
+  waterPoints.value = [];
 }
 
 async function initializeEntites(points) {
