@@ -1,104 +1,127 @@
 <template>
   <div class="container">
-    <div class="controls">
-      <el-form :model="searchInfo">
-        <div class="row">
-          <el-form-item label="所有者">
-            <el-input
-              v-model="searchInfo.owner"
-              placeholder="请输入所有者"
-              @input="handleInputChange"
-              clearable
-            />
-          </el-form-item>
-          <el-form-item label="文件名称">
-            <el-input
-              v-model="searchInfo.filename"
-              placeholder="请输入文件名称"
-              @input="handleInputChange"
-              clearable
-            />
-          </el-form-item>
-          <el-form-item label="产品分类">
-            <el-select
-              v-model="searchInfo.selectedClass"
-              placeholder="请选择"
-              @change="handleInputChange"
-              clearable
-            >
-              <el-option
-                v-for="classItem in classOptions"
-                :key="classItem.value"
-                :value="classItem.value"
-                :label="classItem.label"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="文件类型">
-            <el-select
-              v-model="searchInfo.selectedType"
-              placeholder="请选择"
-              @change="handleInputChange"
-              clearable
-            >
-              <el-option
-                v-for="fileType in fileTypeOptions"
-                :key="fileType.value"
-                :value="fileType.value"
-                :label="fileType.label"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </div>
-        <div class="row">
-          <el-form-item label="观测日期">
-            <el-date-picker
-              v-model="searchInfo.observationDate"
-              type="date"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-              @change="handleInputChange"
-              placeholder="选择观测日期"
-              :disabled-date="disabledDate"
-              clearable
-            />
-          </el-form-item>
-          <el-form-item label="开始日期">
-            <el-date-picker
-              v-model="searchInfo.startDate"
-              type="date"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-              @change="handleInputChange"
-              placeholder="选择开始日期"
-            />
-          </el-form-item>
-          <el-form-item label="结束日期">
-            <el-date-picker
-              v-model="searchInfo.endDate"
-              type="date"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-              @change="handleInputChange"
-              placeholder="选择结束日期"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button @click="searchProducts" class="searchButton">
-              <el-icon> <Search /> </el-icon>搜索
-            </el-button>
-            <el-button
-              @click="deleteSelectedRows"
-              :disabled="!selectedRows.length"
-              >批量删除</el-button
-            >
-            <el-button @click="showExportDialog">导出数据</el-button>
-          </el-form-item>
-        </div>
-      </el-form>
+    <!-- 搜索区域整合到一个卡片中 -->
+    <div class="search-card" :class="{ 'search-card-hidden': isSearchCardHidden }">
+      <div class="search-header">
+        <span class="search-title">产品搜索</span>
+        <el-button 
+          link 
+          class="toggle-button"
+          @click="toggleSearchCard"
+        >
+          <el-icon>
+            <ArrowUp v-if="!isSearchCardHidden" />
+            <ArrowDown v-else />
+          </el-icon>
+          {{ isSearchCardHidden ? '展开搜索' : '收起搜索' }}
+        </el-button>
+      </div>
+      
+      <div class="search-content" v-show="!isSearchCardHidden">
+        <el-form :model="searchInfo">
+          <!-- 第一行：基本搜索条件 -->
+          <div class="row">
+            <el-form-item label="所有者">
+              <el-input
+                v-model="searchInfo.owner"
+                placeholder="请输入所有者"
+                @input="handleInputChange"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="文件名称">
+              <el-input
+                v-model="searchInfo.filename"
+                placeholder="请输入文件名称"
+                @input="handleInputChange"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="产品分类">
+              <el-select
+                v-model="searchInfo.selectedClass"
+                placeholder="请选择"
+                @change="handleInputChange"
+                clearable
+              >
+                <el-option
+                  v-for="classItem in classOptions"
+                  :key="classItem.value"
+                  :value="classItem.value"
+                  :label="classItem.label"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="文件类型">
+              <el-select
+                v-model="searchInfo.selectedType"
+                placeholder="请选择"
+                @change="handleInputChange"
+                clearable
+              >
+                <el-option
+                  v-for="fileType in fileTypeOptions"
+                  :key="fileType.value"
+                  :value="fileType.value"
+                  :label="fileType.label"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </div>
+
+          <!-- 第二行：日期搜索条件和操作按钮 -->
+          <div class="row">
+            <el-form-item label="观测日期">
+              <el-date-picker
+                v-model="searchInfo.observationDate"
+                type="date"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="handleInputChange"
+                placeholder="选择观测日期"
+                :disabled-date="disabledDate"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="开始日期">
+              <el-date-picker
+                v-model="searchInfo.startDate"
+                type="date"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="handleInputChange"
+                placeholder="选择开始日期"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="结束日期">
+              <el-date-picker
+                v-model="searchInfo.endDate"
+                type="date"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                @change="handleInputChange"
+                placeholder="选择结束日期"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item class="button-group">
+              <el-button @click="searchProducts" class="searchButton" type="primary">
+                <el-icon> <Search /> </el-icon>搜索
+              </el-button>
+              <el-button
+                @click="deleteSelectedRows"
+                :disabled="!selectedRows.length"
+                >批量删除</el-button
+              >
+              <el-button @click="showExportDialog">导出数据</el-button>
+            </el-form-item>
+          </div>
+        </el-form>
+      </div>
     </div>
 
-    <!-- 表格区域增加顶部间距，避免遮盖表单 -->
+    <!-- 表格区域 -->
     <div class="table-container">
       <el-table
         :data="tableData"
@@ -166,8 +189,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Search, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import {
   getProductPageData,
@@ -176,6 +199,10 @@ import {
   getModelClassName,
   getTimesByType
 } from '@/api/getData'
+
+// 搜索卡片状态
+const isSearchCardHidden = ref(false)
+const lastScrollTop = ref(0)
 
 // 修复：正确的选项格式
 const classOptions = computed(() => [
@@ -210,7 +237,8 @@ const searchInfo = ref({
 })
 
 const classNames = ref([])
-const showDateArr = ref([])
+// 修复：正确初始化可用日期数组
+const availableDates = ref([])
 
 const loading = ref(false)
 const tableData = ref([])
@@ -221,32 +249,60 @@ const selectedRows = ref([])
 const exportDialogVisible = ref(false)
 const exportDate = ref('')
 
+// 切换搜索卡片显示状态
+const toggleSearchCard = () => {
+  isSearchCardHidden.value = !isSearchCardHidden.value
+}
+
+// 滚动隐藏功能
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  
+  if (scrollTop > lastScrollTop.value && scrollTop > 100) {
+    // 向下滚动且超过100px时隐藏搜索卡片
+    isSearchCardHidden.value = true
+  } else if (scrollTop < lastScrollTop.value) {
+    // 向上滚动时显示搜索卡片
+    isSearchCardHidden.value = false
+  }
+  
+  lastScrollTop.value = scrollTop <= 0 ? 0 : scrollTop
+}
+
 onMounted(() => {
   fetchClassNames()
   fetchAvailableDates()
+  // 添加滚动监听
+  window.addEventListener('scroll', handleScroll)
 })
 
-// 可用日期
+onUnmounted(() => {
+  // 移除滚动监听
+  window.removeEventListener('scroll', handleScroll)
+})
+
+// 修复：正确的日期禁用逻辑
 function disabledDate(time) {
-  if (!showDateArr.value || showDateArr.value.length === 0) {
+  if (!availableDates.value || availableDates.value.length === 0) {
     return false
   }
   const dateString = `${time.getFullYear()}-${(time.getMonth() + 1)
     .toString()
     .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
-  return !showDateArr.value.includes(dateString)
+  return !availableDates.value.includes(dateString)
 }
 
-// 请求日期
+// 修复：正确处理接口返回的数据结构
 function fetchAvailableDates() {
   getTimesByType({
     type: 'modelproducts',
     searchTimeType: 'day'
   })
     .then((res) => {
-      const result = res.response?.value || res
+      // 修复：正确处理多层嵌套的数据结构
+      const result = res?.response?.value || res?.value || res
       if (result.code === 'SUCCESS') {
-        showDateArr.value = result.body?.date || []
+        availableDates.value = result.body?.date || []
       } else {
         ElMessage({
           message: result.msg || '获取日期数据失败',
@@ -267,7 +323,7 @@ function handleInputChange() {
 function fetchClassNames() {
   getModelClassName()
     .then((res) => {
-      const response = res.response?.value || res
+      const response = res?.response?.value || res?.value || res
       if (response.code === 'SUCCESS') {
         classNames.value = response.body || []
         searchProducts()
@@ -303,7 +359,7 @@ function getProductDataPage() {
   loading.value = true
   getProductPageData(params)
     .then((res) => {
-      const result = res.response?.value || res
+      const result = res?.response?.value || res?.value || res
       if (result.code === 'SUCCESS') {
         tableData.value = result.body?.records || []
         currentPage.value = result.body?.current || 1
@@ -348,7 +404,7 @@ function downloadFile(row) {
       loadingInstance.close()
       
       // 创建 Blob 对象
-      const blob = new Blob([res.response?.value || res], { 
+      const blob = new Blob([res], { 
         type: getMimeType(row.filename) 
       })
       
@@ -403,7 +459,7 @@ function confirmDeleteRow(row) {
     .then(() => {
       deleteProductsByConditions({ ids: [row.id] })
         .then((res) => {
-          const result = res.response?.value || res
+          const result = res?.response?.value || res?.value || res
           if (result.code === 'SUCCESS') {
             getProductDataPage()
             ElMessage.success('删除成功')
@@ -439,7 +495,7 @@ function deleteSelectedRows() {
     .then(() => {
       deleteProductsByConditions({ ids: selectedRows.value })
         .then((res) => {
-          const result = res.response?.value || res
+          const result = res?.response?.value || res?.value || res
           if (result.code === 'SUCCESS') {
             getProductDataPage()
             selectedRows.value = []
@@ -522,23 +578,44 @@ function exportData() {
   min-height: 100vh;
 }
 
-.controls {
+/* 搜索卡片样式 */
+.search-card {
   width: 100%;
-  margin-bottom: 20px;
   background: white;
-  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-/* 表格容器 - 增加顶部间距避免遮盖表单 */
-.table-container {
-  width: 100%;
-  margin-top: 20px;
-  background: white;
+.search-card-hidden {
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.search-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.toggle-button {
+  color: #409eff;
+  font-size: 14px;
+}
+
+.search-content {
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .row {
@@ -549,15 +626,22 @@ function exportData() {
   margin-bottom: 16px;
 }
 
+.row:last-child {
+  margin-bottom: 0;
+}
+
 .el-form-item {
   margin-bottom: 0;
   min-width: 180px;
   flex: 1;
 }
 
-.el-form-item:last-child {
+/* 修复：按钮组样式调整 */
+.button-group {
   flex: none;
   min-width: auto;
+  display: flex;
+  gap: 8px;
 }
 
 .searchButton {
@@ -568,6 +652,15 @@ function exportData() {
 
 .searchButton:hover {
   background-color: #66b1ff;
+}
+
+/* 表格容器 */
+.table-container {
+  width: 100%;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .demo-pagination-block {

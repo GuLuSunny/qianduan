@@ -535,9 +535,10 @@ function handleSubmit() {
 
 // 确认文件函数
 const confirmFiles = () => {
-  files.value = []
-
+  // 只在双极化模式下重新组装文件列表
   if (uploadType.value === 'dual') {
+    files.value = []
+
     // 双极化数据：添加4个文件
     const dualFiles = [
       { file: preVVFileObject.value, type: 'preVV' },
@@ -551,12 +552,9 @@ const confirmFiles = () => {
         files.value.push(item.file)
       }
     })
-  } else {
-    // 全极化数据：保持原有逻辑
-    // 这里files已经在handleCustomRequest中添加了
   }
+  // 全极化数据：保持原有文件列表，不进行任何操作
 }
-
 function handleCancel() {
   publisher.value = userinfo?.username || ''
   dataDescription.value = ''
@@ -585,24 +583,50 @@ async function handleConfirm() {
     // 全极化数据 - 使用原来的单文件上传接口
     let allSuccess = true
 
-    for (const file of files.value) {
-      const formData = new FormData()
-      formData.append('tiffile', file)
-      formData.append('createUserId', userinfo?.id || '')
-      formData.append('userName', publisher.value)
-      formData.append('dataIntroduction', dataDescription.value)
-      formData.append('className', className.value)
-      formData.append('observationTime', observationDate.value)
-
-      const res = await modelFilesUpload(formData)
-
-      if (res.response.value.code === 'SUCCESS') {
-        message.success(`${file.name} 上传成功`)
-      } else {
-        message.error(`${file.name} 上传失败: ${res.msg}`)
+    const formData = new FormData()
+    formData.append('tiffile', files.value[0])
+    formData.append('createUserId', userinfo?.id || '')
+    formData.append('userName', publisher.value)
+    formData.append('dataIntroduction', dataDescription.value)
+    formData.append('className', className.value)
+    formData.append('observationTime', observationDate.value)
+    formData.append('modelName', modelName.value)
+    modelFilesUpload(formData)
+      .then((res) => {
+        const response = res.response.value
+        console.log(response)
+        // 检查是否为Blob类型且可能是JSON错误响应
+        if (response instanceof Blob && response.type === 'application/json') {
+          // 读取Blob内容并解析
+          const reader = new FileReader()
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result)
+              if (!errorData.success) {
+                message.error(`上传失败: ${errorData.msg}`)
+              } else {
+                // 如果success为true，说明是成功响应
+                message.success(`成功上传 ${files.value.length} 个文件`)
+                uploadCurrent.value = 2
+              }
+            } catch (e) {
+              console.error('解析响应失败:', e)
+              message.error('上传过程中发生错误')
+            }
+          }
+          reader.readAsText(response)
+        } else {
+          // 正常成功响应
+          console.log(response)
+          message.success(`成功上传 ${files.value.length} 个文件`)
+          uploadCurrent.value = 2
+        }
+      })
+      .catch((error) => {
+        console.error('上传失败:', error)
+        message.error('上传过程中发生错误')
         allSuccess = false
-      }
-    }
+      })
 
     if (allSuccess) {
       uploadCurrent.value = 2
@@ -639,46 +663,46 @@ async function handleConfirm() {
     formData.append('dataIntroduction', dataDescription.value)
     formData.append('className', className.value)
     formData.append('observationTime', observationDate.value)
-
+    formData.append('modelName', modelName.value)
     // 使用多文件上传接口
-   landFilesUploadMul(formData)
-  .then((res) => {
-    const response = res.response.value
-    
-    // 检查是否为Blob类型且可能是JSON错误响应
-    if (response instanceof Blob && response.type === 'application/json') {
-      // 读取Blob内容并解析
-      const reader = new FileReader()
-      reader.onload = () => {
-        try {
-          const errorData = JSON.parse(reader.result)
-          if (!errorData.success) {
-            message.error(`上传失败: ${errorData.msg}`)
-          } else {
-            // 如果success为true，说明是成功响应
-            message.success(`成功上传 ${files.value.length} 个文件`)
-            uploadCurrent.value = 2
-          }
-        } catch (e) {
-          console.error('解析响应失败:', e)
-          message.error('上传过程中发生错误')
-        }
-      }
-      reader.readAsText(response)
-    } else {
-      // 正常成功响应
-      console.log(response)
-      message.success(`成功上传 ${files.value.length} 个文件`)
-      uploadCurrent.value = 2
-    }
-  })
-  .catch((error) => {
-    console.error('上传失败:', error)
-    message.error('上传过程中发生错误')
-  })
+    landFilesUploadMul(formData)
+      .then((res) => {
+        const response = res.response.value
 
-    loadingInstance.close()
+        // 检查是否为Blob类型且可能是JSON错误响应
+        if (response instanceof Blob && response.type === 'application/json') {
+          // 读取Blob内容并解析
+          const reader = new FileReader()
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result)
+              if (!errorData.success) {
+                message.error(`上传失败: ${errorData.msg}`)
+              } else {
+                // 如果success为true，说明是成功响应
+                message.success(`成功上传 ${files.value.length} 个文件`)
+                uploadCurrent.value = 2
+              }
+            } catch (e) {
+              console.error('解析响应失败:', e)
+              message.error('上传过程中发生错误')
+            }
+          }
+          reader.readAsText(response)
+        } else {
+          // 正常成功响应
+          console.log(response)
+          message.success(`成功上传 ${files.value.length} 个文件`)
+          uploadCurrent.value = 2
+        }
+      })
+      .catch((error) => {
+        console.error('上传失败:', error)
+        message.error('上传过程中发生错误')
+      })
+
   }
+  loadingInstance.close()
 }
 
 function handleContinue() {

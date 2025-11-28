@@ -60,16 +60,16 @@
 
     <!-- 分页控件 -->
     <div v-if="currentImageIndex === null" class="pagination">
-      <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems" :page-sizes="[8, 16, 32]"
+      <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems" :page-sizes="[10, 20, 30]"
         layout="total, sizes, prev, pager, next, jumper" @current-change="goToPage" @size-change="changePageSize"
         class="pagination" />
     </div>
 
-    <!-- 详情视图 -->
+   <!-- 详情视图 - 优化布局 -->
     <div v-if="currentImageIndex !== null" class="detail-view">
       <h2 class="title">{{ productDetail.filename }}</h2>
       <div class="detail-content">
-        <div class="image-container">
+        <div class="image-section">
           <!-- 修复：详情页也使用缓存 -->
           <el-image v-if="isImage(productDetail.type) && imageUrlCache[productDetail.id]"
             :src="imageUrlCache[productDetail.id]" 
@@ -87,33 +87,42 @@
         </div>
         <div class="info-section">
           <h3>基本信息</h3>
-          <p class="info-text">
-            文件名称: {{ productDetail.filename }}
-          </p>
-          <p class="info-text">
-            所有者: {{ productDetail.owner }}
-          </p>
-          <p class="info-text">
-            产品分类: {{ productDetail.className }}
-          </p>
-          <p class="info-text">
-            文件类型: {{ productDetail.type }}
-          </p>
-          <p class="info-text">
-            观测时间: {{ productDetail.observationTime }}
-          </p>
-          <p class="info-text">
-            开始时间: {{ productDetail.startTime }}
-          </p>
-          <p class="info-text">
-            结束时间: {{ productDetail.endTime }}
-          </p>
-        </div>
-        <div class="actions">
-          <el-button @click="downloadFile(productDetail)" type="primary" size="large">下载文件</el-button>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">文件名称:</span>
+              <span class="info-value">{{ productDetail.filename }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">所有者:</span>
+              <span class="info-value">{{ productDetail.owner }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">产品分类:</span>
+              <span class="info-value">{{ productDetail.className }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">文件类型:</span>
+              <span class="info-value">{{ productDetail.type }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">观测时间:</span>
+              <span class="info-value">{{ productDetail.observationTime }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">开始时间:</span>
+              <span class="info-value">{{ productDetail.startTime }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">结束时间:</span>
+              <span class="info-value">{{ productDetail.endTime }}</span>
+            </div>
+          </div>
+          <div class="actions">
+            <el-button @click="downloadFile(productDetail)" type="primary" size="large">下载文件</el-button>
+            <el-button @click="goBack" class="return-button">返回</el-button>
+          </div>
         </div>
       </div>
-      <el-button @click="goBack" class="return-button">返回</el-button>
     </div>
   </div>
 </template>
@@ -143,7 +152,7 @@ const classOptions = computed(() => [
 
 // 分页数据
 const currentPage = ref(1)
-const itemsPerPage = ref(8)
+const itemsPerPage = ref(10)
 const totalItems = ref(0)
 
 // 产品列表数据
@@ -471,10 +480,11 @@ onMounted(() => {
 
 .image-placeholder-large {
   text-align: center;
-  padding: 80px 40px;
+  padding: 60px 40px;
   color: #c0c4cc;
 }
 
+/* 详情视图样式优化 */
 .detail-view {
   display: flex;
   flex-direction: column;
@@ -488,58 +498,87 @@ onMounted(() => {
 
 .detail-content {
   display: flex;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  gap: 40px;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.image-container {
+.image-section {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  margin-bottom: 10px;
 }
 
 .product-image {
-  width: 450px;
+  width: 400px;
   height: auto;
+  max-height: 400px;
   border-radius: 8px;
-}
-
-.info-text {
-  font-size: 16px;
-  margin: 12px 0;
-  color: #606266;
+  object-fit: contain;
 }
 
 .info-section {
-  flex: 1;
-  text-align: left;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
 }
 
 .info-section h3 {
   color: #303133;
   margin-bottom: 20px;
   font-size: 20px;
+  text-align: center;
 }
 
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #606266;
+  text-align: left;
+}
+
+.info-value {
+  color: #303133;
+  text-align: right;
+}
+
+/* 修改 actions 样式 */
 .actions {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  width: 100%;
 }
 
 .title {
-  margin: 10px 0 30px 0;
-  font-size: 28px;
+  margin: 0 0 20px 0;
+  font-size: 24px;
   text-align: center;
   width: 100%;
   color: #303133;
 }
 
+
 .return-button {
-  margin-top: 20px;
+  /* 移除原来的 margin-top 和 padding 设置 */
   padding: 12px 24px;
 }
 
@@ -556,5 +595,44 @@ onMounted(() => {
 
 .searchButton:hover {
   background-color: #66b1ff;
+}
+
+/* 响应式设计 */
+@media (min-width: 768px) {
+  .detail-content {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 40px;
+  }
+  
+  .info-section {
+    text-align: left;
+  }
+  
+  .info-section h3 {
+    text-align: left;
+  }
+  
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-image {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .info-value {
+    text-align: left;
+  }
 }
 </style>

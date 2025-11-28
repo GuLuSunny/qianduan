@@ -22,7 +22,7 @@ import { ElMessage } from 'element-plus'
 const nickname = ref('刘思远')
 const routers = useRouter()
 function goToLink () {
-  routers.push('/bigscreenHome')
+  routers.push('/Cesuimap')
 }
 
 onMounted(() => {

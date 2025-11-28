@@ -100,7 +100,7 @@ function loginUser () {
         // 更新全局状态中的用户权限
         updateUserPermissions(result.body.principal);
         fullscreenLoading.value = false
-        routers.push('/Cesuimap')
+        routers.push('/mainMenu')
         // this.$router.push("about");
       } else {
         fullscreenLoading.value = false

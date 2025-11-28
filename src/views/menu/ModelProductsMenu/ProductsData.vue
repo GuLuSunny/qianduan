@@ -6,8 +6,9 @@
       v-model="activeTab"
       @tab-change="handleTabChange"
     >
-      <el-tab-pane label="产品展示" name="1" />
-      <el-tab-pane label="产品查询" name="2" />
+      <el-tab-pane label="产品查询" name="1" />
+      <el-tab-pane label="产品展示" name="2" />
+      
     </el-tabs>
     
     <!-- 下方动态切换的组件区域 -->
@@ -20,24 +21,27 @@
 <script setup>
 import { ref, shallowRef, nextTick } from 'vue'
 // 引入组件
-import ProductDisplay from './ProductDisplay.vue'
 import ProductSearch from './ProductSearch.vue'
+import ProductDisplay from './ProductDisplay.vue'
+
 
 // 当前选中的 Tab - 使用字符串类型
 const activeTab = ref('1')
 
 // 使用 shallowRef 避免不必要的响应式更新
-const currentComponent = shallowRef(ProductDisplay)
+const currentComponent = shallowRef(ProductSearch)
 
 // Tab 切换处理逻辑 - 添加防抖和 nextTick
 async function handleTabChange(key) {
+  console.log(key)
   await nextTick() // 等待 DOM 更新
   
   if (key === '1') {
-    currentComponent.value = ProductDisplay
-  } else if (key === '2') {
     currentComponent.value = ProductSearch
-  }
+  } 
+  else if (key === '2') {
+    currentComponent.value =ProductDisplay
+  } 
 }
 </script>
 
