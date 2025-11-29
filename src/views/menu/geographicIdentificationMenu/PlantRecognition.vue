@@ -29,35 +29,23 @@
 
             <!-- 添加观测日期字段 -->
             <el-form-item label="观测日期：" required>
-              <el-date-picker 
-                v-model="observationDate" 
-                type="date" 
-                placeholder="选择日期" 
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              ></el-date-picker>
+              <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
             </el-form-item>
 
             <!-- 预测参数选项 -->
             <el-form-item label="预测参数">
               <el-checkbox-group v-model="predictOptions">
-                <el-checkbox 
-                  v-for="option in allPredictOptions" 
-                  :key="option.value"
-                  :label="option.value"
-                  :disabled="!isOptionAvailable(option.value, 'predict')"
-                >
+                <el-checkbox v-for="option in allPredictOptions" :key="option.value" :label="option.value"
+                  :disabled="!isOptionAvailable(option.value, 'predict')">
                   {{ option.label }}
                 </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
-            
+
             <!-- 添加颜色选择器 -->
-            <el-form-item 
-              label="类别颜色" 
-              v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')"
-            >
+            <el-form-item label="类别颜色"
+              v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')">
               <div class="color-picker-container">
                 <div v-for="(color, classId) in colorMap" :key="classId" class="color-picker-item">
                   <span class="class-label">{{ classNames[classId] }}:</span>
@@ -75,29 +63,40 @@
             <!-- 结果获取参数选项 -->
             <el-divider />
 
+            <!-- 修改为多选按钮组 -->
             <el-form-item label="结果获取参数">
-              <el-checkbox-group v-model="resultOptions">
-                <el-checkbox 
-                  v-for="option in allResultOptions" 
-                  :key="option.value"
-                  :label="option.value"
-                  :disabled="!isOptionAvailable(option.value, 'result')"
-                >
-                  {{ option.label }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </el-form-item>
+              <div class="result-options-group">
+                <!-- 所有选项放在同一行 -->
+                <div class="options-row">
+                  <!-- 常驻功能：预览图和TIF格式 -->
+                  <el-checkbox v-model="permanentOptions.preview_png"
+                    :disabled="!isOptionAvailable('preview_png', 'result')" label="preview_png">
+                    预览图
+                  </el-checkbox>
+                  <el-checkbox v-model="permanentOptions.tif" label="tif" disabled>
+                    TIF格式（默认）
+                  </el-checkbox>
 
-            <!-- 结果类型选择 -->
-            <el-form-item label="结果类型" v-if="resultOptions.length > 0">
-              <el-radio-group v-model="resultType">
-                <el-radio label="png">PNG格式</el-radio>
-                <el-radio label="tif">TIF格式</el-radio>
+                  <!-- 可选功能 -->
+                  <el-checkbox v-for="option in optionalResultOptions" :key="option.value" :label="option.value"
+                    :disabled="!isOptionAvailable(option.value, 'result')" v-model="optionalOptions[option.value]">
+                    {{ option.label }}
+                  </el-checkbox>
+                </div>
+              </div>
+            </el-form-item>
+            <!-- 添加png类型选择 -->
+            <el-form-item label="预览图类型"
+              v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')">
+              <el-radio-group v-model="pngType">
+                <el-radio label="simple">简单预览</el-radio>
+                <el-radio label="spatial">空间分布</el-radio>
+                <el-radio label="histogram">直方图</el-radio>
               </el-radio-group>
             </el-form-item>
-
             <div class="button-group">
-              <el-button @click="fetchResultFiles" type="success" :loading="loadingResults" :disabled="!selectedModel || !observationDate">
+              <el-button @click="handleGetResults" type="success" :loading="loadingResults"
+                :disabled="!selectedModel || !observationDate">
                 获取预测结果
               </el-button>
             </div>
@@ -107,12 +106,8 @@
 
             <el-form-item label="训练模型下载">
               <el-select v-model="selectedTrainModel" placeholder="请选择训练模型" style="width: 100%">
-                <el-option 
-                  v-for="model in trainModels" 
-                  :key="model.id" 
-                  :label="model.modelInfo || model.modelName"
-                  :value="model.modelName"
-                ></el-option>
+                <el-option v-for="model in trainModels" :key="model.id" :label="model.modelInfo || model.modelName"
+                  :value="model.modelName"></el-option>
               </el-select>
             </el-form-item>
 
@@ -127,22 +122,14 @@
             </el-form-item>
 
             <div class="button-group">
-              <el-button 
-                @click="handleDownloadModel" 
-                type="warning" 
-                :loading="downloadLoading" 
-                :disabled="!selectedTrainModel"
-              >
+              <el-button @click="handleDownloadModel" type="warning" :loading="downloadLoading"
+                :disabled="!selectedTrainModel">
                 {{ selectedTrainModel === '1DResnet' ? `下载步骤${downloadStep + 1}文件` : '下载模型文件' }}
               </el-button>
-              
+
               <!-- 1DResnet模型专用的一键下载按钮 -->
-              <el-button 
-                v-if="selectedTrainModel === '1DResnet'"
-                @click="handleBatchDownload" 
-                type="warning" 
-                :loading="batchDownloadLoading"
-              >
+              <el-button v-if="selectedTrainModel === '1DResnet'" @click="handleBatchDownload" type="warning"
+                :loading="batchDownloadLoading">
                 一键下载全部文件
               </el-button>
             </div>
@@ -172,22 +159,30 @@
           </el-icon>
           <span>暂无预览图</span>
         </div>
-        
+
         <!-- 文件下载区域 -->
         <div class="download-section" v-if="hasDownloadableFiles">
           <h3>结果文件下载</h3>
           <div class="download-buttons">
-            <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
-                      @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
+            <!-- 预览图下载 -->
+            <el-button v-if="permanentOptions.preview_png && isOptionAvailable('preview_png', 'result')"
+              @click="downloadPreviewImage" type="primary" plain icon="Download">
+              下载预览图
+            </el-button>
+
+            <!-- TIF文件下载 -->
+            <el-button v-if="permanentOptions.tif" @click="downloadTifFile" type="success" plain icon="Download">
+              下载TIF文件
+            </el-button>
+
+            <!-- 可选文件下载 -->
+            <el-button v-if="optionalOptions.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')"
+              @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button>
-            <el-button v-if="downloadFiles.evaluate && isOptionAvailable('evaluate', 'result')" 
-                      @click="downloadFile('evaluate')" type="primary" plain icon="Download">
+            <el-button v-if="optionalOptions.evaluate && isOptionAvailable('evaluate', 'result')"
+              @click="downloadFile('evaluate')" type="primary" plain icon="Download">
               评估指标
-            </el-button>
-            <el-button v-if="downloadFiles.result_file" 
-                      @click="downloadResultFile()" type="success" plain icon="Download">
-              下载结果文件 ({{ resultType.toUpperCase() }})
             </el-button>
           </div>
         </div>
@@ -235,8 +230,8 @@ import {
   ElRadio,
   ElText
 } from 'element-plus'
-import { 
-  getModelByClassName, 
+import {
+  getModelByClassName,
   plantCoverPredict,
   getPlantResultByType,
   DownloadPlantTrainModelFiles
@@ -269,14 +264,23 @@ const allPredictOptions = ref([
   { value: 'heatmap', label: '热力图' },
 ])
 
-const allResultOptions = ref([
-  { value: 'preview_png', label: '预览图' },
+const optionalResultOptions = ref([
   { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' }
 ])
 
+// 修改结果选项为多选结构
+const permanentOptions = ref({
+  preview_png: true,
+  tif: true
+})
+
+const optionalOptions = ref({
+  confusion_matrix: false,
+  evaluate: false
+})
+
 const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
-const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate'])
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -315,7 +319,7 @@ const predefineColors = ref([
 const classNames = {
   "-1": "无效/边界区域",
   0: '植被类型1',
-  1: '植被类型2', 
+  1: '植被类型2',
   2: '植被类型3',
   3: '植被类型4'
 }
@@ -324,27 +328,27 @@ const classNames = {
 const form = computed(() => ({
   selectedModel: selectedModel.value,
   predictOptions: predictOptions.value,
-  resultOptions: resultOptions.value,
   observationDate: observationDate.value,
   resultType: resultType.value,
   pngType: pngType.value
 }))
 
 const hasDownloadableFiles = computed(() => {
-  return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate || downloadFiles.value.result_file
+  return permanentOptions.value.preview_png || permanentOptions.value.tif ||
+    optionalOptions.value.confusion_matrix || optionalOptions.value.evaluate
 })
 
 // 检查选项是否可用
 const isOptionAvailable = (optionValue, type) => {
   if (!selectedModel.value || currentModelFunctions.value.length === 0) return false
-  
+
   const functionMap = {
     'preview_png': 'preview_png',
     'confusion_matrix': 'confusion_matrix',
     'evaluate': 'class_stats',
     'heatmap': 'heatmaps_summary'
   }
-  
+
   const backendFunction = functionMap[optionValue]
   return currentModelFunctions.value.includes(backendFunction)
 }
@@ -355,21 +359,17 @@ watch(selectedModel, (newVal) => {
     currentModelFunctions.value = []
     return
   }
-  
+
   const currentModel = models.value.find(m => m.modelName === newVal)
   if (!currentModel || !currentModel.functions) {
     currentModelFunctions.value = []
     return
   }
-  
+
   currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
-  
-  predictOptions.value = predictOptions.value.filter(option => 
+
+  predictOptions.value = predictOptions.value.filter(option =>
     isOptionAvailable(option, 'predict')
-  )
-  
-  resultOptions.value = resultOptions.value.filter(option => 
-    isOptionAvailable(option, 'result')
   )
 })
 
@@ -382,6 +382,7 @@ onMounted(() => {
 
 // 方法
 // 获取模型数据
+// 获取模型数据
 const fetchModels = () => {
   getModelByClassName({ className: "plant" })
     .then((res) => {
@@ -389,22 +390,25 @@ const fetchModels = () => {
 
       if (response?.code === 'SUCCESS') {
         const allModels = response?.body || []
-        
+
         // 过滤预测模型
         models.value = allModels.filter(model => {
           if (!model.functions) return false
           const functionList = model.functions.split(',').map(func => func.trim())
           // 排除纯训练模型，只保留包含预测功能的模型
-          return !functionList.includes('train') && 
-                 functionList.some(func => 
-                   ['preview_png', 'confusion_matrix', 'class_stats', 'heatmaps_summary'].includes(func)
-                 )
+          return !functionList.includes('train') &&
+            functionList.some(func =>
+              ['preview_png', 'confusion_matrix', 'class_stats', 'heatmaps_summary'].includes(func)
+            )
         })
 
-        // 过滤训练模型
+        // 过滤训练模型 - 包含原有训练模型和指定的预测模型
         trainModels.value = allModels.filter(model => {
           if (!model.functions) return false
-          return model.functions === 'train'
+          // 包括训练模型和指定的预测模型
+          return model.functions === 'train' ||
+            model.modelName === 'fanyanV2' ||
+            model.modelName === 'fanyanRF'
         })
 
         if (models.value.length > 0) {
@@ -430,7 +434,6 @@ const fetchModels = () => {
       message.error('请求失败: ' + error.message)
     })
 }
-
 // 处理预测请求
 const handlePredict = () => {
   if (!selectedModel.value) {
@@ -459,7 +462,8 @@ const handlePredict = () => {
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
-    observationTime: observationDate.value
+    observationTime: observationDate.value,
+    pngType: pngType.value
   }
 
   if (predictOptions.value.includes('preview_png') && colorMap.value) {
@@ -476,6 +480,10 @@ const handlePredict = () => {
       if (response?.code === 'SUCCESS') {
         message.success('预测请求已提交')
         predictCurrent.value = 1
+        // 跳转后自动获取预览图
+        if (permanentOptions.value.preview_png && isOptionAvailable('preview_png', 'result')) {
+          fetchPreviewImage()
+        }
       } else {
         const msg = response?.msg || '预测失败'
         error.value = msg
@@ -492,15 +500,69 @@ const handlePredict = () => {
     })
 }
 
-// 获取结果文件 - 直接处理文件流响应
-const fetchResultFiles = () => {
-  if (!selectedModel.value) {
-    message.error('请选择模型')
+// 获取预览图
+const fetchPreviewImage = () => {
+  if (!selectedModel.value || !observationDate.value) {
     return
   }
 
-  if (!observationDate.value) {
-    message.error('请选择观测日期')
+  const userData = localStorage.getItem('Userinfo')
+  if (!userData) {
+    message.error('用户信息未找到，请重新登录')
+    return
+  }
+
+  const userinfo = JSON.parse(userData)
+
+  const params = {
+    modelName: selectedModel.value,
+    type: 'png',
+    userName: userinfo.username,
+    createUserId: userinfo.id,
+    observationTime: observationDate.value,
+    className: "plant",
+    pngType: pngType.value
+  }
+
+  getPlantResultByType(params)
+    .then((res) => {
+      console.log('获取预览图响应:', res)
+
+      const blob = res.data
+      const response = res?.response?.value || res?.value || res
+
+      if (response instanceof Blob && response.type === 'application/json') {
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const errorJson = JSON.parse(reader.result)
+            message.error(errorJson.msg || '获取预览图失败')
+          } catch (e) {
+            message.error('获取预览图失败')
+          }
+        }
+        reader.readAsText(response)
+        return
+      }
+
+      if (response) {
+        const blob = new Blob([response], { type: 'image/png' })
+        const imageUrl = URL.createObjectURL(blob)
+        previewData.value = imageUrl
+        downloadFiles.value.preview_png = blob
+        message.success('预览图获取成功')
+      }
+    })
+    .catch((err) => {
+      console.error('获取预览图失败:', err)
+      handleErrorResponse(err.response?.data || err.message)
+    })
+}
+
+// 获取TIF文件
+const fetchTifFile = () => {
+  if (!selectedModel.value || !observationDate.value) {
+    message.error('请选择模型和观测日期')
     return
   }
 
@@ -513,106 +575,104 @@ const fetchResultFiles = () => {
   const userinfo = JSON.parse(userData)
 
   loadingResults.value = true
-  error.value = ''
-  previewData.value = ''
-  downloadFiles.value = {}
 
   const params = {
     modelName: selectedModel.value,
-    type: resultType.value,
+    type: 'tif',
     userName: userinfo.username,
     createUserId: userinfo.id,
     observationTime: observationDate.value,
-    className: "plant",
-    pngType: pngType.value
+    className: "plant"
   }
 
   getPlantResultByType(params)
     .then((res) => {
-      console.log('获取文件响应:', res)
-      
-      // 检查响应状态
+      console.log('获取TIF文件响应:', res)
+
       const blob = res.data
       const response = res?.response?.value || res?.value || res
-      
-      // 首先检查是否返回错误信息
+
       if (response instanceof Blob && response.type === 'application/json') {
-        // 如果是JSON类型的Blob，说明是错误信息
         const reader = new FileReader()
         reader.onload = () => {
           try {
             const errorJson = JSON.parse(reader.result)
-            message.error(errorJson.msg || '获取结果文件失败')
+            message.error(errorJson.msg || '获取TIF文件失败')
           } catch (e) {
-            message.error('获取结果文件失败')
+            message.error('获取TIF文件失败')
           }
         }
         reader.readAsText(response)
-        return // 不跳转页面
+        return
       }
 
-      // 成功获取文件
-      if (resultType.value === 'png') {
-        // 对于PNG格式，创建对象URL用于图片显示
-        const blob = new Blob([response], { type: 'image/png' })
-        const imageUrl = URL.createObjectURL(blob)
-        previewData.value = imageUrl
-        downloadFiles.value.result_file = blob
-        message.success('PNG图片获取成功')
-        predictCurrent.value = 1 // 只有成功时才跳转
-      } else if (resultType.value === 'tif') {
-        // 对于TIF格式，只提供下载，不显示预览
-        downloadFiles.value.result_file = blob
-        message.success('TIF文件获取成功，请点击下载')
-        predictCurrent.value = 1 // 只有成功时才跳转
+      if (response) {
+        downloadFiles.value.tif = response
+        message.success('TIF文件获取成功，请再次点击下载')
       }
     })
     .catch((err) => {
-      console.error('获取结果文件失败:', err)
+      console.error('获取TIF文件失败:', err)
       handleErrorResponse(err.response?.data || err.message)
-      // catch块中不跳转页面
     })
     .finally(() => {
       loadingResults.value = false
     })
 }
 
+// 处理获取预测结果 - 只跳转不调用接口
+const handleGetResults = () => {
+  if (!selectedModel.value) {
+    message.error('请选择模型')
+    return
+  }
+
+  if (!observationDate.value) {
+    message.error('请选择观测日期')
+    return
+  }
+
+  // 直接跳转到结果页面
+  predictCurrent.value = 1
+
+  // 跳转后自动获取预览图
+  if (permanentOptions.value.preview_png && isOptionAvailable('preview_png', 'result')) {
+    fetchPreviewImage()
+  }
+}
+
 // 统一的错误处理方法
 const handleErrorResponse = (errorData) => {
   if (errorData instanceof Blob) {
-    // 如果是Blob类型，使用FileReader读取
     const reader = new FileReader()
     reader.onload = () => {
       try {
         const errorJson = JSON.parse(reader.result)
-        message.error(errorJson.msg || '获取结果文件失败')
+        message.error(errorJson.msg || '获取文件失败')
       } catch (e) {
-        message.error('获取结果文件失败')
+        message.error('获取文件失败')
       }
     }
     reader.readAsText(errorData)
   } else if (typeof errorData === 'string') {
-    // 如果是字符串，直接显示
     message.error(errorData)
   } else if (errorData && errorData.msg) {
-    // 如果是JSON对象且有msg属性
     message.error(errorData.msg)
   } else {
-    // 其他情况显示默认错误消息
-    message.error('获取结果文件失败')
+    message.error('获取文件失败')
   }
 }
 
-// 下载结果文件 - 直接使用已获取的blob
-const downloadResultFile = () => {
-  if (!downloadFiles.value.result_file) {
-    message.error('结果文件不存在')
+// 下载预览图
+const downloadPreviewImage = () => {
+  if (!downloadFiles.value.preview_png) {
+    // 如果还没有获取预览图，先获取再下载
+    fetchPreviewImage()
     return
   }
 
-  const blob = downloadFiles.value.result_file
-  const fileExtension = resultType.value
-  const fileName = `${selectedModel.value}_result.${fileExtension}`
+  const blob = downloadFiles.value.preview_png
+  const fileName = `${selectedModel.value}_preview.png`
 
   const downloadUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -622,7 +682,28 @@ const downloadResultFile = () => {
   link.click()
   document.body.removeChild(link)
 
-  // 清理URL对象
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
+}
+
+// 下载TIF文件
+const downloadTifFile = () => {
+  if (!downloadFiles.value.tif) {
+    // 如果还没有获取TIF文件，先获取再下载
+    fetchTifFile()
+    return
+  }
+
+  const blob = downloadFiles.value.tif
+  const fileName = `${selectedModel.value}_result.tif`
+
+  const downloadUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = downloadUrl
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
   setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 }
 
@@ -655,13 +736,10 @@ const handleDownloadModel = () => {
   DownloadPlantTrainModelFiles(params)
     .then((response) => {
       console.log('下载文件响应:', response)
-      
-      // 确保我们获取到的是响应数据
+
       const res = response?.data || response?.response?.value || response?.value || response
-      
-      // 检查是否是错误响应
+
       if (res instanceof Blob && res.type === 'application/json') {
-        // 如果是JSON类型的Blob，说明是错误信息
         const reader = new FileReader()
         reader.onload = () => {
           try {
@@ -675,24 +753,20 @@ const handleDownloadModel = () => {
         return
       }
 
-      // 确定文件扩展名
       let fileExtension = '.pkl'
       if (selectedTrainModel.value === '1DResnet') {
         fileExtension = downloadStep.value === 0 ? '.h5' : '.pkl'
       }
 
-      // 创建文件名
       const fileName = `${selectedTrainModel.value}_step${downloadStep.value + 1}${fileExtension}`
-      
-      // 创建下载链接 - 确保正确处理Blob
+
       let blob
       if (res instanceof Blob) {
         blob = res
       } else {
-        // 如果不是Blob，转换为Blob
         blob = new Blob([res], { type: 'application/octet-stream' })
       }
-      
+
       const downloadUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
@@ -701,12 +775,10 @@ const handleDownloadModel = () => {
       link.click()
       document.body.removeChild(link)
 
-      // 清理URL对象
       setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 
       message.success(`模型文件 ${fileName} 下载成功`)
 
-      // 如果是1DResnet模型且当前是第一步，提示用户下载第二步
       if (selectedTrainModel.value === '1DResnet' && downloadStep.value === 0) {
         message.info('请继续下载步骤2的文件以获取完整模型')
         downloadStep.value = 1
@@ -714,7 +786,6 @@ const handleDownloadModel = () => {
     })
     .catch((err) => {
       console.error('下载模型文件失败:', err)
-      // 改进错误处理
       if (err.response?.data) {
         handleErrorResponse(err.response.data)
       } else if (err.message) {
@@ -757,8 +828,7 @@ const handleBatchDownload = () => {
     return DownloadPlantTrainModelFiles(params)
       .then((response) => {
         const res = response?.data || response?.response?.value || response?.value || response
-        
-        // 检查错误
+
         if (res instanceof Blob && res.type === 'application/json') {
           const reader = new FileReader()
           return new Promise((resolve, reject) => {
@@ -776,14 +846,14 @@ const handleBatchDownload = () => {
 
         const fileExtension = step === 0 ? '.h5' : '.pkl'
         const fileName = `${selectedTrainModel.value}_step${step + 1}${fileExtension}`
-        
+
         let blob
         if (res instanceof Blob) {
           blob = res
         } else {
           blob = new Blob([res], { type: 'application/octet-stream' })
         }
-        
+
         const downloadUrl = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = downloadUrl
@@ -797,7 +867,6 @@ const handleBatchDownload = () => {
       })
   }
 
-  // 依次下载两个步骤的文件
   downloadStepFile(0)
     .then((fileName1) => {
       message.success(`文件 ${fileName1} 下载成功，开始下载步骤2文件...`)
@@ -816,7 +885,7 @@ const handleBatchDownload = () => {
     })
 }
 
-// 下载其他文件 - 保持原有实现
+// 下载其他文件
 const downloadFile = (type) => {
   message.warning('植物识别功能暂不支持此文件下载')
 }
@@ -1089,17 +1158,57 @@ const handleBack = () => {
   margin-top: 8px;
 }
 
+/* 修改结果选项分组样式 */
+.result-options-group {
+  display: flex;
+}
+
+.options-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .options-row {
+    gap: 12px;
+  }
+
+  .options-row .el-checkbox {
+    margin-bottom: 8px;
+  }
+}
+
+.permanent-options {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.optional-options {
+  display: flex;
+  gap: 20px;
+}
+
 @media (max-width: 992px) {
   .form-container {
     width: 95%;
   }
-  
+
   .custom-steps {
     max-width: 90%;
   }
-  
+
   .form-column-full {
     padding: 0 10px;
+  }
+
+  .permanent-options,
+  .optional-options {
+    flex-direction: column;
+    gap: 12px;
   }
 }
 </style>
