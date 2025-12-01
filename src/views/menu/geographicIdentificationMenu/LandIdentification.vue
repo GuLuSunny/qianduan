@@ -4,7 +4,7 @@
     <div class="feature-tabs">
       <el-radio-group v-model="activeFeature" size="large">
         <el-radio-button label="upload">数据上传</el-radio-button>
-        <el-radio-button label="identification">土地识别</el-radio-button>
+        <el-radio-button label="identification">地物分类</el-radio-button>
       </el-radio-group>
     </div>
 

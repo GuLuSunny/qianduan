@@ -4,7 +4,7 @@
     <transition name="fade">
       <div class="headView">
         <div class="headTime">2025-4-16 16:52:36</div>
-        <div class="headTitle">开封地表水资源遥感产品生产与应用示范</div>
+        <div class="headTitle">地表水资源水资源综合信息遥感监测系统</div>
         <div class="headWeather">开封 34℃ 浮尘</div>
       </div>
     </transition>
@@ -244,9 +244,9 @@
     </transition>
 
 
-    <div class="mars3d-animation-point" id="htmlElement">
+    <!-- <div class="mars3d-animation-point" id="htmlElement">
       <p></p>
-    </div>
+    </div> -->
 
   </div>
 </template>
@@ -2245,7 +2245,7 @@ async function rotate() {
 /* 原有样式（保留） */
 .CesiumapView {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   overflow: hidden;
   cursor: url('../../../public/images/cesiumMap/cursor-RmLDFyYc32.png') 24 24, auto;
 }
@@ -2766,5 +2766,121 @@ async function rotate() {
   stroke-width: 2px;
   stroke: #f00a0a;
   fill: rgba(0, 255, 0, 0.1);
+}
+
+/* ====================== 响应式适配 ====================== */
+/* 笔记本屏幕适配 (最大宽度1440px) */
+@media screen and (max-width: 1440px) {
+  /* 调整悬浮窗大小 */
+  .dataBoxView {
+    width: 28% !important; /* 缩小宽度 */
+    height: calc(100% / 4) !important; /* 增加高度比例 */
+    max-height: 220px; /* 限制最大高度 */
+  }
+  
+  /* 调整头部 */
+  .headView {
+    height: 70px;
+  }
+  
+  .headTitle {
+    font-size: 24px;
+    line-height: 60px;
+  }
+  
+  /* 调整底部菜单 */
+  .boxMenuView {
+    width: 700px;
+    bottom: 10px;
+  }
+  
+  .boxMenuView ul li {
+    width: 130px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 16px;
+  }
+  
+  /* 调整图片容器大小 */
+  .img-container img,
+  .feature-img-container img {
+    max-width: 50% !important;
+    max-height: 50% !important;
+  }
+  
+  .img-container2 img {
+    max-width: 70% !important;
+    max-height: 70% !important;
+  }
+  
+  /* 调整数据框内边距 */
+  .dataCenter {
+    padding: 15px;
+  }
+  
+  /* 调整弹窗位置 */
+  .clickModal-content,
+  .hoverModal-content {
+    transform: translate(-50%, -180%);
+  }
+}
+
+/* 小屏幕笔记本适配 (最大宽度1366px) */
+@media screen and (max-width: 1366px) {
+  .dataBoxView {
+    width: 30% !important;
+    height: calc(100% / 3.8) !important;
+    max-height: 200px;
+  }
+  
+  .boxMenuView {
+    width: 650px;
+  }
+  
+  .boxMenuView ul li {
+    width: 120px;
+    font-size: 15px;
+  }
+  
+  /* 进一步缩小图片 */
+  .img-container img,
+  .feature-img-container img {
+    max-width: 45% !important;
+    max-height: 45% !important;
+  }
+  
+  .img-container2 img {
+    max-width: 65% !important;
+    max-height: 65% !important;
+  }
+  
+  /* 调整模块间距 */
+  .dataBoxView[style*="top: 37%"] {
+    top: 32% !important;
+  }
+  
+  .dataBoxView[style*="top: 67%"] {
+    top: 62% !important;
+  }
+}
+
+/* 超小屏幕适配 (最大宽度1280px) */
+@media screen and (max-width: 1280px) {
+  .dataBoxView {
+    width: 32% !important;
+  }
+  
+  .boxMenuView {
+    width: 600px;
+  }
+  
+  .boxMenuView ul li {
+    width: 110px;
+    font-size: 14px;
+  }
+  
+  .headTitle {
+    font-size: 22px;
+  }
 }
 </style>

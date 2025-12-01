@@ -3,7 +3,7 @@
     <div class="box">
       <!-- 滑动盒子 -->
       <div class="pre-box">
-        <h1>豫东水网智慧监测</h1>
+        <h1>地表水资源综合<br></br>信息遥感监测系统</h1>
         <div class="img-box">
           <img src="../assets/img/bg6.png" alt="" />
         </div>
@@ -217,15 +217,23 @@ input {
   width: 100%;
   position: absolute;
   top: 20%;
-  justify-content: center;
+  display: flex;           /* 启用 Flex 布局 */
+  justify-content: center; /* 水平居中 */
+  align-items: center;     /* 垂直居中（可选） */
+  text-align: center;      /* 文字居中 */
 }
+
 /* 标题 */
 .title-box h1 {
   color: white;
-  /* 禁止选中 */
   user-select: none;
   letter-spacing: 5px;
   text-shadow: 4px 4px 3px rgba(0, 0, 0, 0.1);
+  margin: 0;               /* 去掉默认外边距 */
+  white-space: nowrap;     /* 防止文字换行 */
+  overflow: hidden;        /* 隐藏溢出内容 */
+  text-overflow: ellipsis; /* 溢出时显示省略号（可选） */
+  max-width: 100%;         /* 限制最大宽度 */
 }
 
 .input-box-login-form {

@@ -1,200 +1,80 @@
 <template>
-  <div class="atmosphere-wrap" style="width: 100%; height: 100%">
+  <div class="atmosphere-wrap">
     <div class="atmosphere-title">{{ title }}</div>
-    <el-row :gutter="25">
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">风速(m/s)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.windSpeed) }}</div>
+    
+    <!-- 使用紧凑的网格布局 -->
+    <div class="compact-grid">
+      <!-- 第一行 -->
+      <div class="compact-row">
+        <div class="compact-item">
+          <div class="compact-label">风速(m/s)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.windSpeed) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">雨量(mm)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.rainfall) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">雨量(mm)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.rainfall) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">大气温度(℃)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.atmosphereTemperature) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">大气温度(℃)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.atmosphereTemperature) }}</div>
         </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="25">
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">土壤温度(℃)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.soilTemperature) }}</div>
+      </div>
+      
+      <!-- 第二行 -->
+      <div class="compact-row">
+        <div class="compact-item">
+          <div class="compact-label">土壤温度(℃)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.soilTemperature) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">数字气压(hPa)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">数字气压(hPa)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">简易总辐射(W/m2)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.simpleTotalRadiation) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">简易总辐射(W/m2)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.simpleTotalRadiation) }}</div>
         </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="25">
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">风向(°)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
+      </div>
+      
+      <!-- 第三行 -->
+      <div class="compact-row">
+        <div class="compact-item">
+          <div class="compact-label">风向(°)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">土壤湿度(%RH)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.soilHumidity) || 'N/A' }}</div>
+        <div class="compact-item">
+          <div class="compact-label">土壤湿度(%RH)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.soilHumidity) || 'N/A' }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">大气湿度(%RH)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.atmosphereHumidity) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">大气湿度(%RH)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.atmosphereHumidity) }}</div>
         </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="25">
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">PM2.5 (ug/m3)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.pm25) }}</div>
+      </div>
+      
+      <!-- 第四行 -->
+      <div class="compact-row">
+        <div class="compact-item">
+          <div class="compact-label">PM2.5(ug/m3)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.pm25) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">盐分(mg/L)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.salinity) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">盐分(mg/L)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.salinity) }}</div>
         </div>
-      </el-col>
-      <el-col
-        :span="8"
-        :class="[
-          {
-            'extra-padding1': hasExtraPadding1,
-            'extra-padding2': hasExtraPadding2,
-            'extra-padding3': hasExtraPadding3
-          }
-        ]"
-      >
-        <div class="grid-content">
-          <div class="box-label">PM10 (ug/m3)</div>
-          <div class="box-value">{{ formatNumber(atmosphereData.pm10) }}</div>
+        <div class="compact-item">
+          <div class="compact-label">PM10(ug/m3)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.pm10) }}</div>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
-import data from '@/../public/json/fullscreenSampleJson/atmosphere.json' // 注意路径，可能需要调整
+import { ref, onMounted, computed } from 'vue'
+import data from '@/../public/json/fullscreenSampleJson/atmosphere.json'
+
 // 创建一个响应式变量来存储气象数据
 const atmosphereData = ref({
   windSpeed: '---',
@@ -204,15 +84,12 @@ const atmosphereData = ref({
   digitalPressure: '---',
   simpleTotalRadiation: '---',
   windDirection: '---',
-  soilHumidity: null, // 声明为 null，方便后续处理
+  soilHumidity: null,
   atmosphereHumidity: '---',
   pm25: '---',
   salinity: '---',
   pm10: '---'
 })
-const hasExtraPadding1 = ref(true)
-const hasExtraPadding2 = ref(false)
-const hasExtraPadding3 = ref(false)
 
 // 页面标题，显示当前日期 + 场所名称
 const title = computed(() => {
@@ -223,94 +100,155 @@ const title = computed(() => {
   return `${y}-${m}-${day}日 龙庭公园气象数据`
 })
 
-function formatNumber (number) {
+function formatNumber(number) {
   if (!isNaN(number) && number !== '') {
-    const numberValue = Number(number) // 将字符串转换为数字
+    const numberValue = Number(number)
     return numberValue.toFixed(2)
   } else {
-    return ''
+    return '---'
   }
 }
 
-// 监听window对象的resize事件
-window.addEventListener('resize', changeSize)
-function changeSize () {
-  // 页面大小设置
-  const viewportHeightInPx = window.innerHeight
-  const viewportWidthInPx = window.innerWidth
-  // const gridHeight = viewportHeightInPx * 0.14
-  // const gridWidth = viewportWidthInPx * 0.23
-  const gridleft = viewportWidthInPx * 0.003
-  // console.log('viewportHeightInPx:', viewportHeightInPx)
-  // console.log('viewportWidthInPx:', viewportWidthInPx)
-  if (viewportHeightInPx > 850 && viewportHeightInPx < 920) {
-    hasExtraPadding1.value = true
-    hasExtraPadding2.value = false
-    hasExtraPadding3.value = false
-  }
-  if (viewportHeightInPx > 1000 && viewportHeightInPx < 1100) {
-    hasExtraPadding1.value = false
-    hasExtraPadding2.value = true
-    hasExtraPadding3.value = false
-  }
-  if (viewportHeightInPx > 650 && viewportHeightInPx < 750) {
-    hasExtraPadding1.value = false
-    hasExtraPadding2.value = false
-    hasExtraPadding3.value = true
-  }
-}
-// 组件加载时开始获取数据
+// 组件加载时获取数据
 onMounted(() => {
-  changeSize()
   atmosphereData.value = data
-})
-onBeforeUnmount(() => {
-  // 销毁实例
-  window.removeEventListener('resize', changeSize);
 })
 </script>
 
+
 <style scoped>
-.el-row {
+.atmosphere-wrap {
   width: 100%;
-  /* height: 100%; */
-  padding: 0px 10px 2px 10px;
-}
-/* .bordered-col {
-  padding-top: calc(100vh * 0.01);
-} */
-.grid-content {
-  margin: 0px;
-  padding: 0px;
-  height: 40px;
-  /* padding-top: calc(100vh * 0.025); */
-  /* min-height: 20px; */
-  background-color: rgba(17, 32, 71, 0.5);
-  font-size: 10px;
-  text-align: center;
-  /* line-height: 21px; */
-  border: 1px solid #1272df; /* 边框样式，可以根据需要自定义颜色和宽度 */
-  border-radius: 10px; /* 可选，圆角边框 */
-}
-.extra-padding1 {
-  margin-top: calc(100vh * 0.012);
-}
-.extra-padding2 {
-  margin-top: calc(100vh * 0.02);
-}
-.extra-padding3 {
-  margin-top: calc(100vh * 0.00001);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+  overflow: hidden;
 }
 
 .atmosphere-title {
   text-align: center;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 16px; /* 增大 */
   font-weight: 600;
-  margin: 0px 0 6px 0;
+  margin: 8px 0 10px 0; /* 增大边距 */
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(17, 32, 71, 0.3);
+  border-radius: 6px; /* 增大圆角 */
+  padding: 6px 10px; /* 增大内边距 */
 }
 
-.atmosphere-wrap {
-  margin-top: -18px; /* 整体上移一点，与其他模块一致 */
+.compact-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 增大行间距 */
+  overflow: hidden;
+}
+
+.compact-row {
+  flex: 1;
+  display: flex;
+  gap: 8px; /* 增大列间距 */
+  min-height: 0;
+  max-height: 38px; /* 增大行高 */
+}
+
+.compact-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 32, 71, 0.5);
+  border: 1px solid #1272df;
+  border-radius: 6px; /* 增大圆角 */
+  padding: 4px 2px; /* 增大内边距 */
+  min-width: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.compact-label {
+  color: #7dffff;
+  font-size: 12px !important; /* 增大字体 */
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2; /* 增大行高 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  margin-bottom: 2px; /* 增大边距 */
+}
+
+.compact-value {
+  color: #ffffff;
+  font-size: 14px !important; /* 增大字体 */
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2; /* 增大行高 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* 笔记本屏幕适配 */
+@media screen and (max-width: 1440px) {
+  .atmosphere-title {
+    font-size: 14px;
+    margin: 6px 0 8px 0;
+    padding: 4px 8px;
+  }
+  
+  .compact-label {
+    font-size: 10px !important;
+  }
+  
+  .compact-value {
+    font-size: 12px !important;
+  }
+  
+  .compact-row {
+    gap: 6px;
+    max-height: 35px; /* 增大行高 */
+  }
+  
+  .compact-item {
+    padding: 3px 2px;
+    border-radius: 5px;
+  }
+  
+  .compact-grid {
+    gap: 6px;
+  }
+}
+
+/* 小屏幕笔记本适配 */
+@media screen and (max-width: 1366px) {
+  .atmosphere-title {
+    font-size: 13px;
+  }
+  
+  .compact-label {
+    font-size: 9px !important;
+  }
+  
+  .compact-value {
+    font-size: 11px !important;
+  }
+  
+  .compact-row {
+    max-height: 32px; /* 增大行高 */
+    gap: 5px;
+  }
+  
+  .compact-item {
+    padding: 2px 1px;
+  }
 }
 </style>
