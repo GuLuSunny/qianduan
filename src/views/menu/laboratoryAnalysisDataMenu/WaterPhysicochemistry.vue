@@ -39,7 +39,7 @@
         </Dragger>
 
         <div class="download-template">
-          <a href="/templates/水体理化模板.xlsx" download
+          <a href="/templates/水质模板.xlsx" download
             >点击此处下载Excel模板</a
           >
         </div>

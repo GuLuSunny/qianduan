@@ -23,8 +23,8 @@
         <el-col :span="8">
           <el-form-item label="监测类型：" label-width="120px">
             <el-select v-model="submitType" placeholder="请选择监测类型" style="width: 100%">
-              <el-option label="湿地土壤检测指标" value="soil"></el-option>
-              <el-option label="湿地植被检测指标" value="plant"></el-option>
+              <el-option label="土壤检测指标" value="soil"></el-option>
+              <el-option label="土壤植被检测指标" value="plant"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -401,7 +401,7 @@ onMounted(() => {
 // 02：径流监测点；
 // 03：气象站；
 // 04：外业调查点位
-// 05: 湿地监测点
+// 05: 土壤监测点
 function getDeviceInfoList(deviceType) {
   queryDeviceByMultiWord({
     id: '',

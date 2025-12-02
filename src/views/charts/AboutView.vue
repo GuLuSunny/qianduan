@@ -19,9 +19,9 @@ const currentPageUrl =
 // 信息窗体的内容可以是任意html片段
 // 01-光谱理化
 // 07-气象站
-// 05-湿地观测点
+// 05-土壤观测点
 const contents = {
-  '01': "<div class='content-window-card'><div style='padding:7px 0px 0px 0px;'><h4>光谱理化数据</h4><p class='input-item'>400：0.002685  </p><p class='input-item'>401：0.002675</p><p class='input-item'>402：0.002664</p><p class='input-item'>...</p></div><div style='padding:7px 0px 0px 0px;'><h4>水体理化数据</h4><p class='input-item'>400：0.002685  </p><p class='input-item'>401：0.002675</p><p class='input-item'>402：0.002664</p><p class='input-item'>...</p></div></div>",
+  '01': "<div class='content-window-card'><div style='padding:7px 0px 0px 0px;'><h4>光谱理化数据</h4><p class='input-item'>400：0.002685  </p><p class='input-item'>401：0.002675</p><p class='input-item'>402：0.002664</p><p class='input-item'>...</p></div><div style='padding:7px 0px 0px 0px;'><h4>水质数据</h4><p class='input-item'>400：0.002685  </p><p class='input-item'>401：0.002675</p><p class='input-item'>402：0.002664</p><p class='input-item'>...</p></div></div>",
   '05': "<div style='width:568px;height:302px' class='bg0'><div class='infoWindowLeft'><img style='width: 100%; height: 100%' src='{{deviceItImgPath}}'/></div></div><div class='auto-wrap'>{{deviceItIntroduce}}</div></div>",
   '07': "<div style='width:568px;height:302px' ><div><img style='width: 100%; height: 100%' src='/images/qixiang/wanan.jpg' /></div></div>"
 }

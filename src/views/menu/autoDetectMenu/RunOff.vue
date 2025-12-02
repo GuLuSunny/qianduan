@@ -37,7 +37,7 @@
           <p class="ant-upload-hint">支持扩展名xlsx,xls</p>
         </Dragger>
         <div class="download-template">
-          <a href="/templates/陆浑湖伊河径流数据模板.xlsx" download>点击此处下载Excel模板</a>
+          <a href="/template伊河径流数据模板.xlsx" download>点击此处下载Excel模板</a>
         </div>
       </div>
 

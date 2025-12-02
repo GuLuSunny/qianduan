@@ -43,7 +43,7 @@ const tabs = [
   {
     key: '2',
     pressionKey: 'menu_subA_c_b',
-    tab: '水体理化',
+    tab: '水质',
     currentComponent: WaterPhysicochemistry
   }
 ]

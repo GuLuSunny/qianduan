@@ -346,16 +346,16 @@
           <!-- 光谱图 -->
           <SpectralReflectance />
         </dv-border-box-7>
-        <!-- 水体理化标题部分 -->
+        <!-- 水质标题部分 -->
         <dv-border-box-6
           :reverse="true"
           style="width: calc(100vw * 0.248); height: calc(100vh * 0.045)"
         >
           <div class="s_title1">
             <div class="s_title3_tc" style="width: calc(100vw * 0.12)">
-              水体理化
+              水质
             </div>
-            <!-- 水体理化地点按钮 -->
+            <!-- 水质地点按钮 -->
             <div class="s_title2_didian">
               <el-popover
                 :visible="visible_shuiti_didian"
@@ -389,7 +389,7 @@
                 </template>
               </el-popover>
             </div>
-            <!-- 水体理化日期 -->
+            <!-- 水质日期 -->
             <div class="s_title_date">
               <el-date-picker
                 v-model="guangPuShiJian"
@@ -417,11 +417,11 @@
             </div>
           </div>
         </dv-border-box-6>
-        <!--  水体理化图 -->
+        <!--  水质图 -->
         <dv-border-box-7
           style="width: calc(100vw * 0.246); height: calc(100vh * 0.24)"
         >
-          <!-- 水体理化图 -->
+          <!-- 水质图 -->
           <WaterPhysicochemistry />
         </dv-border-box-7>
       </div>
@@ -555,7 +555,7 @@
       </div>
       <!-- 第三列 -->
       <div style="flex: 0 1 24vw">
-        <!-- 湿地标题部分 -->
+        <!-- 土壤标题部分 -->
         <dv-border-box-6
           :reverse="true"
           style="width: calc(100vw * 0.25); height: calc(100vh * 0.05)"
@@ -568,10 +568,10 @@
                 padding-left: calc(100vw * 0.018);
               "
             >
-              湿地
+              土壤
             </div>
 
-            <!-- 湿地影像日期 -->
+            <!-- 土壤影像日期 -->
             <div class="s_title2_date">
               <el-date-picker
                 v-model="shiDiShiJian"
@@ -587,11 +587,11 @@
             </div>
           </div>
         </dv-border-box-6>
-        <!--  湿地图 -->
+        <!--  土壤图 -->
         <dv-border-box-7
           style="width: calc(100vw * 0.2481); height: calc(100vh * 0.25)"
         >
-          <!-- 湿地图 -->
+          <!-- 土壤图 -->
           <WetLandView />
         </dv-border-box-7>
       </div>
@@ -697,12 +697,12 @@ import { ref, watch, onMounted, getCurrentInstance, onBeforeUnmount } from 'vue'
 import RunOff from './charts/RunOff.vue' /* 径流 */
 import HydrographView from './charts/HydrographView.vue' /* 水位 */
 import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反射率 */
-import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体理化 */
+import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水质 */
 import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
 import BirdSpecies from './charts/BirdSpecies.vue' /* 水鸟科普 */
 import BirdsRatio from './charts/BirdsRatio.vue' /* 水鸟人工监测 */
 import InfraredCameraDetection from './charts/InfraredCameraDetection.vue' /* 水鸟智能监测 */
-import WetLandView from './charts/WetLandView.vue' /* 湿地 */
+import WetLandView from './charts/WetLandView.vue' /* 土壤 */
 import SensingImageView from './charts/SensingImageView.vue' /* 遥感影像 */
 import MapView from './charts/MapView.vue' /* 陆浑湖野外观测站 */
 
@@ -757,9 +757,9 @@ const shuiniao_didian_radio1 = ref('1')
 /* 水鸟图显示 */
 const shuiniao_tu_show = ref('1')
 
-/* 湿地时间 */
+/* 土壤时间 */
 const shiDiShiJian = ref('2021-01-01')
-/* 湿地地点的选择 */
+/* 土壤地点的选择 */
 const shiDiShiJianFormat = ref('YYYY-MM-DD')
 const shiDiShiJianType = ref('date')
 
@@ -777,7 +777,7 @@ const excludeArea_jingliu = ref(null) // 径流地点按钮区域
 const excludeArea_shuiwei = ref(null) // 水位地点按钮区域
 const excludeArea_qixiang = ref(null) // 气象地点按钮区域
 const excludeArea_guangpu = ref(null) // 光谱地点按钮区域
-const excludeArea_shuiti = ref(null) // 水体理化地点按钮区域
+const excludeArea_shuiti = ref(null) // 水质地点按钮区域
 const excludeArea_yaogan = ref(null) // 遥感类型按钮区域
 
 const contact = ref()
@@ -846,7 +846,7 @@ function handleGlobalClick (event) {
     visible_yaogan_didian.value = false
     return
   }
-  // 点击水体理化-地点按钮
+  // 点击水质-地点按钮
   if (excludeArea_shuiti.value.contains(event.target)) {
     visible_shuiwei_didian.value = false
     visible_qixiang_didian.value = false

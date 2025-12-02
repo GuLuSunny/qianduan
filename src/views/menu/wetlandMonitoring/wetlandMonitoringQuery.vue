@@ -2,9 +2,9 @@
   <div class="container">
         <!-- 左上角选项框 -->
         <a-tabs class="tabs" v-model:activeKey="activeTab" @change="handleTabChange">
-            <a-tab-pane key="1" tab="湿地监测数据" />
-            <a-tab-pane key="2" tab="湿地土壤表格" />
-            <a-tab-pane key="3" tab="湿地植被表格" />
+            <a-tab-pane key="1" tab="土壤监测数据" />
+            <a-tab-pane key="2" tab="土壤表格" />
+            <a-tab-pane key="3" tab="土壤植被表格" />
         </a-tabs>
 
         <!-- 下方动态切换的组件区域 -->

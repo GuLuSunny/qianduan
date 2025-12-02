@@ -68,7 +68,7 @@ const title = computed(() => {
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   const ss = String(d.getSeconds()).padStart(2, '0')
-  return `${y}-${m}-${day}日黑岗口水库水体理化`
+  return `${y}-${m}-${day}日黑岗口水库水质`
 })
 
 function formatNumber (number) {

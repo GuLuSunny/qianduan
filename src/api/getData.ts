@@ -149,7 +149,7 @@ export function findMonthRunOff (data: any) {
 }
 
 /**
- * 查询水体理化数据
+ * 查询水质数据
  * @returns UseAxiosReturn
  */
 export function getWaterPhyBigScreen (data: any) {
@@ -160,7 +160,7 @@ export function getWaterPhyBigScreen (data: any) {
 }
 
 /**
- * 分页查询水体理化数据
+ * 分页查询水质数据
  * @returns UseAxiosReturn
  */
 export function getWaterPhyPageQuery (data: any) {
@@ -171,7 +171,7 @@ export function getWaterPhyPageQuery (data: any) {
 }
 
 /**
- * 根据id删除水体理化数据
+ * 根据id删除水质数据
  * @returns UseAxiosReturn
  */
 export function delWaterPhyDataByids (data: any) {
@@ -182,7 +182,7 @@ export function delWaterPhyDataByids (data: any) {
 }
 
 /**
- * 分页查询水体理化数据
+ * 分页查询水质数据
  * @returns UseAxiosReturn
  */
 export function getAtmospherePageQuery (data: any) {
@@ -193,7 +193,7 @@ export function getAtmospherePageQuery (data: any) {
 }
 
 /**
- * 根据id删除水体理化数据
+ * 根据id删除水质数据
  * @returns UseAxiosReturn
  */
 export function delAtmosphereDataByids (data: any) {
@@ -306,7 +306,7 @@ export function spectralReflectanceInsertByExcel (data: any) {
   })
 }
 /**
- * 水体理化Excel方式提交
+ * 水质Excel方式提交
  * @returns UseAxiosReturn
  */
 export function waterPhysicochemistryInsertByExcel (data: any) {
@@ -329,7 +329,7 @@ export function observationBirdInsert (data: any) {
 
 
 /**
- * 湿地土壤form提交
+ * 土壤form提交
  * @returns UseAxiosReturn
  */
 export function wetlandSoilInsert (data: any) {
@@ -339,7 +339,7 @@ export function wetlandSoilInsert (data: any) {
   })
 }
 /**
- * 湿地植被form提交
+ * 土壤植被form提交
  * @returns UseAxiosReturn
  */
 export function wetlandPlantInsert (data: any) {
@@ -751,7 +751,7 @@ export function addRoleInfo (data: any) {
   })
 }
 /**
- * 湿地植物检测
+ * 土壤植物检测
  * @returns UseAxiosReturn
  */
 export function PlantGetData (data: any) {
@@ -761,7 +761,7 @@ export function PlantGetData (data: any) {
   })
 }
 /**
- * 湿地土壤检测
+ * 土壤检测
  * @returns UseAxiosReturn
  */
 export function WetlandSoilGetData (data: any) {
@@ -816,7 +816,7 @@ export function addPurviewInfo (data: any) {
   })
 }
 /**
- * 查询湿地土壤分页数据
+ * 查询土壤分页数据
  * @returns UseAxiosReturn
  */
 export function getEetlandSoilPageQuery (data: any) {
@@ -827,7 +827,7 @@ export function getEetlandSoilPageQuery (data: any) {
 }
 
 /**
- * 按id删除湿地土壤数据
+ * 按id删除土壤数据
  * @returns UseAxiosReturn
  */
 export function deleteWetlandSoilId (data: any) {
@@ -837,7 +837,7 @@ export function deleteWetlandSoilId (data: any) {
   })
 }
 /**
- * 查询湿地植被分页数据
+ * 查询土壤植被分页数据
  * @returns UseAxiosReturn
  */
 export function getPlantPageQuery (data: any) {
@@ -848,7 +848,7 @@ export function getPlantPageQuery (data: any) {
 }
 
 /**
- * 按id删除湿地植被数据
+ * 按id删除土壤植被数据
  * @returns UseAxiosReturn
  */
 export function deletePlantSoilId (data: any) {

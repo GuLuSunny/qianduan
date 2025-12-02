@@ -36,11 +36,11 @@
         </div>
       </div>
 
-      <!-- 旧右1：水体理化 -->
+      <!-- 旧右1：水质 -->
       <div class="dataBoxView" style="right: 20px; left: auto"
         :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
-        <div class="boxTitle">水体理化</div>
+        <div class="boxTitle">水质</div>
         <div class="dataCenter">
           <WaterPhysicochemistry />
         </div>
@@ -54,11 +54,11 @@
           <SpectralReflectance />
         </div>
       </div>
-      <!-- 旧右3：湿地 -->
+      <!-- 旧右3：土壤 -->
       <div class="dataBoxView" style="right: 20px; left: auto; top: 67%"
         :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
-        <div class="boxTitle">湿地</div>
+        <div class="boxTitle">土壤</div>
         <div class="dataCenter">
           <WetLandView />
         </div>
@@ -260,9 +260,9 @@ import { dialogEmits } from 'element-plus';
 import RunOff from './charts/RunOff.vue' /* 径流 */
 import HydrographView from './charts/HydrographView.vue' /* 水位 */
 import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反射率 */
-import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水体理化 */
+import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水质 */
 import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
-import WetLandView from './charts/WetLandView.vue' /* 湿地 */
+import WetLandView from './charts/WetLandView.vue' /* 土壤 */
 import { selectAllSluicesByConditions,getFarmlandgeojson } from '@/api/getData';
 import { selectAllPumpingStationByConditions } from '@/api/getData'
 import router from '@/router';

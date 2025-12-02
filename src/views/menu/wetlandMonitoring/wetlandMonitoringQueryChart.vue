@@ -19,7 +19,7 @@
       </el-form-item>
     </div>
     <div class="soil">
-      <h3 style="text-align: left">湿地土壤监测指标</h3>
+      <h3 style="text-align: left">土壤监测指标</h3>
       <div class="flex-container">
         <div class="chart-container">
           <div
@@ -53,7 +53,7 @@
   <!-- 表格区域 -->
   <div class="container1">
     <div class="header1">
-      <h3 style="text-align: left">湿地植物监测指标</h3>
+      <h3 style="text-align: left">土壤植物监测指标</h3>
       <el-form-item label="植被物种：" style="margin-left: 38%">
         <el-select
           v-model="plantPicked"

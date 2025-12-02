@@ -42,7 +42,7 @@ lhhvue
 │  │  ├─ 📄XX年XX月XX日光谱反射率.xlsx
 │  │  ├─ 📄XX气象XXXX年XX月数据.xlsx
 │  │  ├─ 📄XX水库XX年水位数据模板.xls
-│  │  └─ 📄水体理化XXXX-XX-XX.xlsx
+│  │  └─ 📄水质XXXX-XX-XX.xlsx
 │  ├─ 📄favicon - 副本.ico
 │  ├─ 📄favicon.ico
 │  └─ 📄index.html
@@ -135,8 +135,8 @@ lhhvue
 │  │  │  ├─ 📄RunOff.vue	径流
 │  │  │  ├─ 📄SensingImageView.vue		遥感影像
 │  │  │  ├─ 📄SpectralReflectance.vue	光谱反射
-│  │  │  └─ 📄WaterPhysicochemistry.vue		水体理化
-│  │  │  └─ 📄WetLandView.vue		湿地
+│  │  │  └─ 📄WaterPhysicochemistry.vue		水质
+│  │  │  └─ 📄WetLandView.vue		土壤
 │  │  ├─ 📁menu
 │  │  │  ├─ 📁DataBirds	鸟类观测数据
 │  │  │  │  ├─ 📄BirdSciencepopularization.vue	鸟类科普
@@ -168,7 +168,7 @@ lhhvue
 │  │  │  ├─ 📁laboratoryAnalysisDataMenu	实验室分析数据
 │  │  │  │  ├─ 📄LaboratoryAnalysisData.vue	实验室分析数据布局
 │  │  │  │  ├─ 📄SpectralReflectance.vue	光谱组件
-│  │  │  │  └─ 📄WaterPhysicochemistry.vue	水体理化组件
+│  │  │  │  └─ 📄WaterPhysicochemistry.vue	水质组件
 │  │  │  ├─ 📁researchDataMenu 研究数据
 │  │  │  │  ├─ 📄DroneImageData.vue	无人机影像组件
 │  │  │  │  ├─ 📄researchData.vue	研究数据布局
@@ -187,10 +187,10 @@ lhhvue
 │  │  │  │  └─ 📄RemoteSensingQuery.vue	遥感,无人机数据查询布局
 │  │  │  │  └─ 📄RemoteSensingTable.vue	遥感查询表格组件
 │  │  │  │  └─ 📄DroneTable.vue	无人机查询表格组件
-│  │  │  ├─ 📁PhysicochemicalData   水体理化数据查询
-│  │  │  │  └─ 📄PhysicochemicalGraph.vue	水体理化图表组件
-│  │  │  │  └─ 📄PhysicochemicalTable.vue	水体理化表格组件
-│  │  │  │  └─ 📄PhysicochemicalPanel.vue	水体理化布局
+│  │  │  ├─ 📁PhysicochemicalData   水质数据查询
+│  │  │  │  └─ 📄PhysicochemicalGraph.vue	水质图表组件
+│  │  │  │  └─ 📄PhysicochemicalTable.vue	水质表格组件
+│  │  │  │  └─ 📄PhysicochemicalPanel.vue	水质布局
 │  │  │  └─ 📄head.vue 头部组件
 │  │  ├─ 📄AboutView.vue 测试用
 │  │  ├─ 📄BigscreenHome.vue 大屏布局

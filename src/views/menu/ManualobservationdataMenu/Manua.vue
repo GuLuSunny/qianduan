@@ -6,8 +6,8 @@
       v-model:activeKey="activeTab"
       @change="handleTabChange"
     >
-      <a-tab-pane key="1" tab="水鸟数据"  v-if="$hasPermission('menu_subA_b_a')"/>
-      <a-tab-pane key="2" tab="湿地数据" v-if="$hasPermission('menu_subA_b_b')"/>
+      <!-- <a-tab-pane key="2" tab="水鸟数据"  v-if="$hasPermission('menu_subA_b_a')"/> -->
+      <a-tab-pane key="1" tab="土壤数据" v-if="$hasPermission('menu_subA_b_b')"/>
     </a-tabs>
     <!-- 下方动态切换的组件区域 -->
     <div class="content-box">
@@ -19,7 +19,7 @@
 <script setup>
 import { ref, getCurrentInstance , onMounted } from 'vue'
 // 引入你需要的组件
-import ManuaDectect from './ManuaDectect.vue'
+// import ManuaDectect from './ManuaDectect.vue'
 import WetlandData from './WetlandData.vue'
 // 当前选中的 Tab
 const activeTab = ref()
@@ -31,16 +31,16 @@ const hasPermission = (permission) => {
   return instance?.appContext.config.globalProperties.$hasPermission(permission)
 }
 const tabs = [
+  // {
+  //   key: '2',
+  //   pressionKey: 'menu_subA_b_a',
+  //   tab: '水鸟数据',
+  //   currentComponent: ManuaDectect
+  // },
   {
     key: '1',
-    pressionKey: 'menu_subA_b_a',
-    tab: '水鸟数据',
-    currentComponent: ManuaDectect
-  },
-  {
-    key: '2',
     pressionKey: 'menu_subA_b_b',
-    tab: '湿地数据',
+    tab: '土壤数据',
     currentComponent: WetlandData
   }
 ]
@@ -65,9 +65,9 @@ onMounted(() => {
 })
 // Tab 切换处理逻辑
 function handleTabChange(key) {
-  if (key === '1') {
+  if (key === '2') {
     currentComponent.value = ManuaDectect
-  } else if (key === '2') {
+  } else if (key === '1') {
     currentComponent.value = WetlandData
   }
 }

@@ -130,7 +130,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', changeSize)
 })
 
-// 获取水体理化动态数据
+// 获取水质动态数据
 function getWaterPhy () {
   const loadingInstance = ElLoading.service(loadingoptions)
   getWaterPhyBigScreen({
@@ -165,7 +165,7 @@ function getWaterPhy () {
       loadingInstance.close()
       ElMessage({
         showClose: true,
-        message: '获取水体理化数据失败，请稍后再试',
+        message: '获取水质数据失败，请稍后再试',
         center: true,
         type: 'error'
       })

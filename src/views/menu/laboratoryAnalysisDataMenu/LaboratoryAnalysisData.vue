@@ -7,7 +7,7 @@
       @change="handleTabChange"
     >
       <a-tab-pane key="1" tab="光谱反射率"  v-if="$hasPermission('menu_subA_c_a')"/>
-      <a-tab-pane key="2" tab="水体理化"  v-if="$hasPermission('menu_subA_c_b')"/>
+      <a-tab-pane key="2" tab="水质"  v-if="$hasPermission('menu_subA_c_b')"/>
     </a-tabs>
 
     <!-- 下方动态切换的组件区域 -->
@@ -43,7 +43,7 @@ const tabs = [
   {
     key: '2',
     pressionKey: 'menu_subA_c_b',
-    tab: '水体理化',
+    tab: '水质',
     currentComponent: WaterPhysicochemistry
   }
 ]
