@@ -697,7 +697,7 @@
           :reverse="true"
           style="width: calc(100vw * 0.994); height: calc(100vh * 0.04)"
           ><div class="s_title4_tc">
-            版权所有: 河南省科学院地理研究所&nbsp;&nbsp;数据联系人：{{
+            版权所有: 河南大学&nbsp;&nbsp;数据联系人：{{
               contact
             }}&nbsp;&nbsp;豫ICP备10005160号-2
           </div></dv-border-box-8
