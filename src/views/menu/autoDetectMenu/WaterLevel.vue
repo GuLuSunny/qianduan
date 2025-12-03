@@ -347,6 +347,11 @@ function handlePrevious() {
 }
 
 function handleConfirm() {
+  if(files.value.length===0)
+  {
+    message.error("请先提交文件")
+    return
+  }
   if (submitType.value === 'file') {
     const loadingInstance = ElLoading.service(loadingoptions)
     files.value.forEach((file) => {
@@ -365,15 +370,17 @@ function handleConfirm() {
         .then((res) => {
           loadingInstance.close()
           const response = res.response.value
+          console.log(response)
+          console.log(response.value)
           if (response.code === 'SUCCESS') {
             message.success(`${file.name} 文件上传成功.`)
             current.value = 2
           } else {
-            message.error(response.msg
-            )
+            message.error(response.msg)
           }
         })
         .catch((error) => {
+          console.log(error)
           loadingInstance.close()
           message.error(
             `${file.name} 上传失败，请下载EXCEL模板，按照模板格式提交！`

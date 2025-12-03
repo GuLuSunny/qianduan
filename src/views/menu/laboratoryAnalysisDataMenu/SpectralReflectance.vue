@@ -318,9 +318,7 @@ function handleConfirm () {
           message.success(`${file.name} 文件上传成功.`)
           current.value = 2
         } else {
-          message.error(
-            `${file.name} 上传失败，请下载EXCEL模板，按照模板格式提交！`
-          )
+          message.error(response.msg)
         }
       })
       .catch((error) => {
