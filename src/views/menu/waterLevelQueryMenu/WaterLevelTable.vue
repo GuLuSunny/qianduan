@@ -2,7 +2,24 @@
   <div class="container">
     <div class="controls">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline">
-        <el-form-item label="日期">
+        <el-form-item label="观测站点:" style="width: 15%">
+          <el-select 
+            v-model="searchInfo.deviceName" 
+            placeholder="请选择观测站点" 
+            :disabled="isDeviceLoading"
+            @change="handleInputChange"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in locations"
+              :key="item.id"
+              :label="item.deviceName"
+              :value="item.deviceName"
+            />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="日期" style="margin-left: 10px;">
           <el-date-picker
             v-if="searchInfo.type == 2"
             v-model="searchInfo.observationTime"
@@ -16,6 +33,7 @@
                 handleVisibleChange(visibility, 'shuiwei', 'month')
             "
             :disabled-date="(time) => disabledDate(time, 'shuiwei', 'month')"
+            style="width: 150px"
           >
           </el-date-picker>
           <el-date-picker
@@ -30,26 +48,31 @@
               (visibility) => handleVisibleChange(visibility, 'shuiwei', 'year')
             "
             :disabled-date="(time) => disabledDate(time, 'shuiwei', 'year')"
+            style="width: 150px"
           >
           </el-date-picker>
-          <el-button @click="changeWayButton">
+          <el-button @click="changeWayButton" style="margin-left: 10px;">
             {{ curWay }}
           </el-button>
         </el-form-item>
-        <el-form-item label="文件名">
+        
+        <el-form-item label="文件名" style="margin-left: 10px;">
           <el-input
             v-model="searchInfo.filepath"
             placeholder="请输入文件名"
             @input="handleInputChange"
+            style="width: 200px"
           />
         </el-form-item>
-        <el-form-item>
+        
+        <el-form-item style="margin-left: 10px;">
           <el-button @click="searchButton" class="searchButton">
             <el-icon> <Search /> </el-icon>搜索
           </el-button>
           <el-button
             @click="deleteSelectedRows"
             :disabled="!isButtonDelDisabled"
+            style="margin-left: 10px"
             >批量删除</el-button
           >
         </el-form-item>
@@ -119,7 +142,8 @@ import { ref, onMounted, getCurrentInstance, watch } from 'vue'
 import {
   fetchBytimeandPage,
   deleteWaterLevelById,
-  getTimesByType
+  getTimesByType,
+  queryDeviceByMultiWord
 } from '@/api/getData'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
@@ -131,21 +155,27 @@ const pageSize = ref(10)
 const totalItems = ref(0)
 const selectedRows = ref([])
 const curWay = ref('切换月')
+const isDeviceLoading = ref(false)
+const locations = ref([])
+
 const searchInfo = ref({
   observationTime: '',
   filepath: '',
-  type: '1'
+  type: '1',
+  deviceName: ''
 })
+
 const loadingoptions = {
-  // 加载配置
   target: '.layoutLoading',
   background: 'rgba(0, 0, 0, 0.7)',
   text: '数据加载中...'
 }
+
 onMounted(() => {
   const instance = getCurrentInstance()
   if (instance) {
     instance.proxy.$nextTick(() => {
+      getDeviceInfoList('06')
       searchButton()
     })
   }
@@ -157,13 +187,49 @@ watch(
     searchInfo.value.observationTime = ''
   }
 )
-function handleInputChange () {
-  // 搜索框内容变化时执行
+
+// 获取设备列表
+function getDeviceInfoList(deviceType) {
+  isDeviceLoading.value = true;
+  queryDeviceByMultiWord({
+    id: '',
+    deviceName: '',
+    type: deviceType
+  })
+    .then((res) => {
+      const result = res.response.value
+      if (result.code === 'SUCCESS') {
+        locations.value = result.body || [];
+        if (locations.value.length > 0) {
+          searchInfo.value.deviceName = locations.value[0]?.deviceName || '';
+        }
+      } else {
+        ElMessage({
+          showClose: true,
+          message: result.msg,
+          center: true
+        })
+      }
+    })
+    .catch((error) => {
+      ElMessage({
+        showClose: true,
+        message: '获取观测站数据失败，请稍后再试',
+        center: true,
+        type: 'error'
+      })
+    })
+    .finally(() => {
+      isDeviceLoading.value = false;
+    });
+}
+
+function handleInputChange() {
   isButtonDelDisabled.value = false
 }
-// 切换年月按钮
-function changeWayButton () {
-  handleInputChange ()
+
+function changeWayButton() {
+  handleInputChange()
   if (curWay.value === '切换年') {
     curWay.value = '切换月'
     searchInfo.value.type = '1'
@@ -175,8 +241,7 @@ function changeWayButton () {
 
 const showDateArr = ref([])
 
-// 可用日期
-function disabledDate (time, type, searchTimeType) {
+function disabledDate(time, type, searchTimeType) {
   if (showDateArr.value == null || showDateArr.value.length === 0) {
     return true
   }
@@ -184,10 +249,8 @@ function disabledDate (time, type, searchTimeType) {
     .toString()
     .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
   if (searchTimeType === 'year') {
-    // year
     customString = `${time.getFullYear()}`
   } else if (searchTimeType === 'month') {
-    // month
     customString = `${time.getFullYear()}-${(time.getMonth() + 1)
       .toString()
       .padStart(2, '0')}`
@@ -195,14 +258,14 @@ function disabledDate (time, type, searchTimeType) {
   const isTimeInArray = showDateArr.value.includes(customString)
   return !isTimeInArray
 }
-// 请求日期
-function handleVisibleChange (visibility, type, searchTimeType) {
+
+function handleVisibleChange(visibility, type, searchTimeType) {
   if (visibility) {
-    // 开启时
     const searchType = searchTimeType
     getTimesByType({
       type: type,
-      searchTimeType: searchType
+      searchTimeType: searchType,
+      deviceName: searchInfo.value.deviceName
     })
       .then((res) => {
         const result = res.response.value
@@ -211,7 +274,6 @@ function handleVisibleChange (visibility, type, searchTimeType) {
           const date = result.body.date
           showDateArr.value = date
         } else {
-          // 处理失败的响应
           ElMessage({
             showClose: true,
             message: result.msg,
@@ -230,23 +292,22 @@ function handleVisibleChange (visibility, type, searchTimeType) {
   }
 }
 
-// 点击查询按钮
-function searchButton () {
+function searchButton() {
   currentPage.value = 1
   getWaterLevelData()
 }
 
-// 分页查询
-function getWaterLevelData () {
+function getWaterLevelData() {
   const loadingInstance = ElLoading.service(loadingoptions)
   fetchBytimeandPage({
     observationTime: searchInfo.value.observationTime,
     currentPage: currentPage.value,
     pageSize: pageSize.value,
-    filepath: searchInfo.value.filepath
+    filepath: searchInfo.value.filepath,
+    deviceName: searchInfo.value.deviceName
   })
     .then((res) => {
-       loadingInstance.close()
+      loadingInstance.close()
       const result = res.response.value
       if (result.code === 'SUCCESS') {
         tableData.value = result.body.records.map((item) => ({
@@ -254,7 +315,6 @@ function getWaterLevelData () {
           type: item.type === 'form' ? '单条系统录入' : '批量文件导入',
           fileName: item.filepath
         }))
-        console.log(tableData.value)
         currentPage.value = result.body.current
         totalItems.value = result.body.total
         pageSize.value = result.body.size
@@ -268,7 +328,7 @@ function getWaterLevelData () {
       }
     })
     .catch(() => {
-       loadingInstance.close()
+      loadingInstance.close()
       ElMessage({
         showClose: true,
         message: '获取数据失败，请稍后再试',
@@ -278,24 +338,23 @@ function getWaterLevelData () {
     })
 }
 
-function handleSizeChange (val) {
+function handleSizeChange(val) {
   pageSize.value = val
   if (totalItems.value === 0) return
   getWaterLevelData()
 }
 
-function handleCurrentChange (val) {
+function handleCurrentChange(val) {
   currentPage.value = val
   if (totalItems.value === 0) return
   getWaterLevelData()
 }
 
-function handleSelectionChange (val) {
+function handleSelectionChange(val) {
   selectedRows.value = val.map((row) => row.id)
 }
 
-// 单行删除
-function confirmDeleteRow (row) {
+function confirmDeleteRow(row) {
   ElMessageBox.confirm('此操作将永久删除该行数据, 是否继续?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -303,7 +362,8 @@ function confirmDeleteRow (row) {
   })
     .then(() => {
       deleteWaterLevelById({
-        ids: [row.id]
+        ids: [row.id],
+        deviceName: searchInfo.value.deviceName
       })
         .then((res) => {
           if (res.response.value.code === 'SUCCESS') {
@@ -341,15 +401,15 @@ function confirmDeleteRow (row) {
       })
     })
 }
-// 批量删除
-function deleteSelectedRows () {
-  // 或者使用展开运算符（更现代且简洁的方式）
+
+function deleteSelectedRows() {
   const requestObject = { ...searchInfo.value }
   if (
     selectedRows.value.length === 0 &&
     (requestObject.observationTime === '' ||
       requestObject.observationTime === null) &&
-    requestObject.filepath === ''
+    requestObject.filepath === '' &&
+    requestObject.deviceName === ''
   ) {
     ElMessage({
       showClose: true,
@@ -438,5 +498,19 @@ function deleteSelectedRows () {
 
 .searchButton {
   background-color: aliceblue;
+}
+
+.demo-form-inline {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+}
+
+.demo-form-inline .el-form-item {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 </style>

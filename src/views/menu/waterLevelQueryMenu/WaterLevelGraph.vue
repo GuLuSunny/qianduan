@@ -1,7 +1,7 @@
 <template>
   <div class="controls">
     <el-form-item label="观测站点:" style="width: 15%">
-      <el-select v-model="deviceName" placeholder="陆浑水库" :disabled="isLoading">
+      <el-select v-model="deviceName" placeholder="惠济河 大王庙站" :disabled="isLoading">
         <el-option
           v-for="item in locations"
           :key="item.id"

@@ -9,6 +9,12 @@
       </div>
     </transition>
 
+    <!-- 新增：数据菜单按钮（在标题下方右侧） -->
+    <div class="data-menu-btn" @click="goToModelView">
+      <i class="el-icon-menu"></i>
+      <span>数据菜单</span>
+    </div>
+
     <!-- ====================== 旧模块组（原6个模块）====================== -->
     <div v-if="currentModuleGroup === 'old'">
       <!-- 旧左1：水位 -->
@@ -176,7 +182,7 @@
         </div>
       </div>
     </div>
-    <!-- 底部功能按钮 -->
+    <!-- 底部功能按钮
     <div class="boxMenuView">
       <ul>
         <li @click="moduleswitch">
@@ -191,7 +197,7 @@
         <li @click="goToModelView">数据菜单</li>
         <li @click="initializeterrain">地形加载</li>
       </ul>
-    </div>
+    </div> -->
 
     <!-- 地图 -->
     <div id="cesiumContainer">
@@ -751,49 +757,49 @@ function clearSluiceAndPumpModels() {
 }
 
 async function initializeEntites(points) {
-  // 创建带有图片的实体
-   try {
-    viewer.entities.add({
-      name: '泵站',
-      position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
-      billboard: {
-        image: marker,
-        width: 40.85,
-        height: 95.8,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        pixelOffset: new Cesium.Cartesian2(0, 16)
-      },
-      monitoItems: {
-        data: {
-          "name": "泵站位置"
-        }
-      },
-    });
-  } catch (error) {
-    if (error instanceof Cesium.DeveloperError && error.message.includes('already exists')) {
-      console.debug('忽略重复实体ID报错（功能正常）:', error.message); 
-      return; 
-    }
-    throw error;
-  }
+  // // 创建带有图片的实体
+  //  try {
+  //   viewer.entities.add({
+  //     name: '泵站',
+  //     position: Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0),
+  //     billboard: {
+  //       image: marker,
+  //       width: 40.85,
+  //       height: 95.8,
+  //       verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+  //       heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+  //       pixelOffset: new Cesium.Cartesian2(0, 16)
+  //     },
+  //     monitoItems: {
+  //       data: {
+  //         "name": "泵站位置"
+  //       }
+  //     },
+  //   });
+  // } catch (error) {
+  //   if (error instanceof Cesium.DeveloperError && error.message.includes('already exists')) {
+  //     console.debug('忽略重复实体ID报错（功能正常）:', error.message); 
+  //     return; 
+  //   }
+  //   throw error;
+  // }
 
-  // 获取地图容器和 HTML 元素
-  var cesiumContainer = document.getElementById('cesiumContainer');
-  var htmlElement = document.getElementById('htmlElement');
+  // // 获取地图容器和 HTML 元素
+  // var cesiumContainer = document.getElementById('cesiumContainer');
+  // var htmlElement = document.getElementById('htmlElement');
 
-  // 将 HTML 元素添加到地图容器中
-  cesiumContainer.appendChild(htmlElement);
+  // // 将 HTML 元素添加到地图容器中
+  // cesiumContainer.appendChild(htmlElement);
 
-  // 将 HTML 元素与 Cesium 地图相对位置绑定
-  viewer.scene.preRender.addEventListener(function () {
-    var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
-    var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
-    if (Cesium.defined(canvasPosition)) {
-      htmlElement.style.left = canvasPosition.x + 'px';
-      htmlElement.style.top = canvasPosition.y + 'px';
-    }
-  });
+  // // 将 HTML 元素与 Cesium 地图相对位置绑定
+  // viewer.scene.preRender.addEventListener(function () {
+  //   var position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106);
+  //   var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
+  //   if (Cesium.defined(canvasPosition)) {
+  //     htmlElement.style.left = canvasPosition.x + 'px';
+  //     htmlElement.style.top = canvasPosition.y + 'px';
+  //   }
+  // });
 
 
 
@@ -802,23 +808,23 @@ async function initializeEntites(points) {
   const entities = [];
 
 
-  // 广告牌
-  // points.forEach(res => {
-  //     const entity = viewer.entities.add({
-  //         id: res.id,
-  //         name: res.name,
-  //         position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude),
-  //         billboard: {
-  //             image: new Cesium.PinBuilder().fromText(res.text, Cesium.Color.ROYALBLUE, 48).toDataURL(),
-  //             verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-  //         },
-  //         monitoItems: {
-  //             data: res
-  //         },
-  //     });
-  //     // 将实体添加到数组中
-  //     entities.push(entity);
-  // });
+  //广告牌
+  points.forEach(res => {
+      const entity = viewer.entities.add({
+          id: res.id,
+          name: res.name,
+          position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude),
+          billboard: {
+              image: new Cesium.PinBuilder().fromText(res.text, Cesium.Color.ROYALBLUE, 48).toDataURL(),
+              verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+          },
+          monitoItems: {
+              data: res
+          },
+      });
+      // 将实体添加到数组中
+      entities.push(entity);
+  });
 
 
   // 创建一个具有渐变色背景的图像
@@ -853,48 +859,48 @@ async function initializeEntites(points) {
   // });
   // 使用上面创建的图像作为标签的背景
   const gradientBackground = createGradientBackground(200, 50);
-  // 点位信息
-  points.forEach(res => {
-    const entity = viewer.entities.add({
-      name: res.name,
-      position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude, 0),
-      billboard: {
-        image: marker, // 图片路径
-        width: 40.85,  // 图片宽度（像素）
-        height: 95.8, // 图片高度（像素）
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,// 垂直方向上的对齐方式
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
-        pixelOffset: new Cesium.Cartesian2(0, 16) // 偏移量，单位为像素。这里的例子是向下偏移50像素
-      },
-      label: {
-        text: res.name,
-        font: "bold 30px Helvetica", // 字体大小和样式
-        scale: 0.5,
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 使用填充和轮廓
-        fillColor: new Cesium.Color.fromCssColorString('#47e8fe'), // 文字颜色
-        outlineColor: new Cesium.Color(0, 0, 0, 0.3), // 轮廓颜色，模拟阴影
-        outlineWidth: 2.0, // 轮廓宽度
-        pixelOffset: new Cesium.Cartesian2(0, 35), // 偏移量
-        showBackground: true, // 显示背景
-        backgroundImage: gradientBackground, // 背景图像
-        horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平对齐方式
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直对齐方式
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000) // 距离显示条件
-      },
-      // point: {
-      //     pixelSize: 10, // 点的大小（像素）
-      //     color: Cesium.Color.ROYALBLUE, // 点的颜色
-      //     outlineColor: Cesium.Color.WHITE, // 点的轮廓颜色
-      //     outlineWidth: 1 // 点的轮廓宽度
-      // },
-      monitoItems: {
-        data: res
-      }
-    });
-    // 将实体添加到数组中
-    entities.push(entity);
+// 点位信息
+points.forEach(res => {
+  const entity = viewer.entities.add({
+    name: res.name,
+    position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude, 0),
+    billboard: {
+      image: marker, // 图片路径
+      width: 40.85,  // 图片宽度（像素）
+      height: 95.8, // 图片高度（像素）
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,// 垂直方向上的对齐方式
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
+      pixelOffset: new Cesium.Cartesian2(0, 16) // 偏移量，单位为像素。这里的例子是向下偏移50像素
+    },
+    label: {
+      text: res.name,
+      font: "bold 30px Helvetica", // 字体大小和样式
+      scale: 0.5,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 使用填充和轮廓
+      fillColor: new Cesium.Color.fromCssColorString('#47e8fe'), // 文字颜色
+      outlineColor: new Cesium.Color(0, 0, 0, 0.3), // 轮廓颜色，模拟阴影
+      outlineWidth: 2.0, // 轮廓宽度
+      pixelOffset: new Cesium.Cartesian2(0, -100), // 负值，将标签置于广告牌上方
+      showBackground: true, // 显示背景
+      backgroundImage: gradientBackground, // 背景图像
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平对齐方式
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
+      verticalOrigin: Cesium.VerticalOrigin.TOP, // 改为顶部对齐，使标签显示在广告牌上方
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000) // 距离显示条件
+    },
+    // point: {
+    //     pixelSize: 10, // 点的大小（像素）
+    //     color: Cesium.Color.ROYALBLUE, // 点的颜色
+    //     outlineColor: Cesium.Color.WHITE, // 点的轮廓颜色
+    //     outlineWidth: 1 // 点的轮廓宽度
+    // },
+    monitoItems: {
+      data: res
+    }
   });
+  // 将实体添加到数组中
+  entities.push(entity);
+});
 
   console.log("实体加载完毕");
 }
@@ -1673,7 +1679,7 @@ async function initializeCesium() {
   // 监听地图视图改变事件--待修正
   viewer.scene.postRender.addEventListener(onMapViewChange, this);
 
-
+  toggleWaterFeatures();  
 
   // 监听地图鼠标移动事件
   // viewer.screenSpaceEventHandler.setInputAction(onMouseMove, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
@@ -2881,6 +2887,86 @@ async function rotate() {
   
   .headTitle {
     font-size: 22px;
+  }
+}
+
+/* 数据菜单按钮样式 */
+.data-menu-btn {
+  position: fixed;
+  top: 32px; 
+  right: 30px;
+  z-index: 10;
+  /* 其他样式保持不变 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 36px;
+  background: rgba(71, 232, 254, 0.2);
+  border: 1px solid rgba(71, 232, 254, 0.5);
+  border-radius: 4px;
+  color: #47e8fe;
+  font-family: PuHuiTi, serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  pointer-events: all;
+  
+  i {
+    margin-right: 8px;
+    font-size: 16px;
+  }
+  
+  &:hover {
+    background: rgba(71, 232, 254, 0.3);
+    border-color: #47e8fe;
+    box-shadow: 0 0 10px rgba(71, 232, 254, 0.5);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* ====================== 响应式适配 ====================== */
+/* 笔记本屏幕适配 (最大宽度1440px) */
+@media screen and (max-width: 1440px) {
+  /* 调整数据菜单按钮 */
+  .data-menu-btn {
+    top: 24px; 
+    right: 20px;
+    width: 110px;
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
+/* 小屏幕笔记本适配 (最大宽度1366px) */
+@media screen and (max-width: 1366px) {
+  .data-menu-btn {
+    top: 26px; /* 原11px + 15px = 26px */
+    right: 15px;
+    width: 100px;
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+/* 超小屏幕适配 (最大宽度1280px) */
+@media screen and (max-width: 1280px) {
+  .data-menu-btn {
+    top: 21px; /* 原6px + 15px = 21px */
+    right: 10px;
+    width: 90px;
+    height: 30px;
+    font-size: 11px;
+  }
+  
+  .data-menu-btn i {
+    font-size: 14px;
+    margin-right: 5px;
   }
 }
 </style>

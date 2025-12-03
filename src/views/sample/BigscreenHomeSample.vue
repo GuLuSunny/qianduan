@@ -1098,7 +1098,7 @@ function yaoGanSelectChange () {
   font-family: PuHuiTi, serif;
   font-style: normal;
 }
-::v-deep .el-button > span {
+:deep(.el-button) > span {
   font-family: PuHuiTi, serif !important;
   font-style: normal !important;
 }
@@ -1246,36 +1246,36 @@ function yaoGanSelectChange () {
   border-color: #dcdfe6 !important;
   height: 32px;
 }
-/* ::v-deep .el-button--large{
+/* :deep(.el-button--large{
   height:auto
 } */
-::v-deep .el-input {
+:deep(.el-input) {
   --el-input-bg-color: transparent !important; /*按钮透明色 */
   --el-input-border: none !important;
   border: none !important;
 }
-::v-deep .el-input__inner {
+:deep(.el-input__inner) {
   color: #fff !important;
 }
-::v-deep .el-select {
+:deep(.el-select) {
   width: calc(100vw * 0.038) !important;
 }
 
-::v-deep .s_title3_date_switch .el-select {
+:deep(.s_title3_date_switch .el-select) {
   width: calc(100vw * 0.068) !important;
 }
-::v-deep .s_title3_date_switch .el-select .el-select__wrapper {
+:deep(.s_title3_date_switch .el-select .el-select__wrapper) {
   background-color: transparent !important; /*按钮透明色 */
   border-color: transparent !important;
   width: calc(100vw * 0.068);
 }
 
-::v-deep .el-select .el-select__wrapper {
+:deep(.el-select .el-select__wrapper) {
   background-color: transparent !important; /*按钮透明色 */
   border-color: transparent !important;
   width: calc(100vw * 0.038);
 }
-::v-deep .el-select__placeholder {
+:deep(.el-select__placeholder) {
   color: #fff !important;
 }
 </style>
