@@ -1054,7 +1054,7 @@ const downloadPrediction = async () => {
     const blob = await response.blob();
     
     // 修改：添加文件类型和大小检查
-    if (blob.size < 1000) {
+    if (blob.size < 10) {
       throw new Error('文件大小异常');
     }
 

@@ -66,9 +66,51 @@
               </div>
             </el-form-item>
 
+            <!-- 轮询状态显示 -->
+            <div v-if="isPolling" class="polling-status">
+              <el-alert
+                title="任务正在执行中，请稍候..."
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <div class="polling-progress">
+                    <el-progress
+                      :percentage="pollingProgress"
+                      :status="pollingStatus === 'failed' ? 'exception' : ''"
+                      :stroke-width="8"
+                      :show-text="false"
+                    />
+                    <div class="polling-info">
+                      <span v-if="pollingStatus === 'executing'">正在处理...</span>
+                      <span v-if="pollingStatus === 'success'" style="color: #67c23a">任务完成！</span>
+                      <span v-if="pollingStatus === 'failed'" style="color: #f56c6c">任务失败</span>
+                      <span class="polling-count">({{ pollingCount }}/{{ maxPollingCount }})</span>
+                    </div>
+                  </div>
+                </template>
+              </el-alert>
+              <el-button 
+                v-if="pollingStatus === 'failed'" 
+                @click="stopPolling" 
+                type="danger" 
+                size="small"
+                class="stop-polling-btn"
+              >
+                停止轮询
+              </el-button>
+            </div>
+
             <div class="button-group">
-              <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading">
-                开始预测
+              <el-button 
+                @click="handlePredict" 
+                class="submit-button" 
+                type="primary" 
+                :loading="predictLoading"
+                :disabled="isPolling"
+              >
+                {{ isPolling ? '任务执行中...' : '开始预测' }}
               </el-button>
             </div>
 
@@ -168,7 +210,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { Picture, Download, Back, Refresh, ZoomIn } from '@element-plus/icons-vue'
 import {
@@ -184,7 +226,9 @@ import {
   ElDivider,
   ElDialog,
   ElColorPicker,
-  ElDatePicker
+  ElDatePicker,
+  ElAlert,
+  ElProgress
 } from 'element-plus'
 import { 
   getModelByClassName, 
@@ -194,7 +238,8 @@ import {
   getLandResultConfusionMatrix, 
   getLandResultConfusionMatrixClassStats,
   getLandResultHeatmap,
-  getLandResultTif  // 添加TIF下载接口
+  getLandResultTif,
+  getModelStatusByConditions  // 导入状态查询接口
 } from '@/api/getData'
 
 // 定义emit事件
@@ -206,6 +251,16 @@ const models = ref([])
 const selectedModel = ref('')
 const observationDate = ref('') // 添加观测日期字段
 const currentModelFunctions = ref([]) // 存储当前选中模型的功能列表
+
+// 轮询相关状态
+const isPolling = ref(false)
+const pollingTimer = ref(null)
+const pollingStatus = ref('') // 'executing', 'success', 'failed'
+const pollingCount = ref(0)
+const pollingProgress = ref(0)
+const maxPollingCount = 300 // 最大轮询次数（10分钟，每2秒一次）
+const pollingInterval = 2000 // 轮询间隔2秒
+const taskStartTime = ref(null)
 
 // 所有可用的选项配置
 const allPredictOptions = ref([
@@ -231,6 +286,7 @@ const predictLoading = ref(false)
 const loadingResults = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
+
 
 // 颜色映射状态
 const colorMap = ref({
@@ -340,6 +396,11 @@ onMounted(() => {
   observationDate.value = today.toISOString().split('T')[0]
 })
 
+// 组件卸载时停止轮询
+onUnmounted(() => {
+  stopPolling()
+})
+
 // 方法
 // 获取模型数据
 const fetchModels = () => {
@@ -369,6 +430,124 @@ const fetchModels = () => {
       console.error('请求失败:', error)
       message.error('请求失败: ' + error.message)
     })
+}
+
+// 开始轮询任务状态
+const startPolling = () => {
+  stopPolling() // 先停止之前的轮询
+  
+  isPolling.value = true
+  pollingCount.value = 0
+  pollingProgress.value = 0
+  pollingStatus.value = 'executing'
+  taskStartTime.value = new Date()
+  
+  // 开始轮询
+  pollingTimer.value = setInterval(() => {
+    checkTaskStatus()
+  }, pollingInterval)
+}
+
+// 停止轮询
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+  }
+  isPolling.value = false
+}
+
+// 检查任务状态
+const checkTaskStatus = async () => {
+  if (pollingCount.value >= maxPollingCount) {
+    message.error('任务执行超时，请稍后手动获取结果')
+    stopPolling()
+    return
+  }
+
+  pollingCount.value++
+  
+  // 更新进度条（基于时间估算，0-90%）
+  const elapsedTime = new Date() - taskStartTime.value
+  const estimatedMaxTime = maxPollingCount * pollingInterval // 最大预估时间
+  pollingProgress.value = Math.min(90, Math.round((elapsedTime / estimatedMaxTime) * 100))
+
+  try {
+    const userData = localStorage.getItem('Userinfo')
+    if (!userData) {
+      throw new Error('用户信息未找到')
+    }
+    
+    const userinfo = JSON.parse(userData)
+    
+    const params = {
+      userName: userinfo.username,
+      createUserid: userinfo.id,
+      modelName: selectedModel.value,
+      observationTime: observationDate.value
+    }
+    
+    const res = await getModelStatusByConditions(params)
+    const response = res?.response?.value || res?.value || res
+    
+    console.log('任务状态查询结果:', response)
+    
+    if (response?.code === 'SUCCESS') {
+      const taskData = response.body?.[0] // 获取第一个任务数据
+      
+      if (taskData) {
+        const status = taskData.usageStatus?.toLowerCase()
+        
+        if (status === 'success') {
+          // 任务成功完成
+          pollingStatus.value = 'success'
+          pollingProgress.value = 100
+          message.success('任务执行成功！')
+          
+          // 停止轮询
+          stopPolling()
+          
+          // 延迟500ms后跳转到结果页面并获取结果
+          setTimeout(() => {
+            predictCurrent.value = 1
+            fetchResultFiles()
+          }, 500)
+          
+        } else if (status === 'failed') {
+          // 任务失败
+          pollingStatus.value = 'failed'
+          pollingProgress.value = 100
+          message.error('任务执行失败，请检查参数或联系管理员')
+          
+          // 停止轮询
+          stopPolling()
+          
+        } else if (status === 'executing') {
+          // 任务仍在执行中，继续轮询
+          pollingStatus.value = 'executing'
+          
+        } else {
+          // 未知状态
+          console.warn('未知的任务状态:', status)
+        }
+      } else {
+        // 没有找到任务数据，可能是任务还未开始记录
+        console.log('未找到任务数据，任务可能正在启动...')
+      }
+    } else {
+      // 接口返回错误
+      const msg = response?.msg || '查询任务状态失败'
+      console.error(msg)
+    }
+    
+  } catch (err) {
+    console.error('查询任务状态失败:', err)
+    // 网络错误时不立即停止轮询，继续尝试
+    if (pollingCount.value > 10) { // 连续失败10次后停止
+      message.error('任务状态查询失败，请稍后手动检查')
+      stopPolling()
+    }
+  }
 }
 
 // 处理预测请求
@@ -414,10 +593,11 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测请求已提交')
-        predictCurrent.value = 1
+        message.success('预测任务已提交，正在等待执行结果...')
+        // 不立即跳转，开始轮询任务状态
+        startPolling()
       } else {
-        const msg = response?.msg || '预测失败'
+        const msg = response?.msg || '预测任务提交失败'
         error.value = msg
         message.error(msg)
       }
@@ -484,20 +664,16 @@ const fetchResultFiles = () => {
         }
 
         message.success('结果获取成功')
-        // 只有在成功获取结果后才跳转到结果页面
-        predictCurrent.value = 1
       } else {
         const msg = response?.msg || '获取结果文件失败'
         error.value = msg
         message.error(msg)
-        // 失败时不跳转页面，保持当前页面
       }
     })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       error.value = '获取结果文件失败: ' + err.message
       message.error('获取结果文件失败: ' + err.message)
-      // 失败时不跳转页面，保持当前页面
     })
     .finally(() => {
       loadingResults.value = false
@@ -600,21 +776,24 @@ const openImageDialog = () => {
   imageDialogVisible.value = true
 }
 
-// 上一步
+// 上一步（同时停止轮询）
 const handlePredictPrevious = () => {
+  stopPolling()
   if (predictCurrent.value > 0) {
     predictCurrent.value -= 1
   }
 }
 
-// 继续预测
+// 继续预测（同时停止轮询）
 const handlePredictContinue = () => {
+  stopPolling()
   predictCurrent.value = 0
   emit('continue-predict')
 }
 
 // 返回
 const handleBack = () => {
+  stopPolling()
   emit('back')
 }
 </script>
@@ -857,6 +1036,31 @@ const handleBack = () => {
 
 .class-label {
   min-width: 50px;
+}
+
+/* 轮询状态样式 */
+.polling-status {
+  margin: 20px 0;
+}
+
+.polling-progress {
+  margin-top: 10px;
+}
+
+.polling-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.polling-count {
+  color: #909399;
+}
+
+.stop-polling-btn {
+  margin-top: 10px;
 }
 
 @media (max-width: 992px) {
