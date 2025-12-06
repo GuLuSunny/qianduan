@@ -80,15 +80,15 @@ const atmosphereData = ref({
   windSpeed: '---',
   rainfall: '---',
   atmosphereTemperature: '---',
-  soilTemperature: '---',
+  relativeHumidity: '---',
   digitalPressure: '---',
-  simpleTotalRadiation: '---',
+  aqi: '---',
   windDirection: '---',
-  soilHumidity: null,
-  atmosphereHumidity: '---',
+  primaryPollutant: null,
+  airQualityLevel: '---',
   pm25: '---',
   salinity: '---',
-  pm10: '---'
+  ozone: '---'
 })
 
 // 页面标题，显示当前日期 + 场所名称
@@ -97,7 +97,7 @@ const title = computed(() => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}日 龙庭公园气象数据`
+  return `${y}-${m}-${day}日 龙亭公园气象数据`
 })
 
 function formatNumber(number) {
