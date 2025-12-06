@@ -32,7 +32,7 @@
         </div>
         <div class="compact-item">
           <div class="compact-label">aqi指数</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.aqi) }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.aqiIndex) }}</div>
         </div>
       </div>
       
@@ -82,9 +82,9 @@ const atmosphereData = ref({
   atmosphereTemperature: '---',
   relativeHumidity: '---',
   digitalPressure: '---',
-  aqi: '---',
+  aqiIndex: '---',
   windDirection: '---',
-  primaryPollutant: null,
+  primaryPollutant: '---',
   airQualityLevel: '---',
   pm25: '---',
   salinity: '---',
