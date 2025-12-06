@@ -28,7 +28,12 @@
             </el-form-item>
 
             <!-- 添加观测日期字段 -->
-            <el-form-item label="观测日期：" required>
+            <el-form-item 
+              label="观测日期：" 
+              required 
+              v-if="!isDualModel"
+              class="date-picker-item"
+            >
               <el-date-picker 
                 v-model="observationDate" 
                 type="date" 
@@ -38,6 +43,31 @@
                 style="width: 100%"
               ></el-date-picker>
             </el-form-item>
+
+            <!-- 双极化模型的两个日期选择器 -->
+            <div v-if="isDualModel" class="dual-date-container">
+              <el-form-item label="第一时相" required class="date-picker-item">
+                <el-date-picker 
+                  v-model="firstTime" 
+                  type="date" 
+                  placeholder="选择第一时相日期" 
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                ></el-date-picker>
+              </el-form-item>
+              
+              <el-form-item label="第二时相" required class="date-picker-item">
+                <el-date-picker 
+                  v-model="secondTime" 
+                  type="date" 
+                  placeholder="选择第二时相日期" 
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                ></el-date-picker>
+              </el-form-item>
+            </div>
 
             <!-- 预测参数选项 -->
             <el-form-item label="预测参数">
@@ -249,8 +279,16 @@ const emit = defineEmits(['back', 'continue-predict'])
 const predictCurrent = ref(0)
 const models = ref([])
 const selectedModel = ref('')
-const observationDate = ref('') // 添加观测日期字段
+const observationDate = ref('') // 全极化模型使用的观测日期
+const firstTime = ref('') // 双极化模型第一时相
+const secondTime = ref('') // 双极化模型第二时相
+const selectedModelType = ref('') // 存储选中模型的类型
 const currentModelFunctions = ref([]) // 存储当前选中模型的功能列表
+
+// 计算属性：判断是否为双极化模型
+const isDualModel = computed(() => {
+  return selectedModelType.value === 'dual'
+})
 
 // 轮询相关状态
 const isPolling = ref(false)
@@ -323,6 +361,54 @@ const classNames = {
   2: '水体',
   3: '城市'
 }
+
+
+
+// 监听选择的模型变化
+watch(selectedModel, (newVal) => {
+  if (!newVal) {
+    currentModelFunctions.value = []
+    selectedModelType.value = ''
+    return
+  }
+  
+  const currentModel = models.value.find(m => m.modelName === newVal)
+  if (!currentModel || !currentModel.functions) {
+    currentModelFunctions.value = []
+    selectedModelType.value = ''
+    return
+  }
+  
+  // 解析功能字符串为数组
+  currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
+  
+  // 设置模型类型
+  selectedModelType.value = currentModel.type || ''
+  
+  // 根据模型类型重置日期
+  if (selectedModelType.value === 'dual') {
+    // 双极化模型：设置默认日期（今天和7天前）
+    const today = new Date()
+    const sevenDaysAgo = new Date(today)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    
+    firstTime.value = sevenDaysAgo.toISOString().split('T')[0]
+    secondTime.value = today.toISOString().split('T')[0]
+  } else {
+    // 全极化模型：设置默认日期为今天
+    const today = new Date()
+    observationDate.value = today.toISOString().split('T')[0]
+  }
+  
+  // 过滤不可用的选项（除了tif）
+  predictOptions.value = predictOptions.value.filter(option => 
+    isOptionAvailable(option, 'predict')
+  )
+  
+  resultOptions.value = resultOptions.value.filter(option => 
+    isOptionAvailable(option, 'result') || option === 'tif'
+  )
+})
 
 // 计算属性
 const form = computed(() => ({
@@ -484,7 +570,14 @@ const checkTaskStatus = async () => {
       userName: userinfo.username,
       createUserid: userinfo.id,
       modelName: selectedModel.value,
-      observationTime: observationDate.value
+    }
+    
+    // 根据模型类型添加日期参数
+    if (isDualModel.value) {
+      params.startTime = firstTime.value
+      params.endTime = secondTime.value
+    } else {
+      params.observationTime = observationDate.value
     }
     
     const res = await getModelStatusByConditions(params)
@@ -560,6 +653,11 @@ const handlePredict = () => {
   if (!observationDate.value) {
     message.error('请选择观测日期')
     return
+  } 
+
+  if (isDualModel.value && (!firstTime.value || !secondTime.value)) {
+    message.error('请选择双时相日期')
+    return
   }
 
   const userData = localStorage.getItem('Userinfo')
@@ -577,13 +675,22 @@ const handlePredict = () => {
     class_stats: predictOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False", // heatmap对应heatmaps_summary
     userName: userinfo.username,
-    createUserId: userinfo.id,
-    observationTime: observationDate.value // 使用自选的观测日期
+    createUserId: userinfo.id
+  }
+
+    // 根据模型类型添加日期参数
+  if (isDualModel.value) {
+    params.firstTime = firstTime.value
+    params.secondTime = secondTime.value
+  } else {
+    params.observationTime = observationDate.value
   }
 
   if (predictOptions.value.includes('preview_png') && colorMap.value) {
     params.color_map = JSON.stringify(colorMap.value)
   }
+
+
 
   predictLoading.value = true
   error.value = ''
@@ -637,39 +744,53 @@ const fetchResultFiles = () => {
   previewData.value = ''
   downloadFiles.value = {}
 
+
   const params = {
     modelName: selectedModel.value,
     preview_png: resultOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: resultOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
+    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
-    observationTime: observationDate.value, // 使用自选的观测日期
     className: "land"
   }
 
+  // 根据模型类型添加日期参数
+  if (isDualModel.value) {
+    // 对于双极化模型，使用 firstTime 作为 observationTime 传递给结果接口
+    params.observationTime = firstTime.value
+    // 如果需要，可以同时传递双时相参数
+    params.firstTime = firstTime.value
+    params.secondTime = secondTime.value
+  } else {
+    params.observationTime = observationDate.value
+  }
+
   getLandResult(params)
-    .then((res) => {
-      console.log('getLandResult 完整响应:', res)
+  .then((res) => {
+    console.log('getLandResult 完整响应:', res)
 
-      const response = res?.response?.value || res?.value || res
-      console.log('处理后的响应数据:', response)
+    const response = res?.response?.value || res?.value || res
+    console.log('处理后的响应数据:', response)
 
-      if (response?.code === 'SUCCESS') {
-        downloadFiles.value = response.body?.urls || {}
-        console.log('下载文件信息:', downloadFiles.value)
+    if (response?.code === 'SUCCESS') {
+      downloadFiles.value = response.body?.urls || {}
+      console.log('下载文件信息:', downloadFiles.value)
 
-        if (downloadFiles.value.preview_png) {
-          loadPreviewImage()
-        }
-
-        message.success('结果获取成功')
-      } else {
-        const msg = response?.msg || '获取结果文件失败'
-        error.value = msg
-        message.error(msg)
+      if (downloadFiles.value.preview_png) {
+        loadPreviewImage()
       }
-    })
+
+      message.success('结果获取成功')
+      
+      // 新增：跳转到结果页面
+      predictCurrent.value = 1
+    } else {
+      const msg = response?.msg || '获取结果文件失败'
+      error.value = msg
+      message.error(msg)
+    }
+  })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       error.value = '获取结果文件失败: ' + err.message
@@ -694,6 +815,8 @@ const loadPreviewImage = () => {
     createUserId: userinfo.id,
     userName: userinfo.username,
     observationTime: observationDate.value, // 使用自选的观测日期
+    firstTime: firstTime.value,
+    secondTime: secondTime.value,
     className: "land"
   })
     .then((res) => {
@@ -742,6 +865,8 @@ const downloadFile = (type) => {
     createUserId: userinfo.id,
     userName: userinfo.username,
     observationTime: observationDate.value, // 使用自选的观测日期
+    firstTime: firstTime.value,
+    secondTime: secondTime.value,
     className: "land"
   })
     .then((res) => {
@@ -932,14 +1057,18 @@ const handleBack = () => {
   align-items: center;
 }
 
+/* 修改预览图容器为固定大小 */
 .image-section {
   width: 100%;
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-image {
-  width: 100%;
-  max-height: 500px;
+  width: 512px;
+  height: 512px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -948,17 +1077,37 @@ const handleBack = () => {
   padding: 10px;
   background-color: #f9f9f9;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* 修改预览图图片样式 - 完全自适应 */
 .result-image img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
+/* 响应式调整 - 小屏幕下适当缩小容器 */
+@media (max-width: 768px) {
+  .result-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 调整无图片时的显示容器 */
 .no-image {
-  width: 100%;
-  height: 300px;
+  width: 512px;
+  height: 512px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -968,8 +1117,40 @@ const handleBack = () => {
   border: 1px dashed #ddd;
   border-radius: 4px;
   background-color: #f9f9f9;
+  margin: 0 auto;
 }
 
+/* 响应式调整无图片容器 */
+@media (max-width: 768px) {
+  .no-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .no-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 查看大图按钮居中 */
+.view-full-button {
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 大图预览的自适应调整 */
+.full-size-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
 .no-image .el-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -1014,12 +1195,6 @@ const handleBack = () => {
   justify-content: center;
   align-items: center;
   overflow: auto;
-}
-
-.full-size-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
 }
 
 .color-picker-container {
@@ -1075,5 +1250,61 @@ const handleBack = () => {
   .form-column-full {
     padding: 0 10px;
   }
+}
+
+/* 双极化模型日期选择器样式 */
+.dual-date-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.dual-date-container .date-picker-item {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* 调整日期选择器表单项的标签对齐 */
+.dual-date-container .el-form-item {
+  margin-bottom: 22px;
+}
+
+.dual-date-container .el-form-item__label {
+  text-align: right;
+  vertical-align: middle;
+  float: left;
+  font-size: 14px;
+  color: #606266;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dual-date-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .dual-date-container .date-picker-item {
+    width: 100%;
+  }
+}
+
+/* 确保所有表单项对齐 */
+.form-container :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.form-container :deep(.el-form-item__label) {
+  text-align: right;
+  vertical-align: middle;
+  float: left;
+  font-size: 14px;
+  color: #606266;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
 }
 </style>

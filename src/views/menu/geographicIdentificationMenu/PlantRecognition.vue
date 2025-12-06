@@ -1195,14 +1195,19 @@ const handleBack = () => {
   align-items: center;
 }
 
+
+/* 修改预览图容器为固定大小 */
 .image-section {
   width: 100%;
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-image {
-  width: 100%;
-  max-height: 500px;
+  width: 512px;
+  height: 512px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1211,17 +1216,37 @@ const handleBack = () => {
   padding: 10px;
   background-color: #f9f9f9;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* 修改预览图图片样式 - 完全自适应 */
 .result-image img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
+/* 响应式调整 - 小屏幕下适当缩小容器 */
+@media (max-width: 768px) {
+  .result-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 调整无图片时的显示容器 */
 .no-image {
-  width: 100%;
-  height: 300px;
+  width: 512px;
+  height: 512px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1231,6 +1256,30 @@ const handleBack = () => {
   border: 1px dashed #ddd;
   border-radius: 4px;
   background-color: #f9f9f9;
+  margin: 0 auto;
+}
+
+/* 响应式调整无图片容器 */
+@media (max-width: 768px) {
+  .no-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .no-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 查看大图按钮居中 */
+.view-full-button {
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .no-image .el-icon {
