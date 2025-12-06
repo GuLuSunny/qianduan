@@ -28,7 +28,12 @@
             </el-form-item>
 
             <!-- 添加观测日期字段 -->
-            <el-form-item label="观测日期：" required>
+            <el-form-item 
+              label="观测日期：" 
+              required 
+              v-if="!isDualModel"
+              class="date-picker-item"
+            >
               <el-date-picker 
                 v-model="observationDate" 
                 type="date" 
@@ -38,6 +43,31 @@
                 style="width: 100%"
               ></el-date-picker>
             </el-form-item>
+
+            <!-- 双极化模型的两个日期选择器 -->
+            <div v-if="isDualModel" class="dual-date-container">
+              <el-form-item label="第一时相" required class="date-picker-item">
+                <el-date-picker 
+                  v-model="firstTime" 
+                  type="date" 
+                  placeholder="选择第一时相日期" 
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                ></el-date-picker>
+              </el-form-item>
+              
+              <el-form-item label="第二时相" required class="date-picker-item">
+                <el-date-picker 
+                  v-model="secondTime" 
+                  type="date" 
+                  placeholder="选择第二时相日期" 
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                ></el-date-picker>
+              </el-form-item>
+            </div>
 
             <!-- 预测参数选项 -->
             <el-form-item label="预测参数">
@@ -66,9 +96,51 @@
               </div>
             </el-form-item>
 
+            <!-- 轮询状态显示 -->
+            <div v-if="isPolling" class="polling-status">
+              <el-alert
+                title="任务正在执行中，请稍候..."
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <div class="polling-progress">
+                    <el-progress
+                      :percentage="pollingProgress"
+                      :status="pollingStatus === 'failed' ? 'exception' : ''"
+                      :stroke-width="8"
+                      :show-text="false"
+                    />
+                    <div class="polling-info">
+                      <span v-if="pollingStatus === 'executing'">正在处理...</span>
+                      <span v-if="pollingStatus === 'success'" style="color: #67c23a">任务完成！</span>
+                      <span v-if="pollingStatus === 'failed'" style="color: #f56c6c">任务失败</span>
+                      <span class="polling-count">({{ pollingCount }}/{{ maxPollingCount }})</span>
+                    </div>
+                  </div>
+                </template>
+              </el-alert>
+              <el-button 
+                v-if="pollingStatus === 'failed'" 
+                @click="stopPolling" 
+                type="danger" 
+                size="small"
+                class="stop-polling-btn"
+              >
+                停止轮询
+              </el-button>
+            </div>
+
             <div class="button-group">
-              <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading">
-                开始预测
+              <el-button 
+                @click="handlePredict" 
+                class="submit-button" 
+                type="primary" 
+                :loading="predictLoading"
+                :disabled="isPolling"
+              >
+                {{ isPolling ? '任务执行中...' : '开始预测' }}
               </el-button>
             </div>
 
@@ -168,7 +240,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { Picture, Download, Back, Refresh, ZoomIn } from '@element-plus/icons-vue'
 import {
@@ -184,7 +256,9 @@ import {
   ElDivider,
   ElDialog,
   ElColorPicker,
-  ElDatePicker
+  ElDatePicker,
+  ElAlert,
+  ElProgress
 } from 'element-plus'
 import { 
   getModelByClassName, 
@@ -194,7 +268,8 @@ import {
   getLandResultConfusionMatrix, 
   getLandResultConfusionMatrixClassStats,
   getLandResultHeatmap,
-  getLandResultTif  // 添加TIF下载接口
+  getLandResultTif,
+  getModelStatusByConditions  // 导入状态查询接口
 } from '@/api/getData'
 
 // 定义emit事件
@@ -204,8 +279,26 @@ const emit = defineEmits(['back', 'continue-predict'])
 const predictCurrent = ref(0)
 const models = ref([])
 const selectedModel = ref('')
-const observationDate = ref('') // 添加观测日期字段
+const observationDate = ref('') // 全极化模型使用的观测日期
+const firstTime = ref('') // 双极化模型第一时相
+const secondTime = ref('') // 双极化模型第二时相
+const selectedModelType = ref('') // 存储选中模型的类型
 const currentModelFunctions = ref([]) // 存储当前选中模型的功能列表
+
+// 计算属性：判断是否为双极化模型
+const isDualModel = computed(() => {
+  return selectedModelType.value === 'dual'
+})
+
+// 轮询相关状态
+const isPolling = ref(false)
+const pollingTimer = ref(null)
+const pollingStatus = ref('') // 'executing', 'success', 'failed'
+const pollingCount = ref(0)
+const pollingProgress = ref(0)
+const maxPollingCount = 300 // 最大轮询次数（10分钟，每2秒一次）
+const pollingInterval = 2000 // 轮询间隔2秒
+const taskStartTime = ref(null)
 
 // 所有可用的选项配置
 const allPredictOptions = ref([
@@ -231,6 +324,7 @@ const predictLoading = ref(false)
 const loadingResults = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
+
 
 // 颜色映射状态
 const colorMap = ref({
@@ -267,6 +361,54 @@ const classNames = {
   2: '水体',
   3: '城市'
 }
+
+
+
+// 监听选择的模型变化
+watch(selectedModel, (newVal) => {
+  if (!newVal) {
+    currentModelFunctions.value = []
+    selectedModelType.value = ''
+    return
+  }
+  
+  const currentModel = models.value.find(m => m.modelName === newVal)
+  if (!currentModel || !currentModel.functions) {
+    currentModelFunctions.value = []
+    selectedModelType.value = ''
+    return
+  }
+  
+  // 解析功能字符串为数组
+  currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
+  
+  // 设置模型类型
+  selectedModelType.value = currentModel.type || ''
+  
+  // 根据模型类型重置日期
+  if (selectedModelType.value === 'dual') {
+    // 双极化模型：设置默认日期（今天和7天前）
+    const today = new Date()
+    const sevenDaysAgo = new Date(today)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    
+    firstTime.value = sevenDaysAgo.toISOString().split('T')[0]
+    secondTime.value = today.toISOString().split('T')[0]
+  } else {
+    // 全极化模型：设置默认日期为今天
+    const today = new Date()
+    observationDate.value = today.toISOString().split('T')[0]
+  }
+  
+  // 过滤不可用的选项（除了tif）
+  predictOptions.value = predictOptions.value.filter(option => 
+    isOptionAvailable(option, 'predict')
+  )
+  
+  resultOptions.value = resultOptions.value.filter(option => 
+    isOptionAvailable(option, 'result') || option === 'tif'
+  )
+})
 
 // 计算属性
 const form = computed(() => ({
@@ -340,6 +482,11 @@ onMounted(() => {
   observationDate.value = today.toISOString().split('T')[0]
 })
 
+// 组件卸载时停止轮询
+onUnmounted(() => {
+  stopPolling()
+})
+
 // 方法
 // 获取模型数据
 const fetchModels = () => {
@@ -371,6 +518,131 @@ const fetchModels = () => {
     })
 }
 
+// 开始轮询任务状态
+const startPolling = () => {
+  stopPolling() // 先停止之前的轮询
+  
+  isPolling.value = true
+  pollingCount.value = 0
+  pollingProgress.value = 0
+  pollingStatus.value = 'executing'
+  taskStartTime.value = new Date()
+  
+  // 开始轮询
+  pollingTimer.value = setInterval(() => {
+    checkTaskStatus()
+  }, pollingInterval)
+}
+
+// 停止轮询
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+  }
+  isPolling.value = false
+}
+
+// 检查任务状态
+const checkTaskStatus = async () => {
+  if (pollingCount.value >= maxPollingCount) {
+    message.error('任务执行超时，请稍后手动获取结果')
+    stopPolling()
+    return
+  }
+
+  pollingCount.value++
+  
+  // 更新进度条（基于时间估算，0-90%）
+  const elapsedTime = new Date() - taskStartTime.value
+  const estimatedMaxTime = maxPollingCount * pollingInterval // 最大预估时间
+  pollingProgress.value = Math.min(90, Math.round((elapsedTime / estimatedMaxTime) * 100))
+
+  try {
+    const userData = localStorage.getItem('Userinfo')
+    if (!userData) {
+      throw new Error('用户信息未找到')
+    }
+    
+    const userinfo = JSON.parse(userData)
+    
+    const params = {
+      userName: userinfo.username,
+      createUserid: userinfo.id,
+      modelName: selectedModel.value,
+    }
+    
+    // 根据模型类型添加日期参数
+    if (isDualModel.value) {
+      params.startTime = firstTime.value
+      params.endTime = secondTime.value
+    } else {
+      params.observationTime = observationDate.value
+    }
+    
+    const res = await getModelStatusByConditions(params)
+    const response = res?.response?.value || res?.value || res
+    
+    console.log('任务状态查询结果:', response)
+    
+    if (response?.code === 'SUCCESS') {
+      const taskData = response.body?.[0] // 获取第一个任务数据
+      
+      if (taskData) {
+        const status = taskData.usageStatus?.toLowerCase()
+        
+        if (status === 'success') {
+          // 任务成功完成
+          pollingStatus.value = 'success'
+          pollingProgress.value = 100
+          message.success('任务执行成功！')
+          
+          // 停止轮询
+          stopPolling()
+          
+          // 延迟500ms后跳转到结果页面并获取结果
+          setTimeout(() => {
+            predictCurrent.value = 1
+            fetchResultFiles()
+          }, 500)
+          
+        } else if (status === 'failed') {
+          // 任务失败
+          pollingStatus.value = 'failed'
+          pollingProgress.value = 100
+          message.error('任务执行失败，请检查参数或联系管理员')
+          
+          // 停止轮询
+          stopPolling()
+          
+        } else if (status === 'executing') {
+          // 任务仍在执行中，继续轮询
+          pollingStatus.value = 'executing'
+          
+        } else {
+          // 未知状态
+          console.warn('未知的任务状态:', status)
+        }
+      } else {
+        // 没有找到任务数据，可能是任务还未开始记录
+        console.log('未找到任务数据，任务可能正在启动...')
+      }
+    } else {
+      // 接口返回错误
+      const msg = response?.msg || '查询任务状态失败'
+      console.error(msg)
+    }
+    
+  } catch (err) {
+    console.error('查询任务状态失败:', err)
+    // 网络错误时不立即停止轮询，继续尝试
+    if (pollingCount.value > 10) { // 连续失败10次后停止
+      message.error('任务状态查询失败，请稍后手动检查')
+      stopPolling()
+    }
+  }
+}
+
 // 处理预测请求
 const handlePredict = () => {
   if (!selectedModel.value) {
@@ -380,6 +652,11 @@ const handlePredict = () => {
 
   if (!observationDate.value) {
     message.error('请选择观测日期')
+    return
+  } 
+
+  if (isDualModel.value && (!firstTime.value || !secondTime.value)) {
+    message.error('请选择双时相日期')
     return
   }
 
@@ -398,13 +675,22 @@ const handlePredict = () => {
     class_stats: predictOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False", // heatmap对应heatmaps_summary
     userName: userinfo.username,
-    createUserId: userinfo.id,
-    observationTime: observationDate.value // 使用自选的观测日期
+    createUserId: userinfo.id
+  }
+
+    // 根据模型类型添加日期参数
+  if (isDualModel.value) {
+    params.firstTime = firstTime.value
+    params.secondTime = secondTime.value
+  } else {
+    params.observationTime = observationDate.value
   }
 
   if (predictOptions.value.includes('preview_png') && colorMap.value) {
     params.color_map = JSON.stringify(colorMap.value)
   }
+
+
 
   predictLoading.value = true
   error.value = ''
@@ -414,10 +700,11 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测请求已提交')
-        predictCurrent.value = 1
+        message.success('预测任务已提交，正在等待执行结果...')
+        // 不立即跳转，开始轮询任务状态
+        startPolling()
       } else {
-        const msg = response?.msg || '预测失败'
+        const msg = response?.msg || '预测任务提交失败'
         error.value = msg
         message.error(msg)
       }
@@ -457,47 +744,57 @@ const fetchResultFiles = () => {
   previewData.value = ''
   downloadFiles.value = {}
 
+
   const params = {
     modelName: selectedModel.value,
     preview_png: resultOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: resultOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
+    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
-    observationTime: observationDate.value, // 使用自选的观测日期
     className: "land"
   }
 
+  // 根据模型类型添加日期参数
+  if (isDualModel.value) {
+    // 对于双极化模型，使用 firstTime 作为 observationTime 传递给结果接口
+    params.observationTime = firstTime.value
+    // 如果需要，可以同时传递双时相参数
+    params.firstTime = firstTime.value
+    params.secondTime = secondTime.value
+  } else {
+    params.observationTime = observationDate.value
+  }
+
   getLandResult(params)
-    .then((res) => {
-      console.log('getLandResult 完整响应:', res)
+  .then((res) => {
+    console.log('getLandResult 完整响应:', res)
 
-      const response = res?.response?.value || res?.value || res
-      console.log('处理后的响应数据:', response)
+    const response = res?.response?.value || res?.value || res
+    console.log('处理后的响应数据:', response)
 
-      if (response?.code === 'SUCCESS') {
-        downloadFiles.value = response.body?.urls || {}
-        console.log('下载文件信息:', downloadFiles.value)
+    if (response?.code === 'SUCCESS') {
+      downloadFiles.value = response.body?.urls || {}
+      console.log('下载文件信息:', downloadFiles.value)
 
-        if (downloadFiles.value.preview_png) {
-          loadPreviewImage()
-        }
-
-        message.success('结果获取成功')
-        // 只有在成功获取结果后才跳转到结果页面
-        predictCurrent.value = 1
-      } else {
-        const msg = response?.msg || '获取结果文件失败'
-        error.value = msg
-        message.error(msg)
-        // 失败时不跳转页面，保持当前页面
+      if (downloadFiles.value.preview_png) {
+        loadPreviewImage()
       }
-    })
+
+      message.success('结果获取成功')
+      
+      // 新增：跳转到结果页面
+      predictCurrent.value = 1
+    } else {
+      const msg = response?.msg || '获取结果文件失败'
+      error.value = msg
+      message.error(msg)
+    }
+  })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       error.value = '获取结果文件失败: ' + err.message
       message.error('获取结果文件失败: ' + err.message)
-      // 失败时不跳转页面，保持当前页面
     })
     .finally(() => {
       loadingResults.value = false
@@ -518,6 +815,8 @@ const loadPreviewImage = () => {
     createUserId: userinfo.id,
     userName: userinfo.username,
     observationTime: observationDate.value, // 使用自选的观测日期
+    firstTime: firstTime.value,
+    secondTime: secondTime.value,
     className: "land"
   })
     .then((res) => {
@@ -566,6 +865,8 @@ const downloadFile = (type) => {
     createUserId: userinfo.id,
     userName: userinfo.username,
     observationTime: observationDate.value, // 使用自选的观测日期
+    firstTime: firstTime.value,
+    secondTime: secondTime.value,
     className: "land"
   })
     .then((res) => {
@@ -600,21 +901,24 @@ const openImageDialog = () => {
   imageDialogVisible.value = true
 }
 
-// 上一步
+// 上一步（同时停止轮询）
 const handlePredictPrevious = () => {
+  stopPolling()
   if (predictCurrent.value > 0) {
     predictCurrent.value -= 1
   }
 }
 
-// 继续预测
+// 继续预测（同时停止轮询）
 const handlePredictContinue = () => {
+  stopPolling()
   predictCurrent.value = 0
   emit('continue-predict')
 }
 
 // 返回
 const handleBack = () => {
+  stopPolling()
   emit('back')
 }
 </script>
@@ -753,14 +1057,18 @@ const handleBack = () => {
   align-items: center;
 }
 
+/* 修改预览图容器为固定大小 */
 .image-section {
   width: 100%;
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-image {
-  width: 100%;
-  max-height: 500px;
+  width: 512px;
+  height: 512px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -769,17 +1077,37 @@ const handleBack = () => {
   padding: 10px;
   background-color: #f9f9f9;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* 修改预览图图片样式 - 完全自适应 */
 .result-image img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
+/* 响应式调整 - 小屏幕下适当缩小容器 */
+@media (max-width: 768px) {
+  .result-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 调整无图片时的显示容器 */
 .no-image {
-  width: 100%;
-  height: 300px;
+  width: 512px;
+  height: 512px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -789,8 +1117,40 @@ const handleBack = () => {
   border: 1px dashed #ddd;
   border-radius: 4px;
   background-color: #f9f9f9;
+  margin: 0 auto;
 }
 
+/* 响应式调整无图片容器 */
+@media (max-width: 768px) {
+  .no-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .no-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 查看大图按钮居中 */
+.view-full-button {
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 大图预览的自适应调整 */
+.full-size-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
 .no-image .el-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -837,12 +1197,6 @@ const handleBack = () => {
   overflow: auto;
 }
 
-.full-size-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
 .color-picker-container {
   display: flex;
   flex-wrap: wrap;
@@ -859,6 +1213,31 @@ const handleBack = () => {
   min-width: 50px;
 }
 
+/* 轮询状态样式 */
+.polling-status {
+  margin: 20px 0;
+}
+
+.polling-progress {
+  margin-top: 10px;
+}
+
+.polling-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.polling-count {
+  color: #909399;
+}
+
+.stop-polling-btn {
+  margin-top: 10px;
+}
+
 @media (max-width: 992px) {
   .form-container {
     width: 95%;
@@ -871,5 +1250,61 @@ const handleBack = () => {
   .form-column-full {
     padding: 0 10px;
   }
+}
+
+/* 双极化模型日期选择器样式 */
+.dual-date-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.dual-date-container .date-picker-item {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* 调整日期选择器表单项的标签对齐 */
+.dual-date-container .el-form-item {
+  margin-bottom: 22px;
+}
+
+.dual-date-container .el-form-item__label {
+  text-align: right;
+  vertical-align: middle;
+  float: left;
+  font-size: 14px;
+  color: #606266;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dual-date-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .dual-date-container .date-picker-item {
+    width: 100%;
+  }
+}
+
+/* 确保所有表单项对齐 */
+.form-container :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.form-container :deep(.el-form-item__label) {
+  text-align: right;
+  vertical-align: middle;
+  float: left;
+  font-size: 14px;
+  color: #606266;
+  line-height: 40px;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
 }
 </style>

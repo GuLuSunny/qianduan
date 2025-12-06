@@ -53,11 +53,53 @@
                 </div>
               </div>
             </el-form-item>
+            
+            <!-- 在预测参数和按钮组之间添加轮询状态 -->
+            <div v-if="isPolling" class="polling-status">
+              <el-alert
+                title="任务正在执行中，请稍候..."
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <div class="polling-progress">
+                    <el-progress
+                      :percentage="pollingProgress"
+                      :status="pollingStatus === 'failed' ? 'exception' : ''"
+                      :stroke-width="8"
+                      :show-text="false"
+                    />
+                    <div class="polling-info">
+                      <span v-if="pollingStatus === 'executing'">正在处理...</span>
+                      <span v-if="pollingStatus === 'success'" style="color: #67c23a">任务完成！</span>
+                      <span v-if="pollingStatus === 'failed'" style="color: #f56c6c">任务失败</span>
+                      <span class="polling-count">({{ pollingCount }}/{{ maxPollingCount }})</span>
+                    </div>
+                  </div>
+                </template>
+              </el-alert>
+              <el-button 
+                v-if="pollingStatus === 'failed'" 
+                @click="stopPolling" 
+                type="danger" 
+                size="small"
+                class="stop-polling-btn"
+              >
+                停止轮询
+              </el-button>
+            </div>
 
             <div class="button-group">
-              <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading">
-                开始预测
-              </el-button>
+                <el-button 
+                  @click="handlePredict" 
+                  class="submit-button" 
+                  type="primary" 
+                  :loading="predictLoading"
+                  :disabled="isPolling"
+                >
+                  {{ isPolling ? '任务执行中...' : '开始预测' }}
+                </el-button>
             </div>
 
             <!-- 结果获取参数选项 -->
@@ -234,7 +276,8 @@ import {
   getModelByClassName,
   plantCoverPredict,
   getPlantResultByType,
-  DownloadPlantTrainModelFiles
+  DownloadPlantTrainModelFiles,
+  getModelStatusByConditions
 } from '@/api/getData'
 
 // 定义emit事件
@@ -287,6 +330,16 @@ const predictLoading = ref(false)
 const loadingResults = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
+
+// 轮询相关状态
+const isPolling = ref(false)
+const pollingTimer = ref(null)
+const pollingStatus = ref('')
+const pollingCount = ref(0)
+const pollingProgress = ref(0)
+const maxPollingCount = 300
+const pollingInterval = 2000
+const taskStartTime = ref(null)
 
 // 颜色映射状态
 const colorMap = ref({
@@ -379,6 +432,103 @@ onMounted(() => {
   const today = new Date()
   observationDate.value = today.toISOString().split('T')[0]
 })
+
+// 轮询相关方法
+const startPolling = () => {
+  stopPolling()
+  
+  isPolling.value = true
+  pollingCount.value = 0
+  pollingProgress.value = 0
+  pollingStatus.value = 'executing'
+  taskStartTime.value = new Date()
+  
+  pollingTimer.value = setInterval(() => {
+    checkTaskStatus()
+  }, pollingInterval)
+}
+
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+  }
+  isPolling.value = false
+}
+
+const checkTaskStatus = async () => {
+  if (pollingCount.value >= maxPollingCount) {
+    message.error('任务执行超时，请稍后手动获取结果')
+    stopPolling()
+    return
+  }
+
+  pollingCount.value++
+  
+  const elapsedTime = new Date() - taskStartTime.value
+  const estimatedMaxTime = maxPollingCount * pollingInterval
+  pollingProgress.value = Math.min(90, Math.round((elapsedTime / estimatedMaxTime) * 100))
+
+  try {
+    const userData = localStorage.getItem('Userinfo')
+    if (!userData) {
+      throw new Error('用户信息未找到')
+    }
+    
+    const userinfo = JSON.parse(userData)
+    
+    const params = {
+      userName: userinfo.username,
+      createUserid: userinfo.id,
+      modelName: selectedModel.value,
+      observationTime: observationDate.value,
+      className: "plant"
+    }
+    
+    // 假设有查询植物任务状态的接口
+    const res = await getModelStatusByConditions(params)
+    const response = res?.response?.value || res?.value || res
+    
+    if (response?.code === 'SUCCESS') {
+      const taskData = response.body?.[0]
+      
+      if (taskData) {
+        const status = taskData.usageStatus?.toLowerCase()
+        
+        if (status === 'success') {
+          pollingStatus.value = 'success'
+          pollingProgress.value = 100
+          message.success('任务执行成功！')
+          
+          stopPolling()
+          
+          setTimeout(() => {
+            predictCurrent.value = 1
+            if (permanentOptions.value.preview_png && isOptionAvailable('preview_png', 'result')) {
+              fetchPreviewImage()
+            }
+          }, 500)
+          
+        } else if (status === 'failed') {
+          pollingStatus.value = 'failed'
+          pollingProgress.value = 100
+          message.error('任务执行失败，请检查参数或联系管理员')
+          stopPolling()
+          
+        } else if (status === 'executing') {
+          pollingStatus.value = 'executing'
+        }
+      }
+    }
+    
+  } catch (err) {
+    console.error('查询任务状态失败:', err)
+    if (pollingCount.value > 10) {
+      message.error('任务状态查询失败，请稍后手动检查')
+      stopPolling()
+    }
+  }
+}
 
 // 方法
 // 获取模型数据
@@ -478,12 +628,9 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测请求已提交')
-        predictCurrent.value = 1
-        // 跳转后自动获取预览图
-        if (permanentOptions.value.preview_png && isOptionAvailable('preview_png', 'result')) {
-          fetchPreviewImage()
-        }
+        message.success('预测任务已提交，正在等待执行结果...')
+        // 不立即跳转，开始轮询任务状态
+        startPolling()
       } else {
         const msg = response?.msg || '预测失败'
         error.value = msg
@@ -1048,14 +1195,19 @@ const handleBack = () => {
   align-items: center;
 }
 
+
+/* 修改预览图容器为固定大小 */
 .image-section {
   width: 100%;
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-image {
-  width: 100%;
-  max-height: 500px;
+  width: 512px;
+  height: 512px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1064,17 +1216,37 @@ const handleBack = () => {
   padding: 10px;
   background-color: #f9f9f9;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* 修改预览图图片样式 - 完全自适应 */
 .result-image img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
+/* 响应式调整 - 小屏幕下适当缩小容器 */
+@media (max-width: 768px) {
+  .result-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 调整无图片时的显示容器 */
 .no-image {
-  width: 100%;
-  height: 300px;
+  width: 512px;
+  height: 512px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1084,6 +1256,30 @@ const handleBack = () => {
   border: 1px dashed #ddd;
   border-radius: 4px;
   background-color: #f9f9f9;
+  margin: 0 auto;
+}
+
+/* 响应式调整无图片容器 */
+@media (max-width: 768px) {
+  .no-image {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .no-image {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* 查看大图按钮居中 */
+.view-full-button {
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .no-image .el-icon {

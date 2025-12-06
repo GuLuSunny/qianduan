@@ -450,7 +450,7 @@ const downloadFile = async (filePath, defaultName) => {
     })
     if (!response.ok) throw new Error(`下载失败: ${response.status}`)
     const blob = await response.blob()
-    if (blob.size < 1000) throw new Error('文件大小异常')
+    if (blob.size < 10) throw new Error('文件大小异常')
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url

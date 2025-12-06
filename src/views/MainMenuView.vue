@@ -9,6 +9,7 @@
       breakpoint="lg" 
       @collapse="onCollapse"
       @breakpoint="onBreakpoint"
+      style="position: fixed; height: 100vh; overflow: auto; left: 0; top: 0; z-index: 100;"
     >
       <div v-if="!collapsed" class="logo">地表水资源<br></br>综合信息遥感监测系统</div>
       <div v-else class="logo-collapsed">
@@ -44,7 +45,7 @@
       </a-menu>
     </a-layout-sider>
     
-    <a-layout>
+    <a-layout :style="{ marginLeft: collapsed ? '80px' : '280px' }">
       <a-layout-header style="background: #fff; padding: 0">
         <span class="head">
           <Head></Head>

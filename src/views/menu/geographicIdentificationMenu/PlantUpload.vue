@@ -12,7 +12,7 @@
     <!-- 提示框 -->
     <div class="info-box" v-if="infoVisible">
       <span class="icon">🔔</span>
-      资料上传成功后可在数据查询页面查看
+      资料上传成功后可在即可在植被覆盖页面预测
       <el-button class="close-button" @click="hideInfo" type="text">×</el-button>
     </div>
 
@@ -79,6 +79,7 @@
         </el-form-item>
       </el-form>
 
+      
       <!-- 按钮组 -->
       <div class="button-group">
         <el-button @click="handleCancel" class="cancel-button">取消</el-button>

@@ -12,7 +12,7 @@
     <!-- 提示框 -->
     <div class="info-box" v-if="infoVisible">
       <span class="icon">🔔</span>
-      资料上传成功后可在数据查询页面查看
+      资料上传成功后即可在地物分类页面进行预测
       <el-button class="close-button" @click="hideInfo" type="text">×</el-button>
     </div>
 
@@ -24,139 +24,178 @@
       </el-radio-group>
     </div>
 
-    <!-- 表单填写页面 -->
-    <div class="form-container" v-if="uploadCurrent === 0">
-      <!-- 文件上传部分 -->
-      <div class="upload-container" v-if="uploadType === 'full'">
-        <Dragger :multiple="false" accept=".tif,.zip" style="margin-top: 20px" :beforeUpload="beforeUpload"
-          :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
-          <p class="ant-upload-drag-icon">
-            <InboxOutlined />
-          </p>
-          <p class="ant-upload-text">点击或将文件拖拽到这里上传</p>
-          <p class="ant-upload-hint">支持扩展名：.tif 或 .zip（单个文件）</p>
-        </Dragger>
-      </div>
-
-      <!-- 双极化数据文件上传区域 -->
-      <div class="dual-upload-container" v-if="uploadType === 'dual'">
-        <div class="file-upload-section">
-          <h4>时段1 VV数据：</h4>
-          <div class="file-input-group">
-            <el-input v-model="preVVFilePath" placeholder="请选择时段1 VV文件" readonly style="width: 100%;" clearable
-              @clear="handleRemoveFile('preVV')" @keydown.delete="handleKeydown($event, 'preVV')"
-              @focus="handleInputFocus('preVV')">
-              <template #append>
-                <el-button @click="handlePreVVBrowseClick"
-                  style="background-color: #409eff; color: white; border: none;">
-                  浏览
-                </el-button>
-              </template>
-            </el-input>
-            <input type="file" ref="preVVFileInput" @change="handlePreVVFileSelect" accept=".tif"
-              style="display: none;" />
-          </div>
+    <!-- 表单填写页面 - 水平布局 -->
+    <div class="form-container horizontal-layout" v-if="uploadCurrent === 0">
+      <!-- 左侧：文件上传区域 -->
+      <div class="upload-section">
+        <!-- 全极化文件上传 -->
+        <div class="upload-container" v-if="uploadType === 'full'">
+          <h3 class="section-title">全极化数据上传</h3>
+          <Dragger :multiple="false" accept=".tif,.zip" :beforeUpload="beforeUpload"
+            :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
+            <p class="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p class="ant-upload-text">点击或将文件拖拽到这里上传</p>
+            <p class="ant-upload-hint">支持扩展名：.tif 或 .zip（单个文件）</p>
+          </Dragger>
         </div>
 
-        <div class="file-upload-section">
-          <h4>时段1 VH数据：</h4>
-          <div class="file-input-group">
-            <el-input v-model="preVHFilePath" placeholder="请选择时段1 VH文件" readonly style="width: 100%;" clearable
-              @clear="handleRemoveFile('preVH')" @keydown.delete="handleKeydown($event, 'preVH')"
-              @focus="handleInputFocus('preVH')">
-              <template #append>
-                <el-button @click="handlePreVHBrowseClick"
-                  style="background-color: #409eff; color: white; border: none;">
-                  浏览
-                </el-button>
-              </template>
-            </el-input>
-            <input type="file" ref="preVHFileInput" @change="handlePreVHFileSelect" accept=".tif"
-              style="display: none;" />
-          </div>
-        </div>
+        <!-- 双极化数据文件上传区域 -->
+        <div class="dual-upload-container" v-if="uploadType === 'dual'">
+          <h3 class="section-title">双极化数据上传</h3>
+          
+          <!-- 时段1文件上传 -->
+          <div class="time-period-section">
+            <h4 class="period-title">时段1</h4>
+            <div class="period-files">
+              <div class="file-upload-section">
+                <div class="file-label">VV数据：</div>
+                <div class="file-input-group">
+                  <el-input v-model="preVVFilePath" placeholder="请选择时段1 VV文件" readonly style="width: 100%;" clearable
+                    @clear="handleRemoveFile('preVV')" @keydown.delete="handleKeydown($event, 'preVV')"
+                    @focus="handleInputFocus('preVV')">
+                    <template #append>
+                      <el-button @click="handlePreVVBrowseClick"
+                        style="background-color: #409eff; color: white; border: none;">
+                        浏览
+                      </el-button>
+                    </template>
+                  </el-input>
+                  <input type="file" ref="preVVFileInput" @change="handlePreVVFileSelect" accept=".tif"
+                    style="display: none;" />
+                </div>
+              </div>
 
-        <div class="file-upload-section">
-          <h4>时段2 VV数据：</h4>
-          <div class="file-input-group">
-            <el-input v-model="nextVVFilePath" placeholder="请选择时段2 VV文件" readonly style="width: 100%;" clearable
-              @clear="handleRemoveFile('nextVV')" @keydown.delete="handleKeydown($event, 'nextVV')"
-              @focus="handleInputFocus('nextVV')">
-              <template #append>
-                <el-button @click="handleNextVVBrowseClick"
-                  style="background-color: #409eff; color: white; border: none;">
-                  浏览
-                </el-button>
-              </template>
-            </el-input>
-            <input type="file" ref="nextVVFileInput" @change="handleNextVVFileSelect" accept=".tif"
-              style="display: none;" />
-          </div>
-        </div>
-
-        <div class="file-upload-section">
-          <h4>时段2 VH数据：</h4>
-          <div class="file-input-group">
-            <el-input v-model="nextVHFilePath" placeholder="请选择时段2 VH文件" readonly style="width: 100%;" clearable
-              @clear="handleRemoveFile('nextVH')" @keydown.delete="handleKeydown($event, 'nextVH')"
-              @focus="handleInputFocus('nextVH')">
-              <template #append>
-                <el-button @click="handleNextVHBrowseClick"
-                  style="background-color: #409eff; color: white; border: none;">
-                  浏览
-                </el-button>
-              </template>
-            </el-input>
-            <input type="file" ref="nextVHFileInput" @change="handleNextVHFileSelect" accept=".tif"
-              style="display: none;" />
-          </div>
-        </div>
-
-        <!-- 文件状态显示 -->
-        <div class="file-status-section">
-          <h4>文件状态：</h4>
-          <div class="file-status">
-            <div v-for="file in dualFileStatus" :key="file.type" class="status-item">
-              <el-icon :color="file.uploaded ? '#67C23A' : '#F56C6C'">
-                <Check v-if="file.uploaded" />
-                <Close v-else />
-              </el-icon>
-              <span>{{ file.label }}: {{ file.uploaded ? file.name : '未选择' }}</span>
+              <div class="file-upload-section">
+                <div class="file-label">VH数据：</div>
+                <div class="file-input-group">
+                  <el-input v-model="preVHFilePath" placeholder="请选择时段1 VH文件" readonly style="width: 100%;" clearable
+                    @clear="handleRemoveFile('preVH')" @keydown.delete="handleKeydown($event, 'preVH')"
+                    @focus="handleInputFocus('preVH')">
+                    <template #append>
+                      <el-button @click="handlePreVHBrowseClick"
+                        style="background-color: #409eff; color: white; border: none;">
+                        浏览
+                      </el-button>
+                    </template>
+                  </el-input>
+                  <input type="file" ref="preVHFileInput" @change="handlePreVHFileSelect" accept=".tif"
+                    style="display: none;" />
+                </div>
+              </div>
             </div>
           </div>
-          <p v-if="hasMissingDualFiles" class="missing-warning">
-            请确保上传所有4个必需的文件！
-          </p>
+
+          <!-- 时段2文件上传 -->
+          <div class="time-period-section">
+            <h4 class="period-title">时段2</h4>
+            <div class="period-files">
+              <div class="file-upload-section">
+                <div class="file-label">VV数据：</div>
+                <div class="file-input-group">
+                  <el-input v-model="nextVVFilePath" placeholder="请选择时段2 VV文件" readonly style="width: 100%;" clearable
+                    @clear="handleRemoveFile('nextVV')" @keydown.delete="handleKeydown($event, 'nextVV')"
+                    @focus="handleInputFocus('nextVV')">
+                    <template #append>
+                      <el-button @click="handleNextVVBrowseClick"
+                        style="background-color: #409eff; color: white; border: none;">
+                        浏览
+                      </el-button>
+                    </template>
+                  </el-input>
+                  <input type="file" ref="nextVVFileInput" @change="handleNextVVFileSelect" accept=".tif"
+                    style="display: none;" />
+                </div>
+              </div>
+
+              <div class="file-upload-section">
+                <div class="file-label">VH数据：</div>
+                <div class="file-input-group">
+                  <el-input v-model="nextVHFilePath" placeholder="请选择时段2 VH文件" readonly style="width: 100%;" clearable
+                    @clear="handleRemoveFile('nextVH')" @keydown.delete="handleKeydown($event, 'nextVH')"
+                    @focus="handleInputFocus('nextVH')">
+                    <template #append>
+                      <el-button @click="handleNextVHBrowseClick"
+                        style="background-color: #409eff; color: white; border: none;">
+                        浏览
+                      </el-button>
+                    </template>
+                  </el-input>
+                  <input type="file" ref="nextVHFileInput" @change="handleNextVHFileSelect" accept=".tif"
+                    style="display: none;" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 文件状态显示 -->
+          <div class="file-status-section">
+            <h4 class="status-title">文件状态</h4>
+            <div class="status-grid">
+              <div v-for="file in dualFileStatus" :key="file.type" class="status-item">
+                <div class="status-icon">
+                  <el-icon :color="file.uploaded ? '#67C23A' : '#F56C6C'">
+                    <Check v-if="file.uploaded" />
+                    <Close v-else />
+                  </el-icon>
+                </div>
+                <div class="status-info">
+                  <div class="status-label">{{ file.label }}</div>
+                  <div class="status-name">{{ file.uploaded ? file.name : '未选择' }}</div>
+                </div>
+              </div>
+            </div>
+            <p v-if="hasMissingDualFiles" class="missing-warning">
+              ⚠️ 请确保上传所有4个必需的文件！
+            </p>
+          </div>
         </div>
       </div>
 
-      <!-- 公共表单部分 -->
-      <el-form :model="form" label-width="120px" style="width: 40%; margin: 0 auto">
-        <el-form-item label="数据简介：" required>
-          <el-input type="textarea" v-model="dataDescription" placeholder="请输入数据简介" rows="4" clearable></el-input>
-        </el-form-item>
-        <el-form-item label="发布人：" required>
-          <el-input v-model="publisher" placeholder="请输入发布人姓名" clearable></el-input>
-        </el-form-item>
-        <!-- 添加观测日期字段 -->
-        <el-form-item label="观测日期：" required>
-          <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
-        </el-form-item>
+      <!-- 右侧：表单信息区域 -->
+      <div class="form-section">
+        <h3 class="section-title">数据信息</h3>
+        <el-form :model="form" label-width="100px" class="info-form">
+          <el-form-item label="数据简介：" required>
+            <el-input type="textarea" v-model="dataDescription" placeholder="请输入数据简介" rows="4" clearable></el-input>
+          </el-form-item>
+          <el-form-item label="发布人：" required>
+            <el-input v-model="publisher" placeholder="请输入发布人姓名" clearable></el-input>
+          </el-form-item>
+          
+          <!-- 双时段日期选择 -->
+          <div class="date-range-section" v-if="uploadType === 'dual'">
+            <el-form-item label="时段1日期：" required>
+              <el-date-picker v-model="firstTime" type="date" placeholder="选择时段1日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
+            </el-form-item>
+            <el-form-item label="时段2日期：" required>
+              <el-date-picker v-model="secondTime" type="date" placeholder="选择时段2日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
+            </el-form-item>
+          </div>
+          
+          <!-- 单时段日期选择（全极化） -->
+          <el-form-item label="观测日期：" required v-if="uploadType === 'full'">
+            <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
+          </el-form-item>
 
-        <!-- 模型名称字段 -->
-        <el-form-item label="模型名称：" required>
-          <el-select v-model="modelName" placeholder="请选择模型" style="width: 100%" disabled>
-            <el-option v-for="model in availableModels" :key="model.value" :label="model.label"
-              :value="model.value"></el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
+          <!-- 模型名称字段 -->
+          <el-form-item label="模型名称：" required>
+            <el-select v-model="modelName" placeholder="请选择模型" style="width: 100%" disabled>
+              <el-option v-for="model in availableModels" :key="model.value" :label="model.label"
+                :value="model.value"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
 
-      <!-- 按钮组 -->
-      <div class="button-group">
-        <el-button @click="handleCancel" class="cancel-button">取消</el-button>
-        <el-button @click="handleSubmit" class="submit-button" type="primary" :disabled="!isFormValid">下一步</el-button>
+        <!-- 按钮组 -->
+        <div class="button-group">
+          <el-button @click="handleCancel" class="cancel-button">取消</el-button>
+          <el-button @click="handleSubmit" class="submit-button" type="primary" :disabled="!isFormValid">下一步</el-button>
+        </div>
       </div>
     </div>
 
@@ -246,6 +285,10 @@ const infoVisible = ref(true)
 const files = ref([])
 const publisher = ref(userinfo?.username || '')
 const dataDescription = ref('')
+// 双时段日期字段
+const firstTime = ref('')
+const secondTime = ref('')
+// 单时段日期字段（用于全极化）
 const observationDate = ref('')
 const uploadType = ref('dual') // 'dual' 或 'full'
 const modelName = ref('')
@@ -271,15 +314,34 @@ const availableModels = ref([
   { label: '全极化模型', value: 'fullModel' }
 ])
 
-const infoData = ref([
-  { title: '数据简介', value: dataDescription.value },
-  { title: '发布人', value: publisher.value }
-])
+// 信息确认数据
+const infoData = computed(() => {
+  const baseData = [
+    { title: '数据简介', value: dataDescription.value || '无' },
+    { title: '发布人', value: publisher.value },
+    { title: '数据类型', value: uploadType.value === 'dual' ? '双极化数据' : '全极化数据' },
+    { title: '模型名称', value: modelName.value }
+  ]
+  
+  if (uploadType.value === 'dual') {
+    baseData.splice(2, 0, 
+      { title: '时段1日期', value: firstTime.value || '未设置' },
+      { title: '时段2日期', value: secondTime.value || '未设置' }
+    )
+  } else {
+    baseData.splice(2, 0, { title: '观测日期', value: observationDate.value || '未设置' })
+  }
+  
+  return baseData
+})
+
 
 // 计算属性
 const form = computed(() => ({
   dataDescription: dataDescription.value,
   publisher: publisher.value,
+  firstTime: firstTime.value,
+  secondTime: secondTime.value,
   observationDate: observationDate.value,
   uploadType: uploadType.value,
   modelName: modelName.value
@@ -305,14 +367,14 @@ const hasMissingDualFiles = computed(() => {
 
 // 表单验证
 const isFormValid = computed(() => {
-  if (!publisher.value || !dataDescription.value || !observationDate.value) {
+  if (!publisher.value || !dataDescription.value) {
     return false
   }
 
   if (uploadType.value === 'full') {
-    return files.value.length > 0
+    return files.value.length > 0 && !!observationDate.value
   } else {
-    return !hasMissingDualFiles.value
+    return !hasMissingDualFiles.value && !!firstTime.value && !!secondTime.value
   }
 })
 
@@ -354,6 +416,9 @@ const clearDualFiles = () => {
   preVHFileObject.value = null
   nextVVFileObject.value = null
   nextVHFileObject.value = null
+  firstTime.value = ''
+  secondTime.value = ''
+  observationDate.value = ''
 }
 
 // 文件浏览按钮点击事件
@@ -522,13 +587,6 @@ function handleSubmit() {
   // 确认文件
   confirmFiles()
 
-  infoData.value = [
-    { title: '数据简介', value: dataDescription.value || '无' },
-    { title: '发布人', value: publisher.value },
-    { title: '观测日期', value: observationDate.value },
-    { title: '数据类型', value: uploadType.value === 'dual' ? '双极化数据' : '全极化数据' },
-    { title: '模型名称', value: modelName.value }
-  ]
 
   uploadCurrent.value = 1
 }
@@ -662,7 +720,8 @@ async function handleConfirm() {
     formData.append('userName', publisher.value)
     formData.append('dataIntroduction', dataDescription.value)
     formData.append('className', className.value)
-    formData.append('observationTime', observationDate.value)
+    formData.append('firstTime', firstTime.value) // 改为firstTime
+    formData.append('secondTime', secondTime.value)     // 改为secondTime
     formData.append('modelName', modelName.value)
     // 使用多文件上传接口
     landFilesUploadMul(formData)
@@ -705,9 +764,12 @@ async function handleConfirm() {
   loadingInstance.close()
 }
 
+// 继续提交 - 重置字段
 function handleContinue() {
   files.value = []
   dataDescription.value = ''
+  firstTime.value = ''
+  secondTime.value = ''
   observationDate.value = ''
   clearDualFiles()
   uploadType.value = 'dual'
@@ -724,7 +786,8 @@ function hideInfo() {
 <style scoped>
 .feature-container {
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: 1400px;
+  padding: 0 20px;
 }
 
 .steps-container {
@@ -742,7 +805,7 @@ function hideInfo() {
 }
 
 .info-box {
-  width: 50%;
+  width: 60%;
   background-color: #f0f9ff;
   color: #1890ff;
   border: 1px solid #91d5ff;
@@ -773,27 +836,79 @@ function hideInfo() {
   color: #ff4d4f;
 }
 
+/* 水平布局容器 */
+.horizontal-layout {
+  display: flex;
+  gap: 30px;
+  margin: 30px auto 40px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.upload-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-section {
+  flex: 0 0 400px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e7ed;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+}
+
 .upload-container {
-  margin: 30px auto;
-  width: 50%;
+  margin-bottom: 30px;
 }
 
 .dual-upload-container {
-  margin: 30px auto;
-  width: 60%;
   padding: 20px;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
   background-color: #f8f9fa;
 }
 
-.file-upload-section {
-  margin-bottom: 20px;
+.time-period-section {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #e4e7ed;
 }
 
-.file-upload-section h4 {
-  margin-bottom: 8px;
-  color: #303133;
+.time-period-section:last-child {
+  border-bottom: none;
+  margin-bottom: 15px;
+}
+
+.period-title {
+  margin: 0 0 15px 0;
+  color: #409eff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.period-files {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.file-upload-section {
+  margin-bottom: 0;
+}
+
+.file-label {
+  margin-bottom: 6px;
+  color: #606266;
   font-size: 14px;
   font-weight: 500;
 }
@@ -810,26 +925,53 @@ function hideInfo() {
   border-top: 1px solid #e4e7ed;
 }
 
-.file-status-section h4 {
-  margin-bottom: 12px;
+.status-title {
+  margin: 0 0 15px 0;
   color: #303133;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.file-status {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-bottom: 15px;
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+}
+
+.status-icon {
+  flex-shrink: 0;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 2px;
+}
+
+.status-name {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .missing-warning {
@@ -838,33 +980,27 @@ function hideInfo() {
   text-align: center;
   font-weight: 500;
   margin: 0;
+  padding: 8px;
+  background: #fef0f0;
+  border-radius: 4px;
 }
 
-.ant-upload-drag-icon {
-  margin-bottom: 16px;
+.info-form {
+  margin-bottom: 20px;
 }
 
-.ant-upload-text {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.ant-upload-hint {
-  color: #666;
-  font-size: 14px;
-}
-
-.form-container {
-  margin: 30px auto 40px;
-  width: 80%;
+.date-range-section {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
 }
 
 .button-group {
   display: flex;
   justify-content: center;
-  margin-top: 30px;
-  gap: 20px;
+  margin-top: 25px;
+  gap: 15px;
 }
 
 .cancel-button {
@@ -927,7 +1063,7 @@ function hideInfo() {
 }
 
 .el-form-item {
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .el-table {
@@ -937,16 +1073,38 @@ function hideInfo() {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+/* 响应式设计 */
 @media (max-width: 992px) {
-
-  .upload-container,
-  .dual-upload-container,
+  .horizontal-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .form-section {
+    flex: none;
+    width: 100%;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .info-box {
     width: 90%;
   }
+}
 
-  .form-container {
-    width: 95%;
+@media (max-width: 768px) {
+  .feature-container {
+    padding: 0 10px;
+  }
+  
+  .dual-upload-container {
+    padding: 15px;
+  }
+  
+  .period-files {
+    gap: 12px;
   }
 }
 </style>
