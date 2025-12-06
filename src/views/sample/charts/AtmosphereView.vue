@@ -23,16 +23,16 @@
       <!-- 第二行 -->
       <div class="compact-row">
         <div class="compact-item">
-          <div class="compact-label">土壤温度(℃)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.soilTemperature) }}</div>
+          <div class="compact-label">相对湿度(%)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.relativeHumidity) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">数字气压(hPa)</div>
           <div class="compact-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
         </div>
         <div class="compact-item">
-          <div class="compact-label">简易总辐射(W/m2)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.simpleTotalRadiation) }}</div>
+          <div class="compact-label">aqi指数</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.aqi) }}</div>
         </div>
       </div>
       
@@ -43,12 +43,12 @@
           <div class="compact-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
         </div>
         <div class="compact-item">
-          <div class="compact-label">土壤湿度(%RH)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.soilHumidity) || 'N/A' }}</div>
+          <div class="compact-label">首要污染物</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.primaryPollutant) || 'N/A' }}</div>
         </div>
         <div class="compact-item">
-          <div class="compact-label">大气湿度(%RH)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.atmosphereHumidity) }}</div>
+          <div class="compact-label">空气质量等级</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.airQualityLevel) }}</div>
         </div>
       </div>
       
@@ -59,8 +59,8 @@
           <div class="compact-value">{{ formatNumber(atmosphereData.pm25) }}</div>
         </div>
         <div class="compact-item">
-          <div class="compact-label">盐分(mg/L)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.salinity) }}</div>
+          <div class="compact-label">臭氧(μg/m3)</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.ozone) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">PM10(ug/m3)</div>
