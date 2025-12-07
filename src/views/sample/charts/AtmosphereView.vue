@@ -87,7 +87,7 @@ const atmosphereData = ref({
   primaryPollutant: '---',
   airQualityLevel: '---',
   pm25: '---',
-  salinity: '---',
+  pm10: '---',
   ozone: '---'
 })
 
