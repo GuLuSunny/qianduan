@@ -1746,32 +1746,48 @@ async function initializeCesium() {
   });
 
 }
-
+//建筑物模型
 function initializeBuildings() {
   console.log("loadedBuildings:" + loadedBuildings.value)
-  if (loadedBuildings.value == false) {
+  if (!loadedBuildings.value) {
+
     viewer.entities.add({
       id: 'model',
       position: position,
-      //orientation:orientation,
+
       model: {
+
         uri: './building/building.glb',
       }
-    })
+    });
+
     loadedBuildings.value = true;
+
+    // 点击后自动飞到建筑
+    flyTo(position);
+
   } else {
-    viewer.entities.remove({
-      id: 'model',
-      position: position,
-      //orientation:orientation,
-      model: {
-        uri: './building/building.glb',
-      }
-    })
+
+    const modelEntity = viewer.entities.getById('model');
+    if (modelEntity) {
+      viewer.entities.remove(modelEntity);  // 正确删除方式
+    }
+
     loadedBuildings.value = false;
   }
 
 }
+function flyTo(pos) {
+  viewer.camera.flyTo({
+    destination: pos,
+    orientation: {
+      heading: 0,
+      pitch: Cesium.Math.toRadians(-35),
+    },
+    duration: 2
+  });
+}
+
 
 async function initializeterrain() {
   viewer.terrain = new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
