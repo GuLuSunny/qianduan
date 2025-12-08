@@ -57,12 +57,12 @@
       <el-form-item label="植被物种：" style="margin-left: 38%">
         <el-select
           v-model="plantPicked"
-          placeholder="芦苇，碎米莎草"
+          placeholder="芦苇、碎米莎草"
           class="custom-select"
           style="width: 200px"
           @change="fetchWetLandData()"
         >
-          <el-option label="芦苇，碎米莎草" value="芦苇，碎米莎草" />
+          <el-option label="芦苇、碎米莎草" value="芦苇、碎米莎草" />
         </el-select>
       </el-form-item>
     </div>
@@ -90,7 +90,7 @@ import { ElMessage, ElLoading } from 'element-plus'
 
 // Reactive references
 const datePicked = ref('')
-const plantPicked = ref('芦苇，碎米莎草')
+const plantPicked = ref('芦苇、碎米莎草')
 const wetLandData = ref([])
 const soilChart = ref(null)
 const selectedValue = ref(4)
