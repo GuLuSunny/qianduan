@@ -182,7 +182,7 @@
         </div>
       </div>
     </div>
-    <!-- 底部功能按钮
+    <!-- 底部功能按钮 -->
     <div class="boxMenuView">
       <ul>
         <li @click="moduleswitch">
@@ -197,7 +197,7 @@
         <li @click="goToModelView">数据菜单</li>
         <li @click="initializeterrain">地形加载</li>
       </ul>
-    </div> -->
+    </div>
 
     <!-- 地图 -->
     <div id="cesiumContainer">
@@ -355,6 +355,9 @@ const monthlyFeatureImgSrc = ref("/images/地物/25-0615.png"); // 对应本地F
 const enlargedImgSrc = ref("");
 const showEnlargeModal = ref(false);
 let farmlandDataSource = null;
+
+// 智慧林地坐标
+const smartForestPosition = Cesium.Cartesian3.fromDegrees(114.3547, 34.81422, 1500);
 
 
 
@@ -1049,7 +1052,7 @@ class TreeDataLoader {
                 high: {
                     url: './tree/tree.glb',
                     scale: 2.0,
-                    maxDistance: 20
+                    maxDistance: 500
                 },
                 low: {
                     url: './tree/l_tree.glb',
@@ -1484,12 +1487,12 @@ class TreeDataLoader {
   const initializeTreeLoader = async () => {
       if (!treeLoader && viewer) {
           treeLoader = new TreeDataLoader(viewer, {
-              heightThreshold: 3000,
+              heightThreshold: 4000,
               models: {
                   high: {
                       url: './tree/tree.glb',
                       scale: 2.0,
-                      maxDistance: 20
+                      maxDistance: 500
                   },
                   low: {
                       url: './tree/l_tree.glb',
@@ -1515,7 +1518,7 @@ class TreeDataLoader {
       forestLoading.value = true;
       try {
           const loader = await initializeTreeLoader();
-          
+
           if (loadedForest.value) {
               // 当前已加载，需要隐藏
               loader.deactivate();
@@ -1526,6 +1529,13 @@ class TreeDataLoader {
               await loader.activate();
               loadedForest.value = true;
               console.log('智慧林地已显示');
+
+              //飞行
+              viewer.camera.flyTo({
+                destination: smartForestPosition,
+                duration: 2.0,
+                easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT
+            });
           }
       } catch (error) {
           console.error('操作智慧林地时出错:', error);
@@ -1533,6 +1543,34 @@ class TreeDataLoader {
           forestLoading.value = false;
       }
   };
+
+// 最简单的智慧林地标记
+const addSmartForestMarker = () => {
+    if (viewer.entities.getById('smart-forest-marker')) {
+        return;
+    }
+    
+    viewer.entities.add({
+        id: 'smart-forest-marker',
+        name: '智慧林地',
+        position: smartForestPosition,
+        billboard: {
+            image: marker,
+            width: 40.85,
+            height: 95.8,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            pixelOffset: new Cesium.Cartesian2(0, 16)
+        },
+        /*label: {
+            text: '智慧林地',
+            font: 'bold 16px Helvetica',
+            fillColor: Cesium.Color.CYAN,
+            pixelOffset: new Cesium.Cartesian2(0, -60),
+            showBackground: true
+        }*/
+    });
+};
 
 async function boxesSlidein() {
   const boxes = document.querySelectorAll(".dataBoxView");
@@ -1612,6 +1650,7 @@ async function initializeCesium() {
   //await initializeterrain();
   //await initializeWater();
   await CesiumHandlerConfig();
+  addSmartForestMarker();
 
   // viewer.entities.remove({
   //   id:'model',
@@ -1636,12 +1675,6 @@ async function initializeCesium() {
   // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
   // 将生成的 Primitive 添加到场景中，并缩放至目标区域
 
-  // 设置最小缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
-
-  // 设置最大缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
-
   let position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0);
   //   let model=viewer.entities.add({
   //     id:'model',
@@ -1658,7 +1691,7 @@ async function initializeCesium() {
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1; // 例如设置为 1000 米
 
   // 设置最大缩放距离（以米为单位）
   viewer.scene.screenSpaceCameraController.maximumZoomDistance = 800000; // 例如设置为 5000000 米
@@ -1713,32 +1746,48 @@ async function initializeCesium() {
   });
 
 }
-
+//建筑物模型
 function initializeBuildings() {
   console.log("loadedBuildings:" + loadedBuildings.value)
-  if (loadedBuildings.value == false) {
+  if (!loadedBuildings.value) {
+
     viewer.entities.add({
       id: 'model',
       position: position,
-      //orientation:orientation,
+
       model: {
+
         uri: './building/building.glb',
       }
-    })
+    });
+
     loadedBuildings.value = true;
+
+    // 点击后自动飞到建筑
+    flyTo(position);
+
   } else {
-    viewer.entities.remove({
-      id: 'model',
-      position: position,
-      //orientation:orientation,
-      model: {
-        uri: './building/building.glb',
-      }
-    })
+
+    const modelEntity = viewer.entities.getById('model');
+    if (modelEntity) {
+      viewer.entities.remove(modelEntity);  // 正确删除方式
+    }
+
     loadedBuildings.value = false;
   }
 
 }
+function flyTo(pos) {
+  viewer.camera.flyTo({
+    destination: pos,
+    orientation: {
+      heading: 0,
+      pitch: Cesium.Math.toRadians(-35),
+    },
+    duration: 2
+  });
+}
+
 
 async function initializeterrain() {
   viewer.terrain = new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
@@ -1816,14 +1865,14 @@ async function CesiumHandlerConfig() {
   // // 平移 添加鼠标右键  鼠标右键旋转
   // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
 
-
+/*
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
   viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
 
   // 设置最大缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米*/
 
   viewer.scene.sun.show = false;
   viewer.scene.moon.show = false;
