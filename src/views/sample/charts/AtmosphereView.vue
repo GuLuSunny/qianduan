@@ -8,15 +8,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">风速(m/s)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.windSpeed) }}</div>
+          <div class="compact-value">{{ atmosphereData.windSpeed}}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">雨量(mm)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.rainfall) }}</div>
+          <div class="compact-value">{{ atmosphereData.rainfall }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">大气温度(℃)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.atmosphereTemperature) }}</div>
+          <div class="compact-value">{{ atmosphereData.atmosphereTemperature }}</div>
         </div>
       </div>
 
@@ -24,15 +24,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">相对湿度(%)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.relativeHumidity) }}</div>
+          <div class="compact-value">{{ atmosphereData.relativeHumidity }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">数字气压(hPa)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
+          <div class="compact-value">{{ atmosphereData.digitalPressure }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">aqi指数</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.aqiIndex) }}</div>
+          <div class="compact-value">{{ atmosphereData.aqiIndex }}</div>
         </div>
       </div>
 
@@ -40,7 +40,7 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">风向(°)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
+          <div class="compact-value">{{ atmosphereData.windDirection }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">首要污染物</div>
@@ -56,15 +56,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">PM2.5(ug/m3)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.pm25) }}</div>
+          <div class="compact-value">{{ atmosphereData.pm25 }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">臭氧(μg/m3)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.ozone) }}</div>
+          <div class="compact-value">{{ atmosphereData.ozone }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">PM10(ug/m3)</div>
-          <div class="compact-value">{{ formatNumber(atmosphereData.pm10) }}</div>
+          <div class="compact-value">{{ atmosphereData.pm10 }}</div>
         </div>
       </div>
     </div>
