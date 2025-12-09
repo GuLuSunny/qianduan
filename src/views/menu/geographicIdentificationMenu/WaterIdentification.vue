@@ -396,7 +396,7 @@ onMounted(() => {
 
 // 获取模型数据
 const fetchModels = () => {
-  getModelByClassName({ className: "water" })
+  getModelByClassName({ className: "waterD" })
     .then((res) => {
       const response = res?.response?.value || res?.value || res
 

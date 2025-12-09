@@ -97,7 +97,7 @@ const title = computed(() => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}日 龙亭公园气象数据`
+  return `${y}-${m}-${day} 龙亭公园气象数据`
 })
 
 function formatNumber(number) {
@@ -122,17 +122,17 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0 8px;
+  /* padding: 0 8px; */
   overflow: hidden;
 }
 
 .atmosphere-title {
   text-align: center;
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   /* 增大 */
   font-weight: 600;
-  margin: 8px 0 10px 0;
+  margin: 0px 0 10px 0;
   /* 增大边距 */
   line-height: 1.2;
   white-space: nowrap;
@@ -162,6 +162,7 @@ onMounted(() => {
   min-height: 0;
   max-height: 38px;
   /* 增大行高 */
+  margin-bottom: 5px;
 }
 
 .compact-item {

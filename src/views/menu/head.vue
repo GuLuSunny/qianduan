@@ -6,7 +6,7 @@
         <img class="avatar" src="@/assets/img/avatar.jpg" alt="用户头像" />
         <el-text class="mx-1" type="info" size="large">{{ nickname }} </el-text>
         <el-button type="info" text bg @click="goToLink">
-          返回大屏系统
+          进入大屏系统
         </el-button>
         <el-button type="info" text bg @click="goToQuit"> 退出系统 </el-button>
       </el-space>

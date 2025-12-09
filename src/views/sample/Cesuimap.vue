@@ -3,9 +3,9 @@
     <!-- 顶部标题 -->
     <transition name="fade">
       <div class="headView">
-        <div class="headTime">2025-4-16 16:52:36</div>
+        <!-- <div class="headTime">2025-4-16 16:52:36</div> -->
         <div class="headTitle">地表水资源水资源综合信息遥感监测系统</div>
-        <div class="headWeather">开封 34℃ 浮尘</div>
+        <!-- <div class="headWeather">开封 34℃ 浮尘</div> -->
       </div>
     </transition>
 
@@ -183,7 +183,7 @@
       </div>
     </div>
     <!-- 底部功能按钮 -->
-    <div class="boxMenuView">
+    <!-- <div class="boxMenuView">
       <ul>
         <li @click="moduleswitch">
           {{ currentModuleGroup === "old" ? "产品显示" : "切换模块" }}
@@ -196,8 +196,8 @@
         <li @click="FarmLandChange">智能农田</li>
         <li @click="goToModelView">数据菜单</li>
         <li @click="initializeterrain">地形加载</li>
-      </ul>
-    </div>
+      </ul> -->
+    <!-- </div> -->
 
     <!-- 地图 -->
     <div id="cesiumContainer">
@@ -812,22 +812,22 @@ async function initializeEntites(points) {
 
 
   //广告牌
-  points.forEach(res => {
-      const entity = viewer.entities.add({
-          id: res.id,
-          name: res.name,
-          position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude),
-          billboard: {
-              image: new Cesium.PinBuilder().fromText(res.text, Cesium.Color.ROYALBLUE, 48).toDataURL(),
-              verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          },
-          monitoItems: {
-              data: res
-          },
-      });
-      // 将实体添加到数组中
-      entities.push(entity);
-  });
+  // points.forEach(res => {
+  //     const entity = viewer.entities.add({
+  //         id: res.id,
+  //         name: res.name,
+  //         position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude),
+  //         billboard: {
+  //             image: new Cesium.PinBuilder().fromText(res.text, Cesium.Color.ROYALBLUE, 48).toDataURL(),
+  //             verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+  //         },
+  //         monitoItems: {
+  //             data: res
+  //         },
+  //     });
+  //     // 将实体添加到数组中
+  //     entities.push(entity);
+  // });
 
 
   // 创建一个具有渐变色背景的图像
@@ -1944,6 +1944,12 @@ async function onEntityClick(movement) {
       // 目标位置为实体的经度、纬度和当前高度
       currentHeight,
       destination: Cesium.Cartesian3.fromRadians(cartographicPosition.longitude, cartographicPosition.latitude, 2000),
+          // 相机方向，控制观察角度
+      orientation: {
+          heading: Cesium.Math.toRadians(0),   // 水平朝向：0度为正北
+          pitch: Cesium.Math.toRadians(-30),   // 俯仰角：-30度表示向下看，但不是垂直
+          roll: 0.0                             // 翻滚角：通常保持为0
+      },
       duration: 2 // 飞行时间（秒）
     });
 
@@ -2666,11 +2672,11 @@ async function rotate() {
 
 /* 盒子内容 */
 .dataBoxView {
-  width: 23%;
+  width: 25%;
   height: calc(100%/3.5);
   position: fixed;
   z-index: 1;
-  left: 20px;
+  //left: 20px;
   top: 70px;
   /* 穿透效果 */
   /* pointer-events: none; */
@@ -2687,7 +2693,7 @@ async function rotate() {
 
 .slide-in {
   /* 目标位置 */
-  transform: translateX(0) !important;
+  transform: translateX(2%) !important;
 }
 
 .slide-out-left {
@@ -2734,7 +2740,7 @@ async function rotate() {
 }
 
 .dataCenter {
-  padding: 20px;
+  padding: 10px;
   color: #ffffff;
   font-family: PuHuiTi, serif;
   height: 100%;
@@ -2942,28 +2948,28 @@ async function rotate() {
 /* 数据菜单按钮样式 */
 .data-menu-btn {
   position: fixed;
-  top: 32px; 
-  right: 30px;
+  top: 6px; 
+  right: 60px;
   z-index: 10;
   /* 其他样式保持不变 */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 120px;
-  height: 36px;
+  width: 80px;
+  height: 24px;
   background: rgba(71, 232, 254, 0.2);
   border: 1px solid rgba(71, 232, 254, 0.5);
   border-radius: 4px;
   color: #47e8fe;
   font-family: PuHuiTi, serif;
-  font-size: 14px;
+  font-size: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   user-select: none;
   pointer-events: all;
   
   i {
-    margin-right: 8px;
+    margin-right: 0px;
     font-size: 16px;
   }
   

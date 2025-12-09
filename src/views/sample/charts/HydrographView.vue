@@ -109,7 +109,7 @@ function updateChart () {
 
   const option = {
     title: {
-      text: `2021-12月平均水位柱状图`,
+      text: `2024-06 惠济河大王庙月平均水位`,
       left: 'center',
       textStyle: {
         color: '#ffffff',
