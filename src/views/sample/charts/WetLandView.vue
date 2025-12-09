@@ -48,27 +48,27 @@ onBeforeUnmount(() => {
 
 const chartOptions = {
   0: {
-    title: '土壤含水量柱状图',
+    title: '土壤含水量',
     yAxisName: '土壤含水量(%)',
     dataKey: 'soilMoistureContent'
   },
   1: {
-    title: '土壤有机质含量柱状图',
+    title: '土壤有机质含量',
     yAxisName: '土壤有机质含量(g/100g)',
     dataKey: 'soilOrganicMatterContent'
   },
   2: {
-    title: '土壤含碳总量柱状图',
+    title: '土壤含碳总量',
     yAxisName: '土壤含碳总量(g/100g)',
     dataKey: 'totalSoilCarbonContent'
   },
   3: {
-    title: '土壤含氮总量柱状图',
+    title: '土壤含氮总量',
     yAxisName: '土壤含氮总量(g/100g)',
     dataKey: 'totalSoilNitrogenContent'
   },
   4: {
-    title: '土壤含磷总量柱状图',
+    title: '土壤含磷总量',
     yAxisName: '土壤含磷总量(g/100g)',
     dataKey: 'totalSoilPhosphorusContent'
   }
@@ -131,7 +131,7 @@ function updateChart () {
   // console.log(title, ' 数据：', seriesData)
   const option = {
     title: {
-      text: `2021-01-01 ${title}`,
+      text: `2025-09-12 开封黑岗口${title}`,
       left: 'center',
       textStyle: {
         color: '#ffffff',

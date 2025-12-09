@@ -10,11 +10,11 @@
     </div>
 
     <!-- 提示框 -->
-    <div class="info-box" v-if="infoVisible">
+    <!-- <div class="info-box" v-if="infoVisible">
       <span class="icon">🔔</span>
       资料上传成功后可在数据查询页面查看
       <el-button class="close-button" @click="hideInfo" type="text">×</el-button>
-    </div>
+    </div> -->
 
     <!-- 表单填写页面 -->
     <div class="form-container" v-if="current === 0">

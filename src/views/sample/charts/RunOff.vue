@@ -47,7 +47,7 @@ onMounted(() => {
       device: datas.device
     }
   })
-  chartTitle.value = data.yearMonth + '月径流曲线'
+  chartTitle.value = data.yearMonth + '月径流'
   // 初始化图表
   updateChart()
 })
