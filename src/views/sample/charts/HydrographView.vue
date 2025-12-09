@@ -109,11 +109,7 @@ function updateChart () {
 
   const option = {
     title: {
-<<<<<<< HEAD
       text: `2024-6月平均水位柱状图`,
-=======
-      text: `2024-06 惠济河大王庙月平均水位`,
->>>>>>> 3b79a493d2618398b50f05a723ae2aba272fdb66
       left: 'center',
       textStyle: {
         color: '#ffffff',
