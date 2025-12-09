@@ -131,7 +131,7 @@ function updateChart () {
   // console.log(title, ' 数据：', seriesData)
   const option = {
     title: {
-      text: `2025-01-01 开封黑岗口${title}`,
+      text: `2025-09-12 开封黑岗口${title}`,
       left: 'center',
       textStyle: {
         color: '#ffffff',
