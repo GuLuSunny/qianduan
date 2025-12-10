@@ -4,7 +4,7 @@
     <transition name="fade">
       <div class="headView">
         <!-- <div class="headTime">2025-4-16 16:52:36</div> -->
-        <div class="headTitle">地表水资源水资源综合信息遥感监测系统</div>
+        <div class="headTitle">地表水资源综合信息遥感监测系统</div>
         <!-- <div class="headWeather">开封 34℃ 浮尘</div> -->
       </div>
     </transition>

@@ -44,7 +44,7 @@
             </el-form-item>
 
             <!-- 添加颜色选择器 -->
-            <el-form-item label="类别颜色"
+            <!-- <el-form-item label="类别颜色"
               v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')">
               <div class="color-picker-container">
                 <div v-for="(color, classId) in colorMap" :key="classId" class="color-picker-item">
@@ -52,7 +52,7 @@
                   <el-color-picker v-model="colorMap[classId]" show-alpha :predefine="predefineColors" />
                 </div>
               </div>
-            </el-form-item>
+            </el-form-item> -->
             
             <!-- 在预测参数和按钮组之间添加轮询状态 -->
             <div v-if="isPolling" class="polling-status">
@@ -146,7 +146,7 @@
             <!-- 模型文件下载区域 -->
             <el-divider />
 
-            <el-form-item label="训练模型下载">
+            <!-- <el-form-item label="训练模型下载">
               <el-select v-model="selectedTrainModel" placeholder="请选择训练模型" style="width: 100%">
                 <el-option v-for="model in trainModels" :key="model.id" :label="model.modelInfo || model.modelName"
                   :value="model.modelName"></el-option>
@@ -167,14 +167,14 @@
               <el-button @click="handleDownloadModel" type="warning" :loading="downloadLoading"
                 :disabled="!selectedTrainModel">
                 {{ selectedTrainModel === '1DResnet' ? `下载步骤${downloadStep + 1}文件` : '下载模型文件' }}
-              </el-button>
+              </el-button> -->
 
               <!-- 1DResnet模型专用的一键下载按钮 -->
-              <el-button v-if="selectedTrainModel === '1DResnet'" @click="handleBatchDownload" type="warning"
+               <!-- <el-button v-if="selectedTrainModel === '1DResnet'" @click="handleBatchDownload" type="warning"
                 :loading="batchDownloadLoading">
                 一键下载全部文件
-              </el-button>
-            </div>
+              </el-button> 
+            </div> -->
           </div>
         </div>
       </el-form>
@@ -218,10 +218,10 @@
             </el-button>
 
             <!-- 可选文件下载 -->
-            <el-button v-if="optionalOptions.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')"
+            <!-- <el-button v-if="optionalOptions.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')"
               @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
-            </el-button>
+            </el-button> -->
             <el-button v-if="optionalOptions.evaluate && isOptionAvailable('evaluate', 'result')"
               @click="downloadFile('evaluate')" type="primary" plain icon="Download">
               评估指标
@@ -302,13 +302,13 @@ const batchDownloadLoading = ref(false)
 // 所有可用的选项配置
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
-  { value: 'confusion_matrix', label: '混淆矩阵' },
+  // { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' },
-  { value: 'heatmap', label: '热力图' },
+  // { value: 'heatmap', label: '热力图' },
 ])
 
 const optionalResultOptions = ref([
-  { value: 'confusion_matrix', label: '混淆矩阵' },
+  // { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' }
 ])
 
@@ -323,7 +323,7 @@ const optionalOptions = ref({
   evaluate: false
 })
 
-const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
+const predictOptions = ref(['preview_png','evaluate'])
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)

@@ -201,20 +201,20 @@
               TIF文件
             </el-button>
 
-            <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
+            <!-- <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
                       @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
-            </el-button>
+            </el-button> -->
             <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')" 
                       @click="downloadFile('evaluate')" type="primary" plain icon="Download">
               评估指标
             </el-button>
 
-            <!-- 热力图下载按钮 - 仅当模型为xgbv1且heatmaps_summary为true时可用 -->
+            <!-- 热力图下载按钮 - 仅当模型为xgbv1且heatmaps_summary为true时可用
             <el-button v-if="canDownloadHeatmap" 
                       @click="downloadFile('heatmap')" type="primary" plain icon="Download">
               热力图
-            </el-button>
+            </el-button> -->
           </div>
         </div>
 
@@ -303,16 +303,16 @@ const taskStartTime = ref(null)
 // 所有可用的选项配置
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
-  { value: 'confusion_matrix', label: '混淆矩阵' },
+  // { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' }, // class_stats对应评估指标
-  { value: 'heatmap', label: '热力图' }, // heatmaps_summary对应热力图
+  // { value: 'heatmap', label: '热力图' }, // heatmaps_summary对应热力图
 ])
 
 const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
-  { value: 'confusion_matrix', label: '混淆矩阵' },
+  // { value: 'confusion_matrix', label: '混淆矩阵' },
   { value: 'evaluate', label: '评估指标' } , // class_stats对应评估指标
-  { value: 'heatmap', label: '热力图' },
+  // { value: 'heatmap', label: '热力图' },
   { value: 'tif', label: 'TIF文件' }  // 添加TIF选项
 ])
 
@@ -330,9 +330,11 @@ const imageDialogVisible = ref(false)
 const colorMap = ref({
   "-1": "#CCCCCC",
   0: '#FFFF00',
-  1: '#008000',
-  2: '#0000FF',
-  3: '#FF0000'
+  1: '#00B050',
+  2: '#4472C4',
+  3: '#FF0000',
+  4: '#C5A27A',
+  5: '#808080'
 })
 
 // 预定义颜色
@@ -359,7 +361,9 @@ const classNames = {
   0: '农田',
   1: '林地', 
   2: '水体',
-  3: '城市'
+  3: '城市',
+  4: '裸地',
+  5: '道路'
 }
 
 
