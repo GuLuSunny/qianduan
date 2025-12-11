@@ -224,7 +224,7 @@
             </el-button> -->
             <el-button v-if="optionalOptions.evaluate && isOptionAvailable('evaluate', 'result')"
               @click="downloadFile('evaluate')" type="primary" plain icon="Download">
-              评估指标
+              统计报告
             </el-button>
           </div>
         </div>
@@ -303,13 +303,13 @@ const batchDownloadLoading = ref(false)
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '评估指标' },
+  { value: 'evaluate', label: '统计报告' },
   // { value: 'heatmap', label: '热力图' },
 ])
 
 const optionalResultOptions = ref([
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '评估指标' }
+  { value: 'evaluate', label: '统计报告' }
 ])
 
 // 修改结果选项为多选结构

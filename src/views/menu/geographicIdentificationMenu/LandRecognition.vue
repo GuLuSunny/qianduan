@@ -207,7 +207,7 @@
             </el-button> -->
             <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')" 
                       @click="downloadFile('evaluate')" type="primary" plain icon="Download">
-              评估指标
+              统计报告
             </el-button>
 
             <!-- 热力图下载按钮 - 仅当模型为xgbv1且heatmaps_summary为true时可用
@@ -304,14 +304,14 @@ const taskStartTime = ref(null)
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '评估指标' }, // class_stats对应评估指标
+  { value: 'evaluate', label: '统计报告' }, // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' }, // heatmaps_summary对应热力图
 ])
 
 const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '评估指标' } , // class_stats对应评估指标
+  { value: 'evaluate', label: '统计报告' } , // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' },
   { value: 'tif', label: 'TIF文件' }  // 添加TIF选项
 ])
@@ -444,7 +444,7 @@ const isOptionAvailable = (optionValue, type) => {
   const functionMap = {
     'preview_png': 'preview_png',
     'confusion_matrix': 'confusion_matrix',
-    'evaluate': 'class_stats', // 前端评估指标对应后端class_stats
+    'evaluate': 'class_stats', // 前端统计报告对应后端class_stats
     'heatmap': 'heatmaps_summary' // 前端热力图对应后端heatmaps_summary
   }
   
@@ -843,7 +843,7 @@ const downloadFile = (type) => {
   const fileNameMap = {
     tif: `${selectedModel.value}_result.tif`,
     confusion_matrix: `${selectedModel.value}_confusion_matrix.png`,
-    evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应评估指标文件
+    evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应统计报告文件
     heatmap: `class_heatmaps_summary.png`
   }
 

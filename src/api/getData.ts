@@ -1231,6 +1231,16 @@ export function getWaterChangeResult(data: any) {
 }
 
 /**
+ * 获取地类变化识别结果
+ * @returns UseAxiosReturn
+ */
+export function getLandChangeResult(data: any) {
+  return useAxiosApi('/api/model/landChange', {
+    method: 'POST',
+    data: data
+  });
+}
+/**
  * 植被模型文件下载接口
  * @returns UseAxiosReturn
  */ 
