@@ -109,7 +109,7 @@ function updateChart () {
 
   const option = {
     title: {
-      text: `2024-6月平均水位柱状图`,
+      text: `2024-08月平均水位柱状图`,
       left: 'center',
       textStyle: {
         color: '#ffffff',
