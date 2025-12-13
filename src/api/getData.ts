@@ -1240,6 +1240,17 @@ export function getLandChangeResult(data: any) {
     data: data
   });
 }
+
+/**
+ * 获取植被覆盖度识别结果
+ * @returns UseAxiosReturn
+ */
+export function getPlantChangeResult(data: any) {
+  return useAxiosApi('/api/model/getPlantChange', {
+    method: 'POST',
+    data: data
+  });
+}
 /**
  * 植被模型文件下载接口
  * @returns UseAxiosReturn

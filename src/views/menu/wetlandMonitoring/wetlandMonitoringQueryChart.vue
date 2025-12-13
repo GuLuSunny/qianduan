@@ -279,7 +279,7 @@ function fetchWetLandData () {
           {
             dataType: '叶面积指数',
             dataValue: data.leafAreaIndex,
-            dataUnit: '-'
+            dataUnit: '%'
           },
           {
             dataType: '物候指数',
