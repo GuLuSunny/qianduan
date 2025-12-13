@@ -141,7 +141,6 @@
             <el-col :span="8">
               <el-form-item label="叶面积指数：" label-width="120px" :required="true">
                 <el-input v-model="leafAreaIndex" type="number" placeholder="请输入叶面积指数" style="width: 100%">
-                  <template #append>%</template>
                 </el-input>
               </el-form-item>
             </el-col>

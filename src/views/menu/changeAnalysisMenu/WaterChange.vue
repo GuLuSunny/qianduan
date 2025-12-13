@@ -100,7 +100,19 @@
             </div>
           </div>
         </el-form-item>
-
+        <el-form-item label="水体标签值：" prop="waterTagValue">
+          <el-input-number
+            v-model="form.waterTagValue"
+            :min="0"
+            :max="255"
+            step="1"
+            placeholder="请输入水体标签值（0-255）"
+            style="width: 200px;"
+          />
+          <div style="font-size: 12px; color: #909399; margin-top: 5px;">
+            注：代表水体的像素值，通常为0-255之间的整数
+          </div>
+        </el-form-item>
         <!-- 预测参数选项 -->
         <el-form-item label="预测参数">
           <el-checkbox-group v-model="predictOptions">
@@ -221,6 +233,13 @@ const previewData = ref('')
 const isImageLoaded = ref(false)
 const zoomLevel = ref(1) // 缩放级别，初始为1（100%）
 
+
+// 新增：水体标签值状态
+const form = ref({
+  waterTagValue: 1 // 默认值，可根据需要调整
+})
+
+
 // 文件上传相关状态
 const earlyFilePath = ref('')
 const lateFilePath = ref('')
@@ -312,6 +331,12 @@ const handlePredict = async () => {
     return
   }
 
+  // 新增：验证水体标签值
+  if (form.value.waterTagValue === undefined || form.value.waterTagValue === null || form.value.waterTagValue === '') {
+    message.error('请输入水体标签值')
+    return
+  }
+
   predictLoading.value = true
   error.value = ''
 
@@ -319,6 +344,10 @@ const handlePredict = async () => {
     const formData = new FormData()
     formData.append('earlyFile', earlyFileObject.value)
     formData.append('lateFile', lateFileObject.value)
+    
+    // 新增：添加水体标签值参数
+    formData.append('waterTagValue', form.value.waterTagValue.toString())
+    
     predictOptions.value.forEach(option => {
       formData.append(option, 'True')
     })
@@ -352,6 +381,7 @@ const handlePredict = async () => {
     predictLoading.value = false
   }
 }
+
 
 const loadPreviewImage = async (imagePath) => {
   if (!imagePath) {

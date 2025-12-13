@@ -103,6 +103,7 @@ import PlantCoverIdentification from './menu/geographicIdentificationMenu/PlantC
 import ProductsData from './menu/ModelProductsMenu/ProductsData.vue'
 import WaterChange from './menu/changeAnalysisMenu/WaterChange.vue'
 import LandChange from './menu/changeAnalysisMenu/LandChange.vue'
+import PlangtChange from './menu/changeAnalysisMenu/PlangtChange.vue'
 import { title } from 'process'
 
 
@@ -127,7 +128,7 @@ const menus_pre = [
         key: '19',
         title: '水资源分布产品生产',
         component: WaterIdentification,
-        breadcrumb: ['水生态要素提取', '水域地域'],
+        breadcrumb: ['水生态要素提取', '水资源分布产品生产'],
         pressionKey: 'menu_subE_c'
       },
       {
@@ -154,9 +155,9 @@ const menus_pre = [
       },
       {
         key: '24',
-        title: '水生态格局变化产品生产',
+        title: '水生态格局演变产品生产',
         component: LandChange,
-        breadcrumb: ['地表水环境遥感产品生产', '水生态格局变化产品生产'],
+        breadcrumb: ['地表水环境遥感产品生产', '水生态格局演变产品生产'],
         pressionKey: 'menu_subE_b'
       }
     ]
@@ -172,6 +173,13 @@ const menus_pre = [
         title: '植被覆盖度产品生产',
         component: PlantCoverIdentification,
         breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度产品生产'],
+        pressionKey: 'menu_subE_d'
+      },
+      {
+        key: '25',
+        title: '区域水生态状况产品生产',
+        component: PlangtChange,
+        breadcrumb: ['地表水生态遥感产品生产', '区域水生态状况产品生产'],
         pressionKey: 'menu_subE_d'
       }
     ]
