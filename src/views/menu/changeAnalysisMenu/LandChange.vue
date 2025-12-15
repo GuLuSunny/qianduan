@@ -123,7 +123,7 @@
                                             <Check />
                                         </el-icon>
                                         <span>配置文件: {{ configFilePath }} ({{ (configFileObject.size / 1024).toFixed(2)
-                                        }} KB)</span>
+                                            }} KB)</span>
                                     </div>
                                 </div>
                             </el-form-item>
@@ -151,133 +151,210 @@
             <!-- 预测结果页面 -->
             <div class="result-container" v-if="predictCurrent === 1">
                 <div class="result-content">
-                    <!-- 结果内容区域 - 真正的左右布局 -->
-                    <div style="display: flex; gap: 30px; align-items: flex-start;">
+                    <!-- 结果内容区域 - 左右布局 -->
+                    <div class="result-layout">
                         <!-- 左边：变化统计 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px;">
-                            <h3 style="margin: 0 0 20px 0; color: #303133;">变化统计</h3>
-                            <div v-if="Object.keys(changeStats).length > 0 || changeTypes.length > 0">
-                                <div class="stat-summary">
-                                    <div class="stat-item">
-                                        <span class="stat-label">总像素数：</span>
-                                        <span class="stat-value">{{ totalStats.total_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">有效像素：</span>
-                                        <span class="stat-value">{{ totalStats.valid_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">变化像素：</span>
-                                        <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                        <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
-                                            '0.00'
-                                            }}%)</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">未变化像素：</span>
-                                        <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                        <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2) ||
-                                            '0.00'
-                                            }}%)</span>
-                                    </div>
-                                </div>
+                        <div class="result-left">
+                            <div class="result-section-header">
+                                <h3><el-icon>
+                                        <DataAnalysis />
+                                    </el-icon> 变化统计</h3>
+                            </div>
 
-                                <!-- 未变化类别统计 -->
-                                <div v-if="Object.keys(changeStats).length > 0">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">未变化类别统计</h4>
-                                    <div style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
-                                        <div v-for="(value, key) in changeStats" :key="key" class="change-type-item">
-                                            <div class="change-type-header">
-                                                <span class="change-from">{{ key }}</span>
+                            <!-- 主要内容区域 - 添加滚动 -->
+                            <div class="result-section-content stats-section-content">
+                                <div class="stats-scroll-container">
+                                    <div v-if="Object.keys(changeStats).length > 0 || changeTypes.length > 0"
+                                        class="stats-main-content">
+                                        <!-- 总体统计卡片 -->
+                                        <div class="stat-summary-card" @mouseenter="onCardHover('summary')">
+                                            <h4 class="stat-summary-title">总体统计</h4>
+                                            <div class="stat-summary-grid">
+                                                <div class="stat-card"
+                                                    :class="{ 'hovered': hoveredCard === 'summary-total' }"
+                                                    @mouseenter="onCardHover('summary-total')"
+                                                    @mouseleave="hoveredCard = ''">
+                                                    <div class="stat-card-value">{{
+                                                        totalStats.total_pixels?.toLocaleString() || '0'
+                                                        }}</div>
+                                                    <div class="stat-card-label">总像素数</div>
+                                                </div>
+                                                <div class="stat-card"
+                                                    :class="{ 'hovered': hoveredCard === 'summary-valid' }"
+                                                    @mouseenter="onCardHover('summary-valid')"
+                                                    @mouseleave="hoveredCard = ''">
+                                                    <div class="stat-card-value">{{
+                                                        totalStats.valid_pixels?.toLocaleString() || '0'
+                                                        }}</div>
+                                                    <div class="stat-card-label">有效像素</div>
+                                                </div>
+                                                <div class="stat-card stat-card-changed"
+                                                    :class="{ 'hovered': hoveredCard === 'summary-changed' }"
+                                                    @mouseenter="onCardHover('summary-changed')"
+                                                    @mouseleave="hoveredCard = ''">
+                                                    <div class="stat-card-value">{{
+                                                        totalStats.changed_pixels?.toLocaleString() ||
+                                                        '0' }}</div>
+                                                    <div class="stat-card-label">变化像素</div>
+                                                    <div class="stat-card-percent">{{
+                                                        totalStats.change_percentage?.toFixed(2) ||
+                                                        '0.00' }}%</div>
+                                                </div>
+                                                <div class="stat-card"
+                                                    :class="{ 'hovered': hoveredCard === 'summary-unchanged' }"
+                                                    @mouseenter="onCardHover('summary-unchanged')"
+                                                    @mouseleave="hoveredCard = ''">
+                                                    <div class="stat-card-value">{{
+                                                        totalStats.unchanged_pixels?.toLocaleString() ||
+                                                        '0' }}</div>
+                                                    <div class="stat-card-label">未变化像素</div>
+                                                    <div class="stat-card-percent">{{
+                                                        totalStats.unchanged_percentage?.toFixed(2) ||
+                                                        '0.00' }}%</div>
+                                                </div>
                                             </div>
-                                            <div class="change-type-details">
-                                                <span>像素数: {{ value.count?.toLocaleString() || value?.toLocaleString()
-                                                    || '0'
-                                                    }}</span>
-                                                <span v-if="value.percentage !== undefined">比例: {{
-                                                    value.percentage.toFixed(2)
-                                                    }}%</span>
-                                                <span v-else-if="totalStats.valid_pixels > 0">
-                                                    比例: {{ ((value.count || value) * 100.0 /
-                                                    totalStats.valid_pixels).toFixed(2) }}%
-                                                </span>
+                                        </div>
+
+                                        <!-- 未变化类别统计 -->
+                                        <div v-if="Object.keys(changeStats).length > 0" class="stats-section">
+                                            <div class="section-header">
+                                                <h4>未变化类别统计</h4>
+                                                <span class="section-count">{{ Object.keys(changeStats).length }}
+                                                    个类别</span>
+                                            </div>
+                                            <div class="stats-list-container">
+                                                <div v-for="(value, key) in changeStats" :key="key"
+                                                    class="stat-item animate__animated"
+                                                    @mouseenter="animateItem($event, 'animate__pulse')">
+                                                    <div class="stat-item-header">
+                                                        <span class="stat-item-label">{{ key }}</span>
+                                                        <span class="stat-item-count">{{ value.count?.toLocaleString()
+                                                            ||
+                                                            value?.toLocaleString() || '0' }}</span>
+                                                    </div>
+                                                    <div class="stat-item-progress">
+                                                        <div class="progress-bar">
+                                                            <div class="progress-fill"
+                                                                :data-percent="value.percentage !== undefined ?
+                                                                    value.percentage :
+                                                                    totalStats.valid_pixels > 0 ?
+                                                                        ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0" :style="{
+                                                                width: `${value.percentage !== undefined ?
+                                                                    value.percentage :
+                                                                    totalStats.valid_pixels > 0 ?
+                                                                        ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0}%`
+                                                            }"></div>
+                                                        </div>
+                                                        <span class="stat-item-percent">
+                                                            {{ value.percentage !== undefined ?
+                                                                value.percentage.toFixed(2) :
+                                                                totalStats.valid_pixels > 0 ?
+                                                                    ((value.count || value) * 100.0 /
+                                                            totalStats.valid_pixels).toFixed(2) :
+                                                            '0.00' }}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 变化类型统计 -->
+                                        <div v-if="changeTypes.length > 0" class="stats-section">
+                                            <div class="section-header">
+                                                <h4>变化类型统计</h4>
+                                                <span class="section-count">{{ changeTypes.length }} 种类型</span>
+                                            </div>
+                                            <div class="stats-list-container">
+                                                <div v-for="(change, index) in changeTypes" :key="index"
+                                                    class="change-type-item animate__animated"
+                                                    @mouseenter="animateItem($event, 'animate__headShake')">
+                                                    <div class="change-type-header">
+                                                        <span class="change-from">{{ change.from_name }}</span>
+                                                        <el-icon class="change-arrow animate__animated"
+                                                            @mouseenter="animateIcon($event)">
+                                                            <Right />
+                                                        </el-icon>
+                                                        <span class="change-to">{{ change.to_name }}</span>
+                                                    </div>
+                                                    <div class="change-type-details">
+                                                        <div class="change-count">
+                                                            <span class="count-label">像素数：</span>
+                                                            <span class="count-value">{{ change.count?.toLocaleString()
+                                                                || '0'
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="change-progress">
+                                                            <div class="progress-bar">
+                                                                <div class="progress-fill"
+                                                                    :data-percent="change.percentage?.toFixed(2) || '0'"
+                                                                    :style="{ width: `${change.percentage?.toFixed(2) || '0'}%` }">
+                                                                </div>
+                                                            </div>
+                                                            <span class="change-percent">{{
+                                                                change.percentage?.toFixed(2) || '0.00'
+                                                                }}%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- 变化类型统计 -->
-                                <div v-if="changeTypes.length > 0">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">变化类型统计</h4>
-                                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
-                                        <div v-for="(change, index) in changeTypes" :key="index"
-                                            class="change-type-item">
-                                            <div class="change-type-header">
-                                                <span class="change-from">{{ change.from_name }}</span>
-                                                <el-icon>
-                                                    <Right />
-                                                </el-icon>
-                                                <span class="change-to">{{ change.to_name }}</span>
-                                            </div>
-                                            <div class="change-type-details">
-                                                <span>像素数: {{ change.count?.toLocaleString() || '0' }}</span>
-                                                <span>比例: {{ change.percentage?.toFixed(2) || '0.00' }}%</span>
-                                            </div>
-                                        </div>
+                                    <div v-else class="empty-stats animate__animated animate__pulse">
+                                        <el-icon class="empty-icon">
+                                            <DataAnalysis />
+                                        </el-icon>
+                                        <div>暂无统计数据</div>
                                     </div>
                                 </div>
                             </div>
-                            <div v-else style="color: #909399; text-align: center; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
-                                    <DataAnalysis />
-                                </el-icon>
-                                <div>暂无统计数据</div>
-                            </div>
 
-                            <!-- 下载按钮保持不变 -->
-                            <div style="margin-top: 25px;" v-if="predictOptions.includes('change_stats')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">统计文件下载</h3>
-                                <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
-                                    style="width: 100%;">
+                            <!-- 统计文件下载 -->
+                            <div class="download-section" v-if="predictOptions.includes('change_stats')">
+                                <h4>统计文件下载</h4>
+                                <el-button @click="downloadStatsFile" type="primary" plain :icon="Download"
+                                    class="download-button animate__animated" @mouseenter="animateButton($event)">
                                     下载统计文件 (JSON)
                                 </el-button>
                             </div>
                         </div>
 
                         <!-- 右边：变化图像 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px; text-align: center;">
-                            <div v-if="previewData && predictOptions.includes('change_image')">
-                                <img :src="previewData" alt="变化结果预览"
-                                    style="max-width: 100%; max-height: 400px; border-radius: 8px;" />
-                                <div class="image-info" v-if="displayMode">
-                                    <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
-                                        {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
-                                    </el-tag>
+                        <div class="result-right">
+                            <div class="result-section-header">
+                                <h3><el-icon>
+                                        <Picture />
+                                    </el-icon> 变化预览</h3>
+                                <el-tag v-if="displayMode" size="small"
+                                    :type="displayMode === 'all' ? 'success' : 'warning'">
+                                    {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
+                                </el-tag>
+                            </div>
+
+                            <div class="result-section-content image-section">
+                                <div v-if="previewData && predictOptions.includes('change_image')"
+                                    class="image-container">
+                                    <img :src="previewData" alt="变化结果预览"
+                                        class="preview-image animate__animated animate__fadeIn" />
+                                    <div class="image-actions">
+                                        <el-button @click="openImageDialog" type="primary" :icon="ZoomIn" plain
+                                            class="animate__animated" @mouseenter="animateButton($event)">
+                                            查看大图
+                                        </el-button>
+                                    </div>
                                 </div>
-                                <el-button @click="openImageDialog" type="primary" plain
-                                    style="margin-top: 15px; width: 100%;">
-                                    <el-icon>
-                                        <ZoomIn />
+                                <div v-else class="empty-image animate__animated animate__pulse">
+                                    <el-icon class="empty-icon">
+                                        <Picture />
                                     </el-icon>
-                                    查看大图
-                                </el-button>
+                                    <div>暂无预览图</div>
+                                </div>
                             </div>
-                            <div v-else style="color: #909399; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
-                                    <Picture />
-                                </el-icon>
-                                <div>暂无预览图</div>
-                            </div>
-                            <div style="margin-top: 25px;" v-if="predictOptions.includes('change_tif')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">变化地图下载</h3>
-                                <el-button @click="downloadTifFile" type="primary" plain icon="Download"
-                                    style="width: 100%;">
+
+                            <!-- 变化地图下载 -->
+                            <div class="download-section" v-if="predictOptions.includes('change_tif')">
+                                <h4>变化地图下载</h4>
+                                <el-button @click="downloadTifFile" type="primary" plain :icon="Download"
+                                    class="download-button animate__animated" @mouseenter="animateButton($event)">
                                     下载变化地图 (TIFF)
                                 </el-button>
                             </div>
@@ -285,11 +362,13 @@
                     </div>
 
                     <!-- 操作按钮 -->
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
-                        <el-button @click="handlePredictPrevious" icon="Back">
+                    <div class="action-buttons">
+                        <el-button @click="handlePredictPrevious" :icon="Back" class="animate__animated"
+                            @mouseenter="animateButton($event)">
                             上一步
                         </el-button>
-                        <el-button @click="handlePredictContinue" type="primary" icon="Refresh">
+                        <el-button @click="handlePredictContinue" type="primary" :icon="Refresh"
+                            class="animate__animated" @mouseenter="animateButton($event)">
                             继续预测
                         </el-button>
                     </div>
@@ -301,8 +380,8 @@
                 <div class="full-image-container">
                     <img :src="previewData" alt="完整预览" class="full-size-image" @load="onImageLoad" />
                     <div v-if="isImageLoaded" class="zoom-controls">
-                        <el-button @click="zoomIn" icon="ZoomIn" circle size="small" />
-                        <el-button @click="zoomOut" icon="ZoomOut" circle size="small" />
+                        <el-button @click="zoomIn" :icon="ZoomIn" circle size="small" />
+                        <el-button @click="zoomOut" :icon="ZoomOut" circle size="small" />
                     </div>
                 </div>
             </el-dialog>
@@ -311,7 +390,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, Right, DataAnalysis } from '@element-plus/icons-vue'
 import {
@@ -328,6 +407,8 @@ import {
     ElTag
 } from 'element-plus'
 import { getLandChangeResult } from '@/api/getData'
+// 导入Animate.css
+import 'animate.css'
 
 // 状态定义
 const predictCurrent = ref(0)
@@ -357,6 +438,64 @@ const changeStats = ref({})
 const totalStats = ref({})
 const changeTypes = ref([])
 const downloadFiles = ref({ stats_file: '', image_file: '', tif_file: '' })
+
+// 新增响应式状态
+const hoveredCard = ref('')
+
+// 新增动画方法
+const onCardHover = (cardId) => {
+    hoveredCard.value = cardId
+}
+
+const animateItem = (event, animationClass) => {
+    const element = event.currentTarget
+    element.classList.remove('animate__animated', 'animate__pulse', 'animate__headShake', 'animate__bounce')
+    void element.offsetWidth // 触发重绘
+    element.classList.add('animate__animated', animationClass)
+
+    // 动画结束后移除类
+    element.addEventListener('animationend', () => {
+        element.classList.remove('animate__animated', animationClass)
+    }, { once: true })
+}
+
+const animateIcon = (event) => {
+    const icon = event.currentTarget
+    icon.classList.remove('animate__animated', 'animate__swing')
+    void icon.offsetWidth
+    icon.classList.add('animate__animated', 'animate__swing')
+
+    icon.addEventListener('animationend', () => {
+        icon.classList.remove('animate__animated', 'animate__swing')
+    }, { once: true })
+}
+
+const animateButton = (event) => {
+    const button = event.currentTarget
+    button.classList.remove('animate__animated', 'animate__rubberBand')
+    void button.offsetWidth
+    button.classList.add('animate__animated', 'animate__rubberBand')
+
+    button.addEventListener('animationend', () => {
+        button.classList.remove('animate__animated', 'animate__rubberBand')
+    }, { once: true })
+}
+
+// 进度条动画方法
+const animateProgressBars = () => {
+    setTimeout(() => {
+        const progressBars = document.querySelectorAll('.progress-fill')
+        progressBars.forEach(bar => {
+            const percent = bar.getAttribute('data-percent') || '0'
+            bar.style.width = '0%'
+
+            setTimeout(() => {
+                bar.style.transition = 'width 1s ease-in-out'
+                bar.style.width = `${percent}%`
+            }, 100)
+        })
+    }, 500)
+}
 
 // 文件选择和验证
 const handleInputFocus = (type) => {
@@ -535,6 +674,9 @@ const handlePredict = async () => {
                 await loadPreviewImage(body.image_file.replace(/\\/g, '/'))
             }
             predictCurrent.value = 1
+
+            // 延迟触发进度条动画
+            animateProgressBars()
         } else {
             const msg = response?.msg || '预测失败'
             error.value = msg
@@ -669,6 +811,7 @@ const handlePredictPrevious = () => {
 }
 
 const handlePredictContinue = () => {
+    hoveredCard.value = ''
     predictCurrent.value = 0
     earlyFilePath.value = ''
     lateFilePath.value = ''
@@ -729,50 +872,287 @@ const applyZoom = () => {
     gap: 20px;
 }
 
-.stat-summary {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e4e7ed;
-    margin-bottom: 20px;
+/* 结果页面布局样式 */
+.result-layout {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.stat-item {
+.result-left,
+.result-right {
+    flex: 1;
+    min-width: 300px;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+    /* 固定高度 */
+}
+
+.result-left {
+    flex: 1;
+    min-width: 300px;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+    /* 保持固定高度 */
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 统计内容区域 - 这是主要的滚动区域 */
+.result-section-content.stats-content {
+    flex: 1;
+    /* 占据所有可用空间 */
+    padding: 0;
+    /* 移除内边距，让内容区域更大 */
+    overflow-y: auto;
+    /* 添加垂直滚动 */
+    display: block;
+    /* 改为块级显示 */
+    min-height: 0;
+    /* 重要：允许滚动 */
+}
+
+
+.result-right {
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.result-section-header {
+    background: white;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e4e7ed;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    padding: 8px 0;
+    flex-shrink: 0;
+    /* 防止被压缩 */
+}
+
+.result-section-header h3 {
+    margin: 0;
+    color: #303133;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 左侧统计区域专用样式 */
+.stats-section-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    /* 添加垂直滚动 */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* 重要：允许内部滚动 */
+}
+
+/* 在 .stats-section-content 后面添加以下样式： */
+.stats-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    margin: -24px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 同时修改 .stats-main-content 的样式： */
+.stats-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: min-content;
+    /* 确保内容可以扩展 */
+}
+
+/* 统计卡片样式 */
+.stat-summary-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
+    flex-shrink: 0;
+    /* 防止被压缩 */
+}
+
+.stat-summary-title {
+    margin: 0 0 16px 0;
+    color: #606266;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stat-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: #f5f7fa;
+    padding: 16px;
+    border-radius: 6px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-changed {
+    background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+    border: 1px solid #91d5ff;
+}
+
+.stat-card-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #303133;
+    margin-bottom: 4px;
+}
+
+.stat-card-label {
+    font-size: 12px;
+    color: #909399;
+}
+
+.stat-card-percent {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    color: #409eff;
+    background: rgba(64, 158, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* 统计区域样式 */
+.stats-section {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    /* 防止被压缩 */
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    /* 防止被压缩 */
+}
+
+.section-header h4 {
+    margin: 0;
+    color: #606266;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.section-count {
+    font-size: 12px;
+    color: #909399;
+    background: #f0f2f5;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.stats-list-container {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
+    padding: 16px;
+    max-height: 300px;
+    /* 限制列表最大高度，防止过长 */
+    overflow-y: auto;
+    /* 列表内部滚动 */
+}
+
+/* 统计项样式 */
+.stat-item {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #f0f0f0;
 }
 
 .stat-item:last-child {
-    border-bottom: none;
     margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
-.stat-label {
-    color: #606266;
-    font-weight: bold;
+.stat-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
-.stat-value {
+.stat-item-label {
+    font-size: 13px;
     color: #303133;
-    font-weight: bold;
+    font-weight: 500;
 }
 
-.stat-percent {
+.stat-item-count {
+    font-size: 13px;
     color: #409eff;
-    font-size: 12px;
-    margin-left: 5px;
+    font-weight: 600;
 }
 
+.stat-item-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #f0f2f5;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #409eff, #79bbff);
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 平滑的动画曲线 */
+}
+
+.stat-item-percent {
+    font-size: 12px;
+    color: #909399;
+    min-width: 40px;
+}
+
+/* 变化类型样式 */
 .change-type-item {
     background: white;
-    padding: 12px 15px;
-    border-radius: 6px;
+    padding: 16px;
+    border-radius: 8px;
     border: 1px solid #e4e7ed;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     transition: all 0.3s;
 }
 
@@ -785,31 +1165,274 @@ const applyZoom = () => {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
 }
 
 .change-from {
     color: #f56c6c;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .change-to {
     color: #67c23a;
-    font-weight: bold;
+    font-weight: 600;
+}
+
+.change-arrow {
+    color: #909399;
+    font-size: 12px;
 }
 
 .change-type-details {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.change-count {
+    display: flex;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: 12px;
+}
+
+.count-label {
     color: #909399;
 }
 
-.image-info {
-    margin-top: 10px;
+.count-value {
+    color: #303133;
+    font-weight: 600;
 }
 
-/* 复用原有样式 */
+.change-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.change-percent {
+    font-size: 12px;
+    color: #409eff;
+    font-weight: 600;
+    min-width: 40px;
+}
+
+/* 右侧图片区域样式 */
+.result-section-content {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.image-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    object-fit: contain;
+}
+
+.image-actions {
+    margin-top: 20px;
+}
+
+/* 下载区域样式 */
+.download-section {
+    background: white;
+    padding: 20px 24px;
+    border-top: 1px solid #e4e7ed;
+    flex-shrink: 0;
+    /* 防止被压缩 */
+}
+
+.download-section h4 {
+    margin: 0 0 12px 0;
+    color: #303133;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.download-button {
+    width: 100%;
+}
+
+/* 空状态样式 */
+.empty-image {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    padding: 40px 20px;
+}
+
+/* 修改空状态样式： */
+.empty-stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    min-height: 300px;
+    /* 确保空状态有一定高度 */
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #dcdfe6;
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e4e7ed;
+}
+
+/* 大图预览样式 */
+.full-image-container {
+    width: 100%;
+    height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    position: relative;
+}
+
+.full-size-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s;
+}
+
+.zoom-controls {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+/* 卡片悬停效果 */
+.stat-card.hovered {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+/* 自定义滚动条样式 */
+.stats-section-content::-webkit-scrollbar,
+.stats-list-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.stats-section-content::-webkit-scrollbar-track,
+.stats-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.stats-section-content::-webkit-scrollbar-thumb,
+.stats-list-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    transition: background 0.3s;
+}
+
+.stats-section-content::-webkit-scrollbar-thumb:hover,
+.stats-list-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 统计项悬停效果 */
+.stat-item {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.stat-item:hover {
+    transform: translateX(8px);
+    border-bottom-color: #409eff;
+    background: linear-gradient(90deg, rgba(64, 158, 255, 0.05) 0%, transparent 100%);
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-left: -8px;
+    margin-right: -8px;
+    border-radius: 6px;
+}
+
+.change-type-item:hover {
+    transform: translateY(-3px) scale(1.02);
+    border-color: #409eff;
+    box-shadow: 0 8px 25px rgba(64, 158, 255, 0.15);
+}
+
+/* 按钮悬停效果 */
+.download-button:hover,
+.image-actions .el-button:hover,
+.action-buttons .el-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 992px) {
+    .result-layout {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .result-left,
+    .result-right {
+        max-width: 100%;
+        height: auto;
+        min-height: 400px;
+    }
+
+    .stat-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* 移动端调整滚动区域 */
+    .result-section-content.stats-content {
+        overflow-y: visible;
+    }
+
+    .stats-list-container {
+        max-height: 250px;
+    }
+}
+
+/* 保留原有样式 */
 .file-status {
     display: flex;
     flex-direction: column;
@@ -931,31 +1554,6 @@ const applyZoom = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-}
-
-.full-image-container {
-    width: 100%;
-    height: 70vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: auto;
-    position: relative;
-}
-
-.full-size-image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    transition: transform 0.2s;
-}
-
-.zoom-controls {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 5px;
 }
 
 @media (max-width: 992px) {
