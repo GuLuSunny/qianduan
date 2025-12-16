@@ -486,7 +486,7 @@ function getMenuItemByKey(key) {
   display: flex;
   align-items: center;
   justify-content: flex-start; /* 图标保持在左侧 */
-  margin-left: 24px; /* 添加左边距，使图标不要太靠左 */
+  margin-left: 20px; /* 添加左边距，使图标不要太靠左 */
   margin-right: 12px; /* 添加右边距，与文字分开 */
   flex-shrink: 0; /* 防止图标被压缩 */
 }
@@ -501,8 +501,10 @@ function getMenuItemByKey(key) {
   text-align: center;
   padding: 0 8px;
   flex: 1; /* 占据剩余空间 */
-  margin-right: 32px;
+  margin-right: 52px;
 }
+
+
 
 /* 三级导航栏样式 - 确保文字水平和垂直都居中 */
 :deep(.ant-menu-item) {
@@ -511,23 +513,28 @@ function getMenuItemByKey(key) {
   justify-content: center !important;
   text-align: center !important;
   height: 44px !important;
-  padding: 0 !important;
-  margin: 8px 0 !important;
+  padding: 24px !important;
   border-radius: 4px;
 }
 
-/* 三级菜单文字样式 */
+/* 三级菜单文字样式 - 修改为块级元素并居中 */
 .submenu-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  display: block !important;
+  width: 100% !important;
   font-size: 13px;
-  text-align: center;
-  padding: 0 8px;
-  margin-left: 8px;
-  
+  text-align: center !important;
+  padding: 8 8px;
+}
+
+/* 折叠状态下调整菜单图标和文字的边距 */
+:deep(.ant-menu-inline-collapsed .menu-icon) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-content: center; /* 折叠时图标居中 */
+}
+
+:deep(.ant-menu-inline-collapsed .menu-text) {
+  display: none; /* 折叠时隐藏文字 */
 }
 
 /* 修改二级菜单标题样式 - 保持图标在左侧，文字居中 */
@@ -571,10 +578,16 @@ function getMenuItemByKey(key) {
 
 :deep(.ant-menu-inline-collapsed .ant-menu-submenu-title) {
   padding: 0 !important;
-  margin: 4px 8px !important;
+  margin: 4px 4px !important;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 折叠状态下调整菜单标题包装器 */
+:deep(.ant-menu-inline-collapsed .menu-title-wrapper) {
+  justify-content: center !important;
+  margin: 0 !important;
 }
 
 /* 折叠状态下图标的调整 */
@@ -605,4 +618,12 @@ function getMenuItemByKey(key) {
     z-index: 100;
   }
 }
+
+/* 调整侧边栏内容区域高度，避免被 trigger 遮挡 */
+:deep(.ant-layout-sider-children) {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 </style>
