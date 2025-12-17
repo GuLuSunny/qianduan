@@ -15,9 +15,9 @@
       <span>数据菜单</span>
     </div>
 
-    <!-- ====================== 旧模块组（原6个模块）====================== -->
+    <!-- ====================== 6个模块====================== -->
     <div v-if="currentModuleGroup === 'old'">
-      <!-- 旧左1：水位 -->
+      <!-- 1：水位 -->
       <div class="dataBoxView" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">水位</div>
@@ -25,7 +25,7 @@
           <HydrographView />
         </div>
       </div>
-      <!-- 旧左2：径流 -->
+      <!-- 2：径流 -->
       <div class="dataBoxView" style="top: 37%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">径流</div>
@@ -33,7 +33,7 @@
           <RunOff />
         </div>
       </div>
-      <!-- 旧左3：气象 -->
+      <!-- 3：气象 -->
       <div class="dataBoxView" style="top: 67%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">气象</div>
@@ -42,7 +42,7 @@
         </div>
       </div>
 
-      <!-- 旧右1：水质 -->
+      <!-- 1：水质 -->
       <div class="dataBoxView" style="right: 20px; left: auto"
         :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
@@ -51,7 +51,7 @@
           <WaterPhysicochemistry />
         </div>
       </div>
-      <!-- 旧右2：光谱反射率 -->
+      <!-- 2：光谱反射率 -->
       <div class="dataBoxView" style="right: 20px; left: auto; top: 37%"
         :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
@@ -60,7 +60,7 @@
           <SpectralReflectance />
         </div>
       </div>
-      <!-- 旧右3：土壤 -->
+      <!-- 3：土壤 -->
       <div class="dataBoxView" style="right: 20px; left: auto; top: 67%"
         :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
@@ -182,8 +182,8 @@
         </div>
       </div>
     </div>
-    <!-- 底部功能按钮 -->
-    <!-- <div class="boxMenuView">
+    <!-- 底部功能按钮
+    <div class="boxMenuView">
       <ul>
         <li @click="moduleswitch">
           {{ currentModuleGroup === "old" ? "产品显示" : "切换模块" }}
@@ -196,8 +196,8 @@
         <li @click="FarmLandChange">智能农田</li>
         <li @click="goToModelView">数据菜单</li>
         <li @click="initializeterrain">地形加载</li>
-      </ul> -->
-    <!-- </div> -->
+      </ul>
+    </div> -->
 
     <!-- 地图 -->
     <div id="cesiumContainer">
@@ -216,17 +216,33 @@
 
 
 
-    <!-- 鼠标点击窗口 -->
-    <transition name="fade">
-      <div v-show="clickPopupShowRight">
-        <div class="clickModal-content" id="clickPopup">
-          <span class="close" @click="closeModal">&times;</span>
-          <div class="clickPopup-title" id="clickPopup-title">
-            <div class="clickPopupTitleText">我是窗口标题</div>
-          </div>
-          <p id="clickPopup-p">这是一个漂亮的弹窗，带有关闭按钮。</p>
-        </div>
+  <!-- 鼠标点击窗口 -->
+  <transition name="fade">
+  <div v-show="clickPopupShowRight">
+    <div class="clickModal-content" id="clickPopup">
+      <span class="close" @click="closeModal">&times;</span>
+      <div class="clickPopup-title" id="clickPopup-title">
+        <div class="clickPopupTitleText">我是窗口标题</div>
       </div>
+      <div id="clickPopup-content" style="padding: 10px 10px 15px 10px; margin: 0;">
+    <div class="popup-img-container" style="max-width: 100%; margin-bottom: 10px; display: none;">
+      <img 
+        id="popup-img" 
+        style="max-width: 48%; height: auto; margin-right: 2%; cursor: zoom-in;"  
+        alt="监测点图片1"
+        @click="enlargeImg($event.target.src)"  
+      >
+      <img 
+        id="popup-img2" 
+        style="max-width: 48%; height: auto; cursor: zoom-in;" 
+        alt="监测点图片2"
+        @click="enlargeImg($event.target.src)" 
+      >
+    </div>
+    <p id="clickPopup-p" >这是一个漂亮的弹窗，带有关闭按钮。</p>
+  </div>
+    </div>
+   </div>
     </transition>
 
 
@@ -273,6 +289,7 @@ import { selectAllSluicesByConditions,getFarmlandgeojson } from '@/api/getData';
 import { selectAllPumpingStationByConditions } from '@/api/getData'
 import router from '@/router';
 import { resolve } from 'path';
+
 
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
@@ -347,7 +364,7 @@ const yearlyChangeImgSrc = ref("/images/年间水体变化/2425.png");
 const yearError = ref(false);
 // 5. 新模块3：水体面积折线图 - 默认选择“时序”
 const areaChartType = ref("时序");
-const areaChartImgSrc = ref("/images/水体面积折线图/水域面积时序.png");
+const areaChartImgSrc = ref("/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png");
 // 6. 新模块4：各月份地物（新增）
 const monthlyFeatureDate = ref("2025-06-15");
 const monthlyFeatureImgSrc = ref("/images/地物/25-0615.png"); // 对应本地F盘路径
@@ -387,6 +404,7 @@ function goToModelView() {
 
 
 // 原有：模块切换函数
+/*
 function moduleswitch() {
   if (currentModuleGroup.value === "old") {
     // 旧模块滑出
@@ -406,7 +424,7 @@ function moduleswitch() {
     }, 1000);
   }
 }
-
+*/
 // ====================== 新增：新模块逻辑======================
 /**
  * 1. 新模块1：更新各月份水体图片路径（日期补零处理）
@@ -491,7 +509,7 @@ function handleYearChange() {
  * 3. 新模块3：更新水体面积折线图图片路径
  */
 function updateAreaChartImg() {
-  areaChartImgSrc.value = `/images/水体面积折线图/水域面积${areaChartType.value}.png`;
+  areaChartImgSrc.value = `/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积${areaChartType.value}.png`;
   console.log("生成水体面积折线图路径:", areaChartImgSrc.value);
 }
 
@@ -546,7 +564,7 @@ function handleImgError(type) {
     yearError.value = false;
   }
   if (type === "area") {
-    areaChartImgSrc.value = "/images/水体面积折线图/水域面积时序.png";
+    areaChartImgSrc.value = "/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png";
     areaChartType.value = "时序";
   }
   // 地物图片错误处理
@@ -1518,7 +1536,7 @@ class TreeDataLoader {
       forestLoading.value = true;
       try {
           const loader = await initializeTreeLoader();
-
+          
           if (loadedForest.value) {
               // 当前已加载，需要隐藏
               loader.deactivate();
@@ -1544,7 +1562,7 @@ class TreeDataLoader {
       }
   };
 
-// 最简单的智慧林地标记
+  // 最简单的智慧林地标记
 const addSmartForestMarker = () => {
     if (viewer.entities.getById('smart-forest-marker')) {
         return;
@@ -1572,39 +1590,51 @@ const addSmartForestMarker = () => {
     });
 };
 
+
+//滑入
 async function boxesSlidein() {
   const boxes = document.querySelectorAll(".dataBoxView");
-  boxes.forEach((box) => box.classList.add("fade-out"));
-  setTimeout(() => {
-    boxes[0].classList.remove("slide-out-left");
-    boxes[2].classList.remove("slide-out-right"); // 对应新右1（折线图）
-    boxes[0].classList.add("slide-in");
-    boxes[2].classList.add("slide-in");
-  }, 1000);
-  setTimeout(() => {
-    boxes[1].classList.remove("slide-out-left");
-    boxes[3].classList.remove("slide-out-right"); // 对应新右2（地物）
-    boxes[1].classList.add("slide-in");
-    boxes[3].classList.add("slide-in");
-  }, 1500);
+  boxes.forEach(box => box.classList.add("fade-out")); 
+
+  const leftBoxes = [0, 1, 2]; 
+  leftBoxes.forEach((index, i) => {
+    setTimeout(() => {
+      boxes[index].classList.remove("slide-out-left"); 
+      boxes[index].classList.add("slide-in"); 
+    }, 1000 + i * 500); 
+  });
+
+
+  const rightBoxes = [3, 4, 5];
+  rightBoxes.forEach((index, i) => {
+    setTimeout(() => {
+      boxes[index].classList.remove("slide-out-right"); 
+      boxes[index].classList.add("slide-in"); 
+    }, 1000 + i * 500); 
+  });
 }
 
-
+// 滑出
 async function boxesSlideOut() {
   const boxes = document.querySelectorAll(".dataBoxView");
-  boxes.forEach((box) => box.classList.add("fade-out"));
-  setTimeout(() => {
-    boxes[0].classList.remove("slide-in");
-    boxes[2].classList.remove("slide-in");
-    boxes[0].classList.add("slide-out-left");
-    boxes[2].classList.add("slide-out-right");
-  }, 1000);
-  setTimeout(() => {
-    boxes[1].classList.remove("slide-in");
-    boxes[3].classList.remove("slide-in");
-    boxes[1].classList.add("slide-out-left");
-    boxes[3].classList.add("slide-out-right");
-  }, 1500);
+  boxes.forEach(box => box.classList.add("fade-out")); 
+
+  const leftBoxes = [0, 1, 2];
+  leftBoxes.forEach((index, i) => {
+    setTimeout(() => {
+      boxes[index].classList.remove("slide-in"); 
+      boxes[index].classList.add("slide-out-left"); 
+    }, 1000 + i * 500);
+  });
+
+  const rightBoxes = [3, 4, 5];
+  rightBoxes.forEach((index, i) => {
+    setTimeout(() => {
+      boxes[index].classList.remove("slide-in"); 
+      boxes[index].classList.add("slide-out-right"); 
+    }, 1000 + i * 500);
+  });
+
   const lis = document.querySelectorAll(".boxMenuView ul li");
   lis.forEach((li, index) => {
     li.style.animation = `fadeInUp 2s ease reverse`;
@@ -1650,7 +1680,7 @@ async function initializeCesium() {
   //await initializeterrain();
   //await initializeWater();
   await CesiumHandlerConfig();
-  addSmartForestMarker();
+  // addSmartForestMarker();
 
   // viewer.entities.remove({
   //   id:'model',
@@ -1675,6 +1705,12 @@ async function initializeCesium() {
   // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
   // 将生成的 Primitive 添加到场景中，并缩放至目标区域
 
+  // 设置最小缩放距离（以米为单位）
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500; // 例如设置为 1000 米
+
+  // 设置最大缩放距离（以米为单位）
+  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 8000000; // 例如设置为 5000000 米
+
   let position = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 0);
   //   let model=viewer.entities.add({
   //     id:'model',
@@ -1691,7 +1727,7 @@ async function initializeCesium() {
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1; // 例如设置为 1000 米
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
 
   // 设置最大缩放距离（以米为单位）
   viewer.scene.screenSpaceCameraController.maximumZoomDistance = 800000; // 例如设置为 5000000 米
@@ -1744,8 +1780,73 @@ async function initializeCesium() {
       startRotation();
     }
   });
+// ========== 监测点配置数组（核心：把三个监测点的差异信息集中管理） ==========
+const monitorPoints = [
+  {
+    id: "waterChartMonitor",       
+    name: "水体图",                 
+    position: { lng: 114.358, lat: 34.805 }, 
+    imgSrc: "/images/水体/5.产品数据-月间水体变化/8-9.png",
+    imgSrc2: "/images/水体/6.产品数据-水体面积折线图/水域面积变化图.png" 
+  },
+  {
+    id: "vegetationCoverMonitor",
+    name: "植被覆盖图",
+    position: { lng: 114.33, lat: 34.81 },
+    imgSrc: "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240625FVC.png",
+    imgSrc2: "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/条带结果/20240625FVC.png"
+  },
+  {
+    id: "landCoverMonitor",
+    name: "土地覆盖",
+    position: { lng: 114.365, lat: 34.79 },
+    imgSrc: "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
+    imgSrc2: "/images/地物分类/3.产品数据-原始图像/202506开封数据制图.png"
+  }
+];
+
+// ========== 循环创建所有监测点实体（替代原来的三段硬编码） ==========
+monitorPoints.forEach(pointConfig => {
+  viewer.entities.add({
+    id: pointConfig.id,
+    name: pointConfig.name,
+    position: Cesium.Cartesian3.fromDegrees(pointConfig.position.lng, pointConfig.position.lat, 0),
+    billboard: {
+      image: marker, // 复用原有标记图片
+      width: 40.85,
+      height: 95.8,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      pixelOffset: new Cesium.Cartesian2(0, 16)
+    },
+    label: {
+      text: pointConfig.name,
+      font: "bold 30px Helvetica",
+      scale: 0.5,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      fillColor: new Cesium.Color.fromCssColorString('#47e8fe'),
+      outlineColor: new Cesium.Color(0, 0, 0, 0.3),
+      outlineWidth: 2.0,
+      pixelOffset: new Cesium.Cartesian2(0, -100),
+      showBackground: true,
+      backgroundImage: createGradientBackground(200, 50), // 复用渐变背景
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      verticalOrigin: Cesium.VerticalOrigin.TOP,
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000)
+    },
+    monitoItems: {
+      data: {
+        name: pointConfig.name,
+        imgSrc: pointConfig.imgSrc,
+        imgSrc2: pointConfig.imgSrc2
+      }
+    }
+  });
+});
 
 }
+
 //建筑物模型
 function initializeBuildings() {
   console.log("loadedBuildings:" + loadedBuildings.value)
@@ -1771,7 +1872,7 @@ function initializeBuildings() {
     const modelEntity = viewer.entities.getById('model');
     if (modelEntity) {
       viewer.entities.remove(modelEntity);  // 正确删除方式
-    }
+      }
 
     loadedBuildings.value = false;
   }
@@ -1850,7 +1951,25 @@ async function initializeWater() {
   });
   console.log("水体加载完毕");
 }
-
+function createGradientBackground(width, height) {
+  // 创建一个临时 Canvas 元素
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  
+  // 创建线性渐变（从左到右：浅蓝 → 深蓝，和原有实体标签渐变一致）
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, 'rgba(10, 40, 80, 0.8)');
+  gradient.addColorStop(1, 'rgba(5, 20, 40, 0.8)');
+  
+  // 填充渐变背景
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // 返回 Canvas 的 DataURL（Cesium 标签的 backgroundImage 支持该格式）
+  return canvas.toDataURL('image/png');
+}
 async function CesiumHandlerConfig() {
 
   // // 倾斜视图 鼠标左键平移
@@ -1914,6 +2033,7 @@ async function CesiumHandlerConfig() {
   console.log("Cesium配置和监听加载完毕");
 }
 // 实体点击事件处理函数
+// 实体点击事件处理函数
 async function onEntityClick(movement) {
   // 获取点击位置的实体对象
   var pickedObject = viewer.scene.pick(movement.position);
@@ -1930,38 +2050,78 @@ async function onEntityClick(movement) {
     const entityPosition = pickedObject.id.position.getValue(Cesium.JulianDate.now());
 
     // 将 Cartesian 坐标转换为窗口坐标
-
     const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, entityPosition);
     console.log('坐标检查点2');
     // 获取当前相机高度（Cartographic 坐标中的高度）
     const currentHeight = viewer.camera.positionCartographic.height;
     // 将实体位置从 Cartesian 坐标转换为 Cartographic 坐标（经度、纬度、高度）
     const cartographicPosition = Cesium.Cartographic.fromCartesian(entityPosition);
-    console.log(cartographicPosition); // 输出 Cartographic 坐标
+    console.log(cartographicPosition.longitude+" "+cartographicPosition.latitude); // 输出 Cartographic 坐标
 
     // 将相机飞行到实体位置，并保持当前高度
-    viewer.camera.flyTo({
-      // 目标位置为实体的经度、纬度和当前高度
-      currentHeight,
-      destination: Cesium.Cartesian3.fromRadians(cartographicPosition.longitude, cartographicPosition.latitude, 2000),
-          // 相机方向，控制观察角度
-      orientation: {
-          heading: Cesium.Math.toRadians(0),   // 水平朝向：0度为正北
-          pitch: Cesium.Math.toRadians(-30),   // 俯仰角：-30度表示向下看，但不是垂直
-          roll: 0.0                             // 翻滚角：通常保持为0
-      },
-      duration: 2 // 飞行时间（秒）
-    });
+    // viewer.camera.flyTo({
+    //   // 目标位置为实体的经度、纬度和当前高度
+    //   currentHeight,
+    //   destination: Cesium.Cartesian3.fromRadians(cartographicPosition.longitude, cartographicPosition.latitude, 2000),
+    //       // 相机方向，控制观察角度
+    //   orientation: {
+    //       // heading: Cesium.Math.toRadians(0),   // 水平朝向：0度为正北
+    //       pitch: Cesium.Math.toRadians(-80),   // 俯仰角：-30度表示向下看，但不是垂直
+    //       roll: 0.0                             // 翻滚角：通常保持为0
+    //   },
+    //   duration: 2 // 飞行时间（秒）
+    // });
 
-    // 获取弹窗元素
+    // 关键修改1：声明所有需要的 DOM 变量（解决未定义错误）
     const modalElement = document.getElementById('clickPopup');
-    const modal_P_Element = document.getElementById('clickPopup-p');
+  const modalP = document.getElementById('clickPopup-p');
+  const modalContent = document.getElementById('clickPopup-content');
+  // 新增：图片容器 + 第二张图片
+  const imgContainer = document.querySelector('.popup-img-container');
+  const modalImg = document.getElementById('popup-img');
+  const modalImg2 = document.getElementById('popup-img2'); // 新增
+  const modalTitle = document.querySelector('.clickPopupTitleText');
+
+    // 关键修改2：判断元素是否存在（避免 null 报错）
+    if (!modalElement || !modalP || !modalImg ||!modalImg2) {
+      console.error("弹窗 DOM 元素未找到！");
+      return;
+    }
 
     // 将弹窗定位到实体位置的窗口坐标
     modalElement.style.left = windowPosition.x + 'px';
     modalElement.style.top = windowPosition.y + 'px';
-    // 在弹窗中显示实体的详细信息
-    // modal_P_Element.innerHTML = `${JSON.stringify(pickedObject.id.monitoItems.data)}`;
+
+    const monitorData = pickedObject.id.monitoItems.data;
+  if ((monitorData.name === "水体图"||monitorData.name === "植被覆盖图"||monitorData.name === "土地覆盖") 
+      && monitorData.imgSrc && monitorData.imgSrc2) { // 新增判断imgSrc2
+    // 是特殊监测点：显示图片容器（两张图），隐藏文本
+    modalTitle.textContent = monitorData.name; 
+    
+    // 加载第一张图片
+    modalImg.src = monitorData.imgSrc;
+    modalImg.onerror = function() {
+      console.error("第一张图片加载失败：", monitorData.imgSrc);
+      modalImg.src = "/images/default.png"; // 可选：默认占位图
+    };
+    
+    // 加载第二张图片（新增）
+    modalImg2.src = monitorData.imgSrc2;
+    modalImg2.onerror = function() {
+      console.error("第二张图片加载失败：", monitorData.imgSrc2);
+      modalImg2.src = "/images/default.png"; // 可选：默认占位图
+    };
+    
+    // 显示图片容器、隐藏文本（关键：替换原有单张图的display逻辑）
+    imgContainer.style.display = "flex"; // 用flex布局让两张图并排
+    modalP.style.display = "none"; 
+  } else {
+    // 其他实体（水闸、泵站）：显示文本，隐藏图片容器
+    modalTitle.textContent = monitorData.name || "监测点信息";
+    imgContainer.style.display = "none"; // 隐藏图片容器
+    modalP.style.display = "block";
+  }
+
     await boxesSlideOut();
   } else {
     // 如果没有点击到目标实体，则关闭弹窗
@@ -1974,7 +2134,6 @@ async function onEntityClick(movement) {
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
   }
 }
-
 
 // 显示弹窗
 async function showModal() {
@@ -2051,11 +2210,12 @@ async function onMovement(movement) {
     modal_P_Element.innerHTML = `${JSON.stringify(pickedObject.id.monitoItems.data.name)}`;
 
     // 判断clickPopup状态决定是否显示hoverPopup
-    if (!clickPopupShowRight.value) {
+    if (clickPopupShowRight.value) {
+      hoverPopupShow.value = false; // 点击弹窗显示时，隐藏悬浮窗
+    } else {
+      hoverPopupShow.value = true;  // 点击弹窗未显示时，显示悬浮窗
     }
-    clickPopupShowRight.value ? hoverPopupShow.value = false : hoverPopupShow.value = true;
   } else {
-    clickPopupShowRight.value = false;
     hoverPopupShow.value = false;
   }
 }
@@ -3023,5 +3183,20 @@ async function rotate() {
     font-size: 14px;
     margin-right: 5px;
   }
+}
+
+/* 弹窗图片位置*/
+.clickModal-content {
+  width: 450px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: rgba(2, 7, 17, .8);
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  /* 关键修改：Y轴偏移从 -220% 改为 -180%，弹窗整体下移 */
+  transform: translate(50%, -80%);
+  font-family: PuHuiTi, serif;
+  color: #ffffff;
 }
 </style>

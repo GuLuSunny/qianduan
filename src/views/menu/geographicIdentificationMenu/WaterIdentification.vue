@@ -22,7 +22,7 @@
           <div class="form-content">
             <!-- 数据类型选择 -->
             <el-form-item label="数据类型：" required>
-              <el-radio-group v-model="dataType" class="radio-group">
+              <el-radio-group v-model="dataType" class="radio-group" @change="handleDataTypeChange">
                 <el-radio :label="1">SAR单模态</el-radio>
                 <el-radio :label="2">光学单模态</el-radio>
                 <el-radio :label="3">融合多模态</el-radio>
@@ -95,7 +95,12 @@
             </div>
 
             <el-form-item label="可用模型" :required="true">
-              <el-select v-model="selectedModel" placeholder="请选择预测模型" class="model-select">
+              <el-select 
+                v-model="selectedModel" 
+                placeholder="请选择预测模型" 
+                class="model-select"
+                @change="handleModelChange"
+              >
                 <el-option v-for="model in models" :key="model.id" :label="model.modelInfo || model.modelName"
                   :value="model.modelName"></el-option>
               </el-select>
@@ -105,7 +110,7 @@
             <el-form-item label="预测参数">
               <el-checkbox-group v-model="predictOptions" class="checkbox-group">
                 <el-checkbox label="preview_png">预览图</el-checkbox>
-                <el-checkbox label="confusion_matrix">检测参数</el-checkbox>
+                <el-checkbox label="class_stats">检测参数</el-checkbox>
                 <el-checkbox label="result_file_download">结果文件下载</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
@@ -138,7 +143,7 @@
                 class="submit-button" 
                 type="primary" 
                 :loading="predictLoading"
-                :disabled="!selectedModel || (!sarFileObject && !opticalFileObject)"
+                :disabled="!selectedModel || !isFileSelectionValid"
               >
                 {{ predictLoading ? '上传并预测中...' : '开始预测' }}
               </el-button>
@@ -176,7 +181,7 @@
               
               <div class="download-section">
                 <h3 class="result-title">结果文件下载</h3>
-                <el-button @click="downloadPrediction" type="primary" plain icon="Download" class="download-button">
+                <el-button @click="downloadPrediction" type="primary" plain :icon="Download" class="download-button">
                   下载预测结果
                 </el-button>
               </div>
@@ -203,10 +208,10 @@
 
           <!-- 操作按钮 -->
           <div class="result-actions">
-            <el-button @click="handlePredictPrevious" icon="Back">
+            <el-button @click="handlePredictPrevious" :icon="Back">
               上一步
             </el-button>
-            <el-button @click="handlePredictContinue" type="primary" icon="Refresh">
+            <el-button @click="handlePredictContinue" type="primary" :icon="Refresh">
               继续预测
             </el-button>
           </div>
@@ -255,6 +260,18 @@ const dataType = ref(1)
 const isSarDisabled = computed(() => dataType.value === 2)
 const isOpticalDisabled = computed(() => dataType.value === 1)
 
+// 计算属性：检查文件选择是否有效
+const isFileSelectionValid = computed(() => {
+  if (dataType.value === 1) {
+    return !!sarFileObject.value
+  } else if (dataType.value === 2) {
+    return !!opticalFileObject.value
+  } else if (dataType.value === 3) {
+    return !!sarFileObject.value && !!opticalFileObject.value
+  }
+  return false
+})
+
 // 文件上传相关状态
 const sarFilePath = ref('')
 const opticalFilePath = ref('')
@@ -268,7 +285,8 @@ const focusedInput = ref('')
 const predictCurrent = ref(0)
 const models = ref([])
 const selectedModel = ref('')
-const predictOptions = ref(['preview_png', 'confusion_matrix', 'result_file_download'])
+// 默认勾选所有预测参数
+const predictOptions = ref(['preview_png', 'class_stats', 'result_file_download'])
 const detectionData = ref({
   area: '0 km²',
   perimeter: '0 km',
@@ -278,6 +296,38 @@ const detectionData = ref({
 const previewData = ref('')
 const predictLoading = ref(false)
 const imageDialogVisible = ref(false)
+
+// 处理数据类型变化
+const handleDataTypeChange = (newDataType) => {
+  // 清空不符合当前数据类型的文件
+  if (newDataType === 1) {
+    // SAR单模态，清空光学文件
+    handleRemoveFile('optical')
+  } else if (newDataType === 2) {
+    // 光学单模态，清空SAR文件
+    handleRemoveFile('sar')
+  }
+  // 多模态不清空任何文件
+}
+
+// 处理模型变化
+const handleModelChange = (newModel) => {
+  if (!newModel) return
+  
+  // 清空所有已上传的文件
+  handleRemoveFile('sar')
+  handleRemoveFile('optical')
+  
+  // 根据新模型的功能更新预测参数
+  const currentModel = models.value.find(m => m.modelName === newModel)
+  if (currentModel && currentModel.functions) {
+    const availableFunctions = currentModel.functions.split(',')
+    // 只保留当前模型支持的功能
+    predictOptions.value = predictOptions.value.filter(option => 
+      availableFunctions.includes(option)
+    )
+  }
+}
 
 // 文件上传方法
 const handleInputFocus = (type) => {
@@ -379,8 +429,9 @@ watch(selectedModel, (newVal) => {
   if (!currentModel || !currentModel.functions) return
   
   const availableFunctions = currentModel.functions.split(',')
-  predictOptions.value = predictOptions.value.filter(option => 
-    availableFunctions.includes(option)
+  // 默认勾选所有可用的功能
+  predictOptions.value = availableFunctions.filter(option => 
+    ['preview_png', 'class_stats', 'result_file_download'].includes(option)
   )
 })
 
@@ -405,6 +456,15 @@ const fetchModels = () => {
 
         if (models.value.length > 0) {
           selectedModel.value = models.value[0].modelName
+          
+          // 根据第一个模型的功能设置默认预测参数
+          const firstModel = models.value[0]
+          if (firstModel.functions) {
+            const availableFunctions = firstModel.functions.split(',')
+            predictOptions.value = availableFunctions.filter(option => 
+              ['preview_png', 'class_stats', 'result_file_download'].includes(option)
+            )
+          }
         } else {
           message.warning('未找到可用模型')
         }
@@ -464,6 +524,9 @@ const handlePredict = async () => {
     if (opticalFileObject.value) {
       formData.append('optFile', opticalFileObject.value)
     }
+    
+    // 添加预测参数
+    formData.append('predictOptions', JSON.stringify(predictOptions.value))
     
     formData.append('userName', userinfo.username)
     formData.append('createUserId', userinfo.id)
