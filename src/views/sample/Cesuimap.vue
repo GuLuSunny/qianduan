@@ -18,7 +18,10 @@
     <!-- ====================== 6个模块====================== -->
     <div v-if="currentModuleGroup === 'old'">
       <!-- 1：水位 -->
-      <div class="dataBoxView" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">水位</div>
         <div class="dataCenter">
@@ -26,7 +29,11 @@
         </div>
       </div>
       <!-- 2：径流 -->
-      <div class="dataBoxView" style="top: 37%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        style="top: 37%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">径流</div>
         <div class="dataCenter">
@@ -34,7 +41,11 @@
         </div>
       </div>
       <!-- 3：气象 -->
-      <div class="dataBoxView" style="top: 67%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        style="top: 67%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">气象</div>
         <div class="dataCenter">
@@ -43,8 +54,11 @@
       </div>
 
       <!-- 1：水质 -->
-      <div class="dataBoxView" style="right: 20px; left: auto"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">水质</div>
         <div class="dataCenter">
@@ -52,8 +66,11 @@
         </div>
       </div>
       <!-- 2：光谱反射率 -->
-      <div class="dataBoxView" style="right: 20px; left: auto; top: 37%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto; top: 37%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">光谱反射率</div>
         <div class="dataCenter">
@@ -61,8 +78,11 @@
         </div>
       </div>
       <!-- 3：土壤 -->
-      <div class="dataBoxView" style="right: 20px; left: auto; top: 67%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto; top: 67%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">土壤</div>
         <div class="dataCenter">
@@ -74,24 +94,38 @@
     <!-- ====================== 新模块组（修改后：左2+右2）====================== -->
     <div v-else-if="currentModuleGroup === 'new'">
       <!-- 新左1：各月份水体（保留） -->
-      <div class="dataBoxView" :class="{
-        'slide-in': newDataBoxShow,
-        'slide-out-left': !newDataBoxShow,
-      }">
+      <div
+        class="dataBoxView"
+        :class="{
+          'slide-in': newDataBoxShow,
+          'slide-out-left': !newDataBoxShow,
+        }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">各月份水体</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-date-picker v-model="monthlyWaterDate" placeholder="选择年月日" :clearable="false" type="date"
-                :format="datePickerFormat.format" :value-format="datePickerFormat.valueFormat"
-                @change="updateMonthlyWaterImg" />
+              <el-date-picker
+                v-model="monthlyWaterDate"
+                placeholder="选择年月日"
+                :clearable="false"
+                type="date"
+                :format="datePickerFormat.format"
+                :value-format="datePickerFormat.valueFormat"
+                @change="updateMonthlyWaterImg"
+              />
             </div>
           </div>
           <div class="custom-border-box">
             <div class="img-container">
-              <img v-if="monthlyWaterImgSrc" :src="monthlyWaterImgSrc" alt="各月份水体图片" @error="handleImgError('monthly')"
-                @click="enlargeImg(monthlyWaterImgSrc)" />
+              <img
+                v-if="monthlyWaterImgSrc"
+                :src="monthlyWaterImgSrc"
+                alt="各月份水体图片"
+                @error="handleImgError('monthly')"
+                @click="enlargeImg(monthlyWaterImgSrc)"
+              />
               <div v-else class="img-placeholder">请选择日期加载图片</div>
             </div>
           </div>
@@ -99,29 +133,60 @@
       </div>
 
       <!-- 新左2：年间水体变化（保留原左2） -->
-      <div class="dataBoxView" style="top: 37%" :class="{
-        'slide-in': newDataBoxShow,
-        'slide-out-left': !newDataBoxShow,
-      }">
+      <div
+        class="dataBoxView"
+        style="top: 37%"
+        :class="{
+          'slide-in': newDataBoxShow,
+          'slide-out-left': !newDataBoxShow,
+        }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">年间水体变化</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls yearly-controls">
-              <el-date-picker v-model="yearlyChangeStartYear" placeholder="开始年" :clearable="false" type="year"
-                format="YYYY" value-format="YYYY" @change="handleYearChange" />
+              <el-date-picker
+                v-model="yearlyChangeStartYear"
+                placeholder="开始年"
+                :clearable="false"
+                type="year"
+                format="YYYY"
+                value-format="YYYY"
+                @change="handleYearChange"
+              />
               <span style="margin: 0 10px">-</span>
-              <el-date-picker v-model="yearlyChangeEndYear" placeholder="结束年" :clearable="false" type="year"
-                format="YYYY" value-format="YYYY" @change="handleYearChange" :disabled="!yearlyChangeStartYear" />
-              <el-tooltip v-if="yearError" content="仅支持相邻两年" placement="top">
-                <i class="el-icon-warning" style="color: #ff4d4f; margin-left: 10px"></i>
+              <el-date-picker
+                v-model="yearlyChangeEndYear"
+                placeholder="结束年"
+                :clearable="false"
+                type="year"
+                format="YYYY"
+                value-format="YYYY"
+                @change="handleYearChange"
+                :disabled="!yearlyChangeStartYear"
+              />
+              <el-tooltip
+                v-if="yearError"
+                content="仅支持相邻两年"
+                placement="top"
+              >
+                <i
+                  class="el-icon-warning"
+                  style="color: #ff4d4f; margin-left: 10px"
+                ></i>
               </el-tooltip>
             </div>
           </div>
           <div class="custom-border-box">
             <div class="img-container">
-              <img v-if="yearlyChangeImgSrc && !yearError" :src="yearlyChangeImgSrc" alt="年间水体变化图片"
-                @error="handleImgError('yearly')" @click="enlargeImg(yearlyChangeImgSrc)" />
+              <img
+                v-if="yearlyChangeImgSrc && !yearError"
+                :src="yearlyChangeImgSrc"
+                alt="年间水体变化图片"
+                @error="handleImgError('yearly')"
+                @click="enlargeImg(yearlyChangeImgSrc)"
+              />
               <div v-else class="img-placeholder">
                 {{ yearError ? "请选择相邻两年" : "请选择年份范围加载图片" }}
               </div>
@@ -131,16 +196,24 @@
       </div>
 
       <!-- 新右1：水体面积折线图（从原左3移动） -->
-      <div class="dataBoxView" style="right: 20px; left: auto" :class="{
-        'slide-in': newDataBoxShow,
-        'slide-out-right': !newDataBoxShow,
-      }">
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto"
+        :class="{
+          'slide-in': newDataBoxShow,
+          'slide-out-right': !newDataBoxShow,
+        }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">水体面积折线图</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-select v-model="areaChartType" placeholder="选择类型" @change="updateAreaChartImg">
+              <el-select
+                v-model="areaChartType"
+                placeholder="选择类型"
+                @change="updateAreaChartImg"
+              >
                 <el-option label="时序" value="时序" />
                 <el-option label="月份" value="月份" />
               </el-select>
@@ -148,8 +221,13 @@
           </div>
           <div class="custom-border-box">
             <div class="img-container2">
-              <img v-if="areaChartImgSrc" :src="areaChartImgSrc" alt="水体面积折线图" @error="handleImgError('area')"
-                @click="enlargeImg(areaChartImgSrc)" />
+              <img
+                v-if="areaChartImgSrc"
+                :src="areaChartImgSrc"
+                alt="水体面积折线图"
+                @error="handleImgError('area')"
+                @click="enlargeImg(areaChartImgSrc)"
+              />
               <div v-else class="img-placeholder">请选择类型加载图片</div>
             </div>
           </div>
@@ -157,25 +235,40 @@
       </div>
 
       <!-- 新增：新右2：各月份地物（添加feature-img-container类名缩小图片） -->
-      <div class="dataBoxView" style="right: 20px; left: auto; top: 37%" :class="{
-        'slide-in': newDataBoxShow,
-        'slide-out-right': !newDataBoxShow,
-      }">
+      <div
+        class="dataBoxView"
+        style="right: 20px; left: auto; top: 37%"
+        :class="{
+          'slide-in': newDataBoxShow,
+          'slide-out-right': !newDataBoxShow,
+        }"
+      >
         <div class="titleIcon"></div>
         <div class="boxTitle">各月份地物</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-date-picker v-model="monthlyFeatureDate" placeholder="选择年月日" :clearable="false" type="date"
-                :format="datePickerFormat.format" :value-format="datePickerFormat.valueFormat"
-                @change="updateMonthlyFeatureImg" />
+              <el-date-picker
+                v-model="monthlyFeatureDate"
+                placeholder="选择年月日"
+                :clearable="false"
+                type="date"
+                :format="datePickerFormat.format"
+                :value-format="datePickerFormat.valueFormat"
+                @change="updateMonthlyFeatureImg"
+              />
             </div>
           </div>
           <div class="custom-border-box">
             <!-- 关键：添加feature-img-container类名，用于单独控制地物图片大小 -->
             <div class="img-container feature-img-container">
-              <img v-if="monthlyFeatureImgSrc" :src="monthlyFeatureImgSrc" alt="各月份地物图片"
-                @error="handleImgError('feature')" @click="enlargeImg(monthlyFeatureImgSrc)" />
+              <img
+                v-if="monthlyFeatureImgSrc"
+                :src="monthlyFeatureImgSrc"
+                alt="各月份地物图片"
+                @error="handleImgError('feature')"
+                @click="enlargeImg(monthlyFeatureImgSrc)"
+              />
               <div v-else class="img-placeholder">请选择日期加载图片</div>
             </div>
           </div>
@@ -200,12 +293,10 @@
     </div> -->
 
     <!-- 地图 -->
-    <div id="cesiumContainer">
-    </div>
+    <div id="cesiumContainer"></div>
 
     <!-- 鼠标缩放控件 -->
     <div class="MouseZoom" id="MouseZoom"></div>
-
 
     <transition name="fade">
       <div v-if="loadingShow" class="loading-box" id="loadingBox">
@@ -214,37 +305,48 @@
       </div>
     </transition>
 
-
-
-  <!-- 鼠标点击窗口 -->
-  <transition name="fade">
-  <div v-show="clickPopupShowRight">
-    <div class="clickModal-content" id="clickPopup">
-      <span class="close" @click="closeModal">&times;</span>
-      <div class="clickPopup-title" id="clickPopup-title">
-        <div class="clickPopupTitleText">我是窗口标题</div>
+<!-- 保留原有普通监测点的单弹窗（水闸/泵站用） -->
+<transition name="fade">
+  <div v-show="clickPopupShowNormal">
+    <div class="clickModal-content normal-popup" id="clickPopupNormal">
+      <span class="close" @click="closeNormalModal">&times;</span>
+      <div class="clickPopup-title">
+        <div class="clickPopupTitleText">{{ normalPopupTitle }}</div>
       </div>
-      <div id="clickPopup-content" style="padding: 10px 10px 15px 10px; margin: 0;">
-    <div class="popup-img-container" style="max-width: 100%; margin-bottom: 10px; display: none;">
-      <img 
-        id="popup-img" 
-        style="max-width: 48%; height: auto; margin-right: 2%; cursor: zoom-in;"  
-        alt="监测点图片1"
-        @click="enlargeImg($event.target.src)"  
-      >
-      <img 
-        id="popup-img2" 
-        style="max-width: 48%; height: auto; cursor: zoom-in;" 
-        alt="监测点图片2"
-        @click="enlargeImg($event.target.src)" 
-      >
+      <div id="clickPopup-content" style="padding: 10px">
+        <p id="clickPopup-p">{{ normalPopupContent }}</p>
+      </div>
     </div>
-    <p id="clickPopup-p" >这是一个漂亮的弹窗，带有关闭按钮。</p>
   </div>
-    </div>
-   </div>
-    </transition>
+</transition>
 
+<!-- 新增特殊监测点的双弹窗（水体图/植被覆盖/土地覆盖用） -->
+<transition name="fade">
+  <div v-show="clickPopupShowLeft">
+    <div class="clickModal-content left-popup" id="clickPopupLeft">
+      <span class="close" @click="closeLeftModal">&times;</span>
+      <div class="clickPopup-title">
+        <div class="clickPopupTitleText">{{ leftPopupTitle }}</div>
+      </div>
+      <div style="padding: 10px">
+        <img :src="leftPopupImgSrc" class="popup-img-item" @click="enlargeImg(leftPopupImgSrc)" />
+      </div>
+    </div>
+  </div> 
+</transition>
+<transition name="fade">
+  <div v-show="clickPopupShowRight">
+    <div class="clickModal-content right-popup" id="clickPopupRight">
+      <span class="close" @click="closeRightModal">&times;</span>
+      <div class="clickPopup-title">
+        <div class="clickPopupTitleText">{{ rightPopupTitle }}</div>
+      </div>
+      <div style="padding: 10px">
+        <img :src="rightPopupImgSrc" class="popup-img-item" @click="enlargeImg(rightPopupImgSrc)" />
+      </div>
+    </div>
+  </div> 
+</transition>
 
     <!-- 鼠标悬浮窗口 -->
     <transition name="fade">
@@ -259,38 +361,41 @@
     <transition name="fade">
       <div v-if="showEnlargeModal" class="enlarge-modal">
         <div class="modal-content">
-          <span class="close" @click="closeEnlargeModal">&times;</span>
-          <img :src="enlargedImgSrc" alt="Enlarged Image" class="enlarged-img" />
+          <span class="enlarge-close" @click="closeEnlargeModal">&times;</span>
+          <img
+            :src="enlargedImgSrc"
+            alt="Enlarged Image"
+            class="enlarged-img"
+          />
         </div>
       </div>
     </transition>
 
-
     <!-- <div class="mars3d-animation-point" id="htmlElement">
       <p></p>
     </div> -->
-
   </div>
 </template>
 <script setup>
-import { ref, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { ref, watch, getCurrentInstance, onMounted, onUnmounted } from "vue";
 //导入cesium
-import * as Cesium from 'cesium';
-import 'cesium/Build/Cesium/Widgets/widgets.css';
-import marker from '../../../public/images/cesiumMap/marker.png';
-import { dialogEmits } from 'element-plus';
-import RunOff from './charts/RunOff.vue' /* 径流 */
-import HydrographView from './charts/HydrographView.vue' /* 水位 */
-import SpectralReflectance from './charts/SpectralReflectance.vue' /* 光谱反射率 */
-import WaterPhysicochemistry from './charts/WaterPhysicochemistry.vue' /* 水质 */
-import Atmosphere from './charts/AtmosphereView.vue' /* 气象 */
-import WetLandView from './charts/WetLandView.vue' /* 土壤 */
-import { selectAllSluicesByConditions,getFarmlandgeojson } from '@/api/getData';
-import { selectAllPumpingStationByConditions } from '@/api/getData'
-import router from '@/router';
-import { resolve } from 'path';
-
-
+import * as Cesium from "cesium";
+import "cesium/Build/Cesium/Widgets/widgets.css";
+import marker from "../../../public/images/cesiumMap/marker.png";
+import { dialogEmits } from "element-plus";
+import RunOff from "./charts/RunOff.vue"; /* 径流 */
+import HydrographView from "./charts/HydrographView.vue"; /* 水位 */
+import SpectralReflectance from "./charts/SpectralReflectance.vue"; /* 光谱反射率 */
+import WaterPhysicochemistry from "./charts/WaterPhysicochemistry.vue"; /* 水质 */
+import Atmosphere from "./charts/AtmosphereView.vue"; /* 气象 */
+import WetLandView from "./charts/WetLandView.vue"; /* 土壤 */
+import {
+  selectAllSluicesByConditions,
+  getFarmlandgeojson,
+} from "@/api/getData";
+import { selectAllPumpingStationByConditions } from "@/api/getData";
+import router from "@/router";
+import { resolve } from "path";
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
@@ -300,15 +405,26 @@ const pumpDatas = ref();
 // lading
 const loadingShow = ref(true);
 const cesiumLoaded = ref(false);
-const clickPopupShowRight = ref(true); // 控制弹窗显示与隐藏
+const clickPopupShowNormal = ref(false); 
+const clickPopupShowLeft = ref(false);
+const clickPopupShowRight = ref(false); 
+const normalPopupTitle = ref("");        // 普通监测点标题
+const normalPopupContent = ref("");      // 普通监测点内容
 
+const leftPopupTitle = ref("");
+const rightPopupTitle = ref("");
+const leftPopupImgSrc = ref("");
+const rightPopupImgSrc = ref("");
+const closeNormalModal = () => { clickPopupShowNormal.value = false; };
+const closeLeftModal = () => { clickPopupShowLeft.value = false; };
+const closeRightModal = () => { clickPopupShowRight.value = false; };
 //是否加载水体
 const loadedWater = ref(false);
 // 存储水闸和泵站实体的引用，便于后续删除
 const sluiceEntities = ref([]);
 const pumpEntities = ref([]);
 //存储水闸+泵站所有点位
-const waterPoints = ref([]); 
+const waterPoints = ref([]);
 
 //是否加载建筑物
 const loadedBuildings = ref(false);
@@ -340,7 +456,11 @@ var pitch = 90;
 // 初始距离
 var distance = 10000;
 // 初始偏移量
-var offset = new Cesium.HeadingPitchRange(Cesium.Math.toRadians(heading), -Cesium.Math.toRadians(pitch), distance);
+var offset = new Cesium.HeadingPitchRange(
+  Cesium.Math.toRadians(heading),
+  -Cesium.Math.toRadians(pitch),
+  distance
+);
 // 控制heading增减的标志位
 var increasing = true;
 window.CESIUM_BASE_URL = "/static/Cesium";
@@ -350,7 +470,7 @@ window.CESIUM_BASE_URL = "/static/Cesium";
 const currentModuleGroup = ref("old");
 // 2. 新模块滑入/滑出控制
 const newDataBoxShow = ref(false);
-// 3. 新模块1：各月份水体 
+// 3. 新模块1：各月份水体
 const monthlyWaterDate = ref("2025-06-24");
 const monthlyWaterImgSrc = ref("/images/各月份水体/25-0624.png");
 const datePickerFormat = {
@@ -364,7 +484,9 @@ const yearlyChangeImgSrc = ref("/images/年间水体变化/2425.png");
 const yearError = ref(false);
 // 5. 新模块3：水体面积折线图 - 默认选择“时序”
 const areaChartType = ref("时序");
-const areaChartImgSrc = ref("/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png");
+const areaChartImgSrc = ref(
+  "/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png"
+);
 // 6. 新模块4：各月份地物（新增）
 const monthlyFeatureDate = ref("2025-06-15");
 const monthlyFeatureImgSrc = ref("/images/地物/25-0615.png"); // 对应本地F盘路径
@@ -374,9 +496,11 @@ const showEnlargeModal = ref(false);
 let farmlandDataSource = null;
 
 // 智慧林地坐标
-const smartForestPosition = Cesium.Cartesian3.fromDegrees(114.3547, 34.81422, 1500);
-
-
+const smartForestPosition = Cesium.Cartesian3.fromDegrees(
+  114.3547,
+  34.81422,
+  1500
+);
 
 onMounted(async () => {
   const instance = getCurrentInstance();
@@ -386,22 +510,21 @@ onMounted(async () => {
       checkCesiumLoaded();
       updateAreaChartImg(); // 初始化水体面积折线图（默认时序）
       updateMonthlyFeatureImg(); // 初始化各月份地物图片
-    })
+    });
   }
-})
+});
 onUnmounted(() => {
-    if (treeLoader) {
-        treeLoader.destroy();
-        treeLoader = null;
-    }
+  if (treeLoader) {
+    treeLoader.destroy();
+    treeLoader = null;
+  }
 });
 
 function goToModelView() {
   console.log(localStorage);
   setTimeout(resolve, 10000);
-  router.push('/mainMenu')
+  router.push("/mainMenu");
 }
-
 
 // 原有：模块切换函数
 /*
@@ -564,7 +687,8 @@ function handleImgError(type) {
     yearError.value = false;
   }
   if (type === "area") {
-    areaChartImgSrc.value = "/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png";
+    areaChartImgSrc.value =
+      "/images/水体/5.产品数据-月间水体变化/8-9.png图/水域面积时序.png";
     areaChartType.value = "时序";
   }
   // 地物图片错误处理
@@ -604,7 +728,7 @@ function toggleWaterFeatures() {
 
     // 飞行到便于观察效果的坐标
     const targetPosition = Cesium.Cartesian3.fromDegrees(
-      114.27387879, 
+      114.27387879,
       34.786476669,
       15000
     );
@@ -615,7 +739,7 @@ function toggleWaterFeatures() {
       easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
       complete: () => {
         console.log("已飞行到智慧水体目标坐标");
-      }
+      },
     });
   } else {
     // 只清除水闸和泵站模型
@@ -625,141 +749,135 @@ function toggleWaterFeatures() {
 }
 function selectAllSluicesDatas() {
   // 先清除已有的水闸模型，避免重复加载
-  sluiceEntities.value.forEach(entity => {
+  sluiceEntities.value.forEach((entity) => {
     viewer.entities.remove(entity);
   });
   sluiceEntities.value = [];
 
-  selectAllSluicesByConditions({})
-    .then((res) => {
-      const result = res.response.value;
-      console.log(result);
-      if (result.code === 'SUCCESS') {
-        sluiceDatas.value = result.body;
-        console.log(sluiceDatas);
-        const sluicePoints = [];
-        // 遍历每个水闸数据并加载GLB模型
-        sluiceDatas.value.forEach((sluice) => {
-          // 从geog字段中提取经纬度
-          const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
-          const match = sluice.geog.match(pointRegex);
+  selectAllSluicesByConditions({}).then((res) => {
+    const result = res.response.value;
+    console.log(result);
+    if (result.code === "SUCCESS") {
+      sluiceDatas.value = result.body;
+      console.log(sluiceDatas);
+      const sluicePoints = [];
+      // 遍历每个水闸数据并加载GLB模型
+      sluiceDatas.value.forEach((sluice) => {
+        // 从geog字段中提取经纬度
+        const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
+        const match = sluice.geog.match(pointRegex);
 
-          if (match && match.length === 3) {
-            const longitude = parseFloat(match[1]);
-            const latitude = parseFloat(match[2]);
-            const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
-            
-            sluicePoints.push({
-              id: sluice.id,
-              name: sluice.name,
-              text: sluice.irrname, 
-              position: {
-                longitude: longitude,
-                latitude: latitude
-              }
-            });
-            // 添加模型实体并保存引用
-            const entity = viewer.entities.add({
-              position: position,
-              model: {
-                uri: './sluice/sluice.glb', // GLB模型路径
-                scale: 10.0, // 缩放比例
-                minimumPixelSize: 32, // 最小像素大小，确保远距离可见
-                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-              },
-              show: true,
-              type: 'sluice' // 添加类型标识
-            });
+        if (match && match.length === 3) {
+          const longitude = parseFloat(match[1]);
+          const latitude = parseFloat(match[2]);
+          const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
 
-            // 保存实体引用，便于后续删除
-            sluiceEntities.value.push(entity);
-          }
-        });
-        // 将水闸点位合并到全局waterPoints
-        waterPoints.value = [...waterPoints.value, ...sluicePoints];
-        initializeEntites(waterPoints.value);
+          sluicePoints.push({
+            id: sluice.id,
+            name: sluice.name,
+            text: sluice.irrname,
+            position: {
+              longitude: longitude,
+              latitude: latitude,
+            },
+          });
+          // 添加模型实体并保存引用
+          const entity = viewer.entities.add({
+            position: position,
+            model: {
+              uri: "./sluice/sluice.glb", // GLB模型路径
+              scale: 10.0, // 缩放比例
+              minimumPixelSize: 32, // 最小像素大小，确保远距离可见
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+            show: true,
+            type: "sluice", // 添加类型标识
+          });
 
-      } else {
-        message.error(result.msg);
-      }
-    })
-
+          // 保存实体引用，便于后续删除
+          sluiceEntities.value.push(entity);
+        }
+      });
+      // 将水闸点位合并到全局waterPoints
+      waterPoints.value = [...waterPoints.value, ...sluicePoints];
+      initializeEntites(waterPoints.value);
+    } else {
+      message.error(result.msg);
+    }
+  });
 }
 
 function selectAllPumpDatas() {
   // 先清除已有的泵站模型，避免重复加载
-  pumpEntities.value.forEach(entity => {
+  pumpEntities.value.forEach((entity) => {
     viewer.entities.remove(entity);
   });
   pumpEntities.value = [];
 
-  selectAllPumpingStationByConditions({})
-    .then((res) => {
-      const result = res.response.value;
-      console.log(result);
-      if (result.code === 'SUCCESS') {
-        pumpDatas.value = result.body;
-        console.log(pumpDatas);
-        const pumpPoints = [];
-        // 遍历每个泵站数据并加载GLB模型
-        pumpDatas.value.forEach((pump) => {
-          // 从geog字段中提取经纬度
-          const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
-          const match = pump.geog.match(pointRegex);
+  selectAllPumpingStationByConditions({}).then((res) => {
+    const result = res.response.value;
+    console.log(result);
+    if (result.code === "SUCCESS") {
+      pumpDatas.value = result.body;
+      console.log(pumpDatas);
+      const pumpPoints = [];
+      // 遍历每个泵站数据并加载GLB模型
+      pumpDatas.value.forEach((pump) => {
+        // 从geog字段中提取经纬度
+        const pointRegex = /POINT\(([\d.]+)\s([\d.]+)\)/;
+        const match = pump.geog.match(pointRegex);
 
-          if (match && match.length === 3) {
-            const longitude = parseFloat(match[1]);
-            const latitude = parseFloat(match[2]);
-            const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
-            
-            pumpPoints.push({
-              id: pump.id,
-              name: pump.name,
-              text: pump.irrname,
-              position: {
-                longitude: longitude,
-                latitude: latitude
-              }
-            });
+        if (match && match.length === 3) {
+          const longitude = parseFloat(match[1]);
+          const latitude = parseFloat(match[2]);
+          const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
 
-            // 添加模型实体并保存引用
-            const entity = viewer.entities.add({
-              position: position,
-              model: {
-                uri: './pump/pump.glb', // GLB模型路径
-                scale: 10.0, // 缩放比例
-                minimumPixelSize: 32, // 最小像素大小，确保远距离可见
-                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-              },
-              show: true,
-              type: 'pump' // 添加类型标识
-            });
+          pumpPoints.push({
+            id: pump.id,
+            name: pump.name,
+            text: pump.irrname,
+            position: {
+              longitude: longitude,
+              latitude: latitude,
+            },
+          });
 
-            // 保存实体引用，便于后续删除
-            pumpEntities.value.push(entity);
-          }
-        });
-        // 将泵站点位合并到全局waterPoints
-        waterPoints.value = [...waterPoints.value, ...pumpPoints];
-        initializeEntites(waterPoints.value);
-      } else {
-        message.error(result.msg);
-      }
-    })
+          // 添加模型实体并保存引用
+          const entity = viewer.entities.add({
+            position: position,
+            model: {
+              uri: "./pump/pump.glb", // GLB模型路径
+              scale: 10.0, // 缩放比例
+              minimumPixelSize: 32, // 最小像素大小，确保远距离可见
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+            show: true,
+            type: "pump", // 添加类型标识
+          });
 
+          // 保存实体引用，便于后续删除
+          pumpEntities.value.push(entity);
+        }
+      });
+      // 将泵站点位合并到全局waterPoints
+      waterPoints.value = [...waterPoints.value, ...pumpPoints];
+      initializeEntites(waterPoints.value);
+    } else {
+      message.error(result.msg);
+    }
+  });
 }
-
 
 // 清除所有水闸和泵站模型
 function clearSluiceAndPumpModels() {
   // 清除水闸模型
-  sluiceEntities.value.forEach(entity => {
+  sluiceEntities.value.forEach((entity) => {
     viewer.entities.remove(entity);
   });
   sluiceEntities.value = [];
 
   // 清除泵站模型
-  pumpEntities.value.forEach(entity => {
+  pumpEntities.value.forEach((entity) => {
     viewer.entities.remove(entity);
   });
   pumpEntities.value = [];
@@ -769,8 +887,11 @@ function clearSluiceAndPumpModels() {
   for (let i = entities.length - 1; i >= 0; i--) {
     const entity = entities[i];
     // 通过monitoItems.data判断是否为水闸/泵站相关实体
-    if (entity.monitoItems && entity.monitoItems.data && 
-        waterPoints.value.some(point => point.id === entity.monitoItems.data.id)) {
+    if (
+      entity.monitoItems &&
+      entity.monitoItems.data &&
+      waterPoints.value.some((point) => point.id === entity.monitoItems.data.id)
+    ) {
       viewer.entities.remove(entity);
     }
   }
@@ -799,8 +920,8 @@ async function initializeEntites(points) {
   //   });
   // } catch (error) {
   //   if (error instanceof Cesium.DeveloperError && error.message.includes('already exists')) {
-  //     console.debug('忽略重复实体ID报错（功能正常）:', error.message); 
-  //     return; 
+  //     console.debug('忽略重复实体ID报错（功能正常）:', error.message);
+  //     return;
   //   }
   //   throw error;
   // }
@@ -822,12 +943,8 @@ async function initializeEntites(points) {
   //   }
   // });
 
-
-
-
   // 创建一个数组来保存所有的实体
   const entities = [];
-
 
   //广告牌
   // points.forEach(res => {
@@ -847,25 +964,24 @@ async function initializeEntites(points) {
   //     entities.push(entity);
   // });
 
-
   // 创建一个具有渐变色背景的图像
   function createGradientBackground(width, height) {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
 
     // 创建渐变
     const gradient = context.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.2)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.7)");
 
     // 填充渐变
     context.fillStyle = gradient;
     context.fillRect(0, 0, width, height);
 
     // 返回作为背景的图像
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL("image/png");
   }
   // let model = viewer.entities.add({
   //     id: '建筑模型',
@@ -880,48 +996,55 @@ async function initializeEntites(points) {
   // });
   // 使用上面创建的图像作为标签的背景
   const gradientBackground = createGradientBackground(200, 50);
-// 点位信息
-points.forEach(res => {
-  const entity = viewer.entities.add({
-    name: res.name,
-    position: Cesium.Cartesian3.fromDegrees(res.position.longitude, res.position.latitude, 0),
-    billboard: {
-      image: marker, // 图片路径
-      width: 40.85,  // 图片宽度（像素）
-      height: 95.8, // 图片高度（像素）
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,// 垂直方向上的对齐方式
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
-      pixelOffset: new Cesium.Cartesian2(0, 16) // 偏移量，单位为像素。这里的例子是向下偏移50像素
-    },
-    label: {
-      text: res.name,
-      font: "bold 30px Helvetica", // 字体大小和样式
-      scale: 0.5,
-      style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 使用填充和轮廓
-      fillColor: new Cesium.Color.fromCssColorString('#47e8fe'), // 文字颜色
-      outlineColor: new Cesium.Color(0, 0, 0, 0.3), // 轮廓颜色，模拟阴影
-      outlineWidth: 2.0, // 轮廓宽度
-      pixelOffset: new Cesium.Cartesian2(0, -100), // 负值，将标签置于广告牌上方
-      showBackground: true, // 显示背景
-      backgroundImage: gradientBackground, // 背景图像
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平对齐方式
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
-      verticalOrigin: Cesium.VerticalOrigin.TOP, // 改为顶部对齐，使标签显示在广告牌上方
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000) // 距离显示条件
-    },
-    // point: {
-    //     pixelSize: 10, // 点的大小（像素）
-    //     color: Cesium.Color.ROYALBLUE, // 点的颜色
-    //     outlineColor: Cesium.Color.WHITE, // 点的轮廓颜色
-    //     outlineWidth: 1 // 点的轮廓宽度
-    // },
-    monitoItems: {
-      data: res
-    }
+  // 点位信息
+  points.forEach((res) => {
+    const entity = viewer.entities.add({
+      name: res.name,
+      position: Cesium.Cartesian3.fromDegrees(
+        res.position.longitude,
+        res.position.latitude,
+        0
+      ),
+      billboard: {
+        image: marker, // 图片路径
+        width: 40.85, // 图片宽度（像素）
+        height: 95.8, // 图片高度（像素）
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // 垂直方向上的对齐方式
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
+        pixelOffset: new Cesium.Cartesian2(0, 16), // 偏移量，单位为像素。这里的例子是向下偏移50像素
+      },
+      label: {
+        text: res.name,
+        font: "bold 30px Helvetica", // 字体大小和样式
+        scale: 0.5,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 使用填充和轮廓
+        fillColor: new Cesium.Color.fromCssColorString("#47e8fe"), // 文字颜色
+        outlineColor: new Cesium.Color(0, 0, 0, 0.3), // 轮廓颜色，模拟阴影
+        outlineWidth: 2.0, // 轮廓宽度
+        pixelOffset: new Cesium.Cartesian2(0, -100), // 负值，将标签置于广告牌上方
+        showBackground: true, // 显示背景
+        backgroundImage: gradientBackground, // 背景图像
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平对齐方式
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 紧贴地面
+        verticalOrigin: Cesium.VerticalOrigin.TOP, // 改为顶部对齐，使标签显示在广告牌上方
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+          0,
+          100000
+        ), // 距离显示条件
+      },
+      // point: {
+      //     pixelSize: 10, // 点的大小（像素）
+      //     color: Cesium.Color.ROYALBLUE, // 点的颜色
+      //     outlineColor: Cesium.Color.WHITE, // 点的轮廓颜色
+      //     outlineWidth: 1 // 点的轮廓宽度
+      // },
+      monitoItems: {
+        data: res,
+      },
+    });
+    // 将实体添加到数组中
+    entities.push(entity);
   });
-  // 将实体添加到数组中
-  entities.push(entity);
-});
 
   console.log("实体加载完毕");
 }
@@ -929,11 +1052,11 @@ points.forEach(res => {
 function FarmLandChange() {
   if (!loadedFarmLand.value) {
     console.log("开始加载农田模型...");
-    addFarmlandData();   // 你的加载函数
+    addFarmlandData(); // 你的加载函数
     loadedFarmLand.value = true;
   } else {
     console.log("移除农田模型...");
-    clearFarmland();     // 移除函数
+    clearFarmland(); // 移除函数
     loadedFarmLand.value = false;
   }
 }
@@ -949,36 +1072,38 @@ function clearFarmland() {
 //农田加载函数
 const addFarmlandData = async () => {
   try {
-    const response = await fetch('/nongtian/zzz.geojson');
+    const response = await fetch("/nongtian/zzz.geojson");
     const geojson = await response.json();
     const features = geojson.features;
 
     const CHUNK_SIZE = 20; // ✅ 一批加载20个模型，防止卡顿
     let index = 0;
 
-   farmlandDataSource = new Cesium.CustomDataSource('farmland');
-viewer.dataSources.add(farmlandDataSource);
-
+    farmlandDataSource = new Cesium.CustomDataSource("farmland");
+    viewer.dataSources.add(farmlandDataSource);
 
     function getFeatureCenter(feature) {
       const coords = feature.geometry.coordinates;
       const type = feature.geometry.type;
       let vertices = [];
 
-      if (type === 'Polygon') {
+      if (type === "Polygon") {
         vertices = coords[0];
-      } else if (type === 'MultiPolygon') {
+      } else if (type === "MultiPolygon") {
         vertices = coords[0][0];
       } else {
-        console.warn('❌ 不支持的几何类型:', type);
+        console.warn("❌ 不支持的几何类型:", type);
         return null;
       }
 
-      const { lonSum, latSum } = vertices.reduce((acc, [lon, lat]) => {
-        acc.lonSum += lon;
-        acc.latSum += lat;
-        return acc;
-      }, { lonSum: 0, latSum: 0 });
+      const { lonSum, latSum } = vertices.reduce(
+        (acc, [lon, lat]) => {
+          acc.lonSum += lon;
+          acc.latSum += lat;
+          return acc;
+        },
+        { lonSum: 0, latSum: 0 }
+      );
 
       const centerLon = lonSum / vertices.length;
       const centerLat = latSum / vertices.length;
@@ -988,7 +1113,7 @@ viewer.dataSources.add(farmlandDataSource);
 
     async function processChunk() {
       if (index >= features.length) {
-        console.log('✅ 所有农田模型加载完成');
+        console.log("✅ 所有农田模型加载完成");
         viewer.zoomTo(dataSource);
         return;
       }
@@ -1002,19 +1127,18 @@ viewer.dataSources.add(farmlandDataSource);
         const [lon, lat] = center;
 
         const entity = new Cesium.Entity({
-          name: '草模型农田',
+          name: "草模型农田",
           position: Cesium.Cartesian3.fromDegrees(lon, lat, 0),
           model: {
-            uri: '/nongtian/grass.glb', // ✅ 正确模型路径
-            scale: 0.2,                 // ✅ 控制模型大小，防止拉伸
+            uri: "/nongtian/grass.glb", // ✅ 正确模型路径
+            scale: 0.2, // ✅ 控制模型大小，防止拉伸
             minimumPixelSize: 20,
-            maximumScale: 200
+            maximumScale: 200,
           },
-          properties: feature.properties
+          properties: feature.properties,
         });
 
         farmlandDataSource.entities.add(entity);
-
       });
 
       index += CHUNK_SIZE;
@@ -1025,15 +1149,14 @@ viewer.dataSources.add(farmlandDataSource);
 
     processChunk();
   } catch (err) {
-    console.error('❌ 加载农田模型失败:', err);
+    console.error("❌ 加载农田模型失败:", err);
   }
 };
 function checkCesiumLoaded() {
-
   // 设置定时器，每隔一段时间检查Cesium对象是否存在
   const intervalId = setInterval(async () => {
     console.log("正在等待Cesium加载");
-    if (typeof Cesium !== 'undefined') {
+    if (typeof Cesium !== "undefined") {
       // Cesium对象已加载
       clearInterval(intervalId); // 停止定时器
       cesiumLoaded.value = true;
@@ -1044,7 +1167,7 @@ function checkCesiumLoaded() {
       var eventHelper = new Cesium.EventHelper();
       var tileLoadProgressEvent = viewer.scene.globe.tileLoadProgressEvent;
       eventHelper.add(tileLoadProgressEvent, async function (e) {
-        console.log('每次加载地图服务矢量切片都会进入这个回调', e);
+        console.log("每次加载地图服务矢量切片都会进入这个回调", e);
         if (e == 0) {
           console.log("矢量切片加载完成时的回调");
           //关闭加载动画
@@ -1061,163 +1184,165 @@ function checkCesiumLoaded() {
 }
 
 class TreeDataLoader {
-    constructor(viewer, options = {}) {
-        this.viewer = viewer;
-        this.config = {
-            rangeUrl: './tree/TreeRange.geojson',
-            pointUrl: './tree/trees.geojson',
-            models: {
-                high: {
-                    url: './tree/tree.glb',
-                    scale: 2.0,
-                    maxDistance: 500
-                },
-                low: {
-                    url: './tree/l_tree.glb',
-                    scale: 2.0,
-                    maxDistance: 6000
-                }
-            },
-            heightThreshold: 5000,
-            chunkSize: 200,
-            idleTimeout: 15,
-            maximumScreenSpaceError: 2,
-            visibleDistance: 6000,
-            rangeStyle: {
-                fill: Cesium.Color.GREEN.withAlpha(0.3),
-                stroke: Cesium.Color.GREEN
-            }
-        };
-        Object.assign(this.config, options);
+  constructor(viewer, options = {}) {
+    this.viewer = viewer;
+    this.config = {
+      rangeUrl: "./tree/TreeRange.geojson",
+      pointUrl: "./tree/trees.geojson",
+      models: {
+        high: {
+          url: "./tree/tree.glb",
+          scale: 2.0,
+          maxDistance: 500,
+        },
+        low: {
+          url: "./tree/l_tree.glb",
+          scale: 2.0,
+          maxDistance: 6000,
+        },
+      },
+      heightThreshold: 5000,
+      chunkSize: 200,
+      idleTimeout: 15,
+      maximumScreenSpaceError: 2,
+      visibleDistance: 6000,
+      rangeStyle: {
+        fill: Cesium.Color.GREEN.withAlpha(0.3),
+        stroke: Cesium.Color.GREEN,
+      },
+    };
+    Object.assign(this.config, options);
 
-        this.rangeDataSource = null;
-        this.pointDataSource = null;
-        this.allPoints = [];
-        this.loaded = false;
-        this.isInitialized = false;//标记是否已初始化
-        this.currentVisible = new Map();
-        
-        this.modelCaches = {
-            high: null,
-            low: null
-        };
-        this.modelInstances = new Map();
-        
-        this.lastCameraHeight = 0;
-        this.shouldShowModels = false;
-        this.isActive = false;
+    this.rangeDataSource = null;
+    this.pointDataSource = null;
+    this.allPoints = [];
+    this.loaded = false;
+    this.isInitialized = false; //标记是否已初始化
+    this.currentVisible = new Map();
+
+    this.modelCaches = {
+      high: null,
+      low: null,
+    };
+    this.modelInstances = new Map();
+
+    this.lastCameraHeight = 0;
+    this.shouldShowModels = false;
+    this.isActive = false;
+  }
+
+  // 新增：初始化方法（不立即加载数据）
+  async init() {
+    if (this.isInitialized) return;
+
+    await this._preloadModels();
+    this.isInitialized = true;
+    console.log("树木加载器初始化完成，等待激活");
+  }
+
+  // 新增激活方法
+  async activate() {
+    if (!this.isInitialized) {
+      await this.init();
     }
 
-    // 新增：初始化方法（不立即加载数据）
-    async init() {
-        if (this.isInitialized) return;
-        
-        await this._preloadModels();
-        this.isInitialized = true;
-        console.log('树木加载器初始化完成，等待激活');
+    if (this.isActive) return;
+
+    this.isActive = true;
+
+    if (!this.loaded) {
+      await this._loadRangeData();
+      await this._loadAllPoints();
+      this.loaded = true;
     }
 
-    // 新增激活方法
-    async activate() {
-        if (!this.isInitialized) {
-            await this.init();
-        }
-        
-        if (this.isActive) return;
-        
-        this.isActive = true;
-        
-        if (!this.loaded) {
-            await this._loadRangeData();
-            await this._loadAllPoints();
-            this.loaded = true;
-        }
+    // 确保范围数据初始状态正确
+    if (this.rangeDataSource) {
+      const currentHeight = this.viewer.camera.positionCartographic.height;
+      this.rangeDataSource.show = currentHeight >= this.config.heightThreshold;
+    }
 
-        // 确保范围数据初始状态正确
-      if (this.rangeDataSource) {
-          const currentHeight = this.viewer.camera.positionCartographic.height;
-          this.rangeDataSource.show = currentHeight >= this.config.heightThreshold;
+    // 确保点数据源显示
+    if (this.pointDataSource) {
+      this.pointDataSource.show = true;
+    }
+
+    this._setupCameraListener();
+    this._updateVisibility();
+  }
+
+  // 修改 deactivate 方法
+  deactivate() {
+    if (!this.isActive) return;
+
+    this.isActive = false;
+
+    // 移除相机监听
+    if (this.cameraChangedListener) {
+      this.viewer.camera.changed.removeEventListener(
+        this.cameraChangedListener
+      );
+      this.cameraChangedListener = null;
+    }
+
+    // 隐藏所有模型
+    this._hideAllModels();
+
+    // 完全移除数据源，而不是只隐藏
+    if (this.rangeDataSource) {
+      this.viewer.dataSources.remove(this.rangeDataSource);
+      this.rangeDataSource = null;
+    }
+
+    if (this.pointDataSource) {
+      this.viewer.dataSources.remove(this.pointDataSource);
+      this.pointDataSource = null;
+    }
+
+    // 重置状态
+    this.loaded = false;
+    this.allPoints = [];
+    this.currentVisible.clear();
+    this.modelInstances.clear();
+
+    console.log("树木加载器已停用");
+  }
+
+  // 新增：切换显示状态
+  toggle() {
+    if (this.loaded && this.shouldShowModels) {
+      this.deactivate();
+    } else {
+      this.activate();
+    }
+  }
+
+  async _preloadModels() {
+    try {
+      for (const [key, modelConfig] of Object.entries(this.config.models)) {
+        this.modelCaches[key] = await Cesium.Model.fromGltfAsync({
+          url: modelConfig.url,
+          scale: modelConfig.scale,
+          maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        });
+        console.log(`已预加载 ${key} 精度模型: ${modelConfig.url}`);
       }
-      
-      // 确保点数据源显示
-      if (this.pointDataSource) {
-          this.pointDataSource.show = true;
-      }
-        
-      this._setupCameraListener();
-      this._updateVisibility();
+    } catch (e) {
+      console.error("模型加载失败:", e);
     }
+  }
 
-    // 修改 deactivate 方法
-    deactivate() {
-      if (!this.isActive) return;
-      
-      this.isActive = false;
-      
-      // 移除相机监听
-      if (this.cameraChangedListener) {
-          this.viewer.camera.changed.removeEventListener(this.cameraChangedListener);
-          this.cameraChangedListener = null;
-      }
-      
-      // 隐藏所有模型
-      this._hideAllModels();
-      
-      // 完全移除数据源，而不是只隐藏
-      if (this.rangeDataSource) {
-          this.viewer.dataSources.remove(this.rangeDataSource);
-          this.rangeDataSource = null;
-      }
-      
-      if (this.pointDataSource) {
-          this.viewer.dataSources.remove(this.pointDataSource);
-          this.pointDataSource = null;
-      }
-      
-      // 重置状态
-      this.loaded = false;
-      this.allPoints = [];
-      this.currentVisible.clear();
-      this.modelInstances.clear();
-      
-      console.log('树木加载器已停用');
+  _getAppropriateModel(distance) {
+    if (distance <= this.config.models.high.maxDistance) {
+      return "high";
+    } else {
+      return "low";
     }
+  }
 
-    // 新增：切换显示状态
-    toggle() {
-      if (this.loaded && this.shouldShowModels) {
-          this.deactivate();
-      } else {
-          this.activate();
-      }
-    }
-
-    async _preloadModels() {
-        try {
-            for (const [key, modelConfig] of Object.entries(this.config.models)) {
-                this.modelCaches[key] = await Cesium.Model.fromGltfAsync({
-                    url: modelConfig.url,
-                    scale: modelConfig.scale,
-                    maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
-                });
-                console.log(`已预加载 ${key} 精度模型: ${modelConfig.url}`);
-            }
-        } catch (e) {
-            console.error('模型加载失败:', e);
-        }
-    }
-
-    _getAppropriateModel(distance) {
-        if (distance <= this.config.models.high.maxDistance) {
-            return 'high';
-        } else {
-            return 'low';
-        }
-    }
-
-    _isInViewFrustum(position) {
-        /*ry {
+  _isInViewFrustum(position) {
+    /*ry {
             const camera = this.viewer.camera;
             const cullingVolume = camera.frustum.computeCullingVolume(
                 camera.position, 
@@ -1233,406 +1358,416 @@ class TreeDataLoader {
             console.warn('视锥体检测出错:', e);
             return true;
         }*/
-        return true;
-    }
+    return true;
+  }
 
-    _syncModelVisibility(visiblePoints, cameraPosition) {
-        const newVisibleIds = new Set(visiblePoints.map(p => p.id));
-        const entitiesToHide = [];
+  _syncModelVisibility(visiblePoints, cameraPosition) {
+    const newVisibleIds = new Set(visiblePoints.map((p) => p.id));
+    const entitiesToHide = [];
 
-        this.currentVisible.forEach((entity, id) => {
-            if (!newVisibleIds.has(id)) {
-                entitiesToHide.push(id);
-            }
-        });
-
-        entitiesToHide.forEach(id => {
-            const entity = this.currentVisible.get(id);
-            if (entity) {
-                entity.show = false;
-                entity._currentInView = false;
-            }
-        });
-
-        this._processVisiblePointsBatch(visiblePoints, cameraPosition, 0);
-    }
-
-    _processVisiblePointsBatch(visiblePoints, cameraPosition, startIndex) {
-        const batchSize = 50;
-        const endIndex = Math.min(startIndex + batchSize, visiblePoints.length);
-
-        for (let i = startIndex; i < endIndex; i++) {
-            const point = visiblePoints[i];
-            this._updateOrCreateEntity(point, cameraPosition);
-        }
-
-        if (endIndex < visiblePoints.length) {
-            requestIdleCallback(() => {
-                this._processVisiblePointsBatch(visiblePoints, cameraPosition, endIndex);
-            }, { timeout: 50 });
-        }
-    }
-
-    _updateOrCreateEntity(point, cameraPosition) {
-        const inViewFrustum = this._isInViewFrustum(point.position);
-        
-        let entity = this.currentVisible.get(point.id);
-        
-        if (!inViewFrustum) {
-            if (entity) {
-                entity.show = false;
-                entity._currentInView = false;
-            }
-            return;
-        }
-
-        const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
-        const modelType = this._getAppropriateModel(distance);
-        
-        const currentModelType = this.modelInstances.get(point.id);
-
-        if (entity) {
-            if (currentModelType !== modelType) {
-                this._updateEntityModel(entity, point, modelType);
-                this.modelInstances.set(point.id, modelType);
-            }
-            entity.show = true;
-            entity._currentInView = true;
-        } else {
-            this._createEntity(point, modelType);
-        }
-    }
-
-    _createEntity(point, modelType) {
-        try {
-            const cachedModel = this.modelCaches[modelType];
-            if (!cachedModel) {
-                console.warn(`模型缓存不存在: ${modelType}`);
-                return;
-            }
-
-            const entity = this.pointDataSource.entities.add({
-                id: point.id,
-                position: point.position,
-                model: {
-                    uri: this.config.models[modelType].url,
-                    scale: this.config.models[modelType].scale,
-                    maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
-                },
-                show: true
-            });
-
-            entity._currentInView = true;
-            
-            this.currentVisible.set(point.id, entity);
-            this.modelInstances.set(point.id, modelType);
-            
-        } catch (e) {
-            console.error('创建实体时出错:', e);
-        }
-    }
-
-    _updateEntityModel(entity, point, newModelType) {
-        try {
-            entity.model = new Cesium.ModelGraphics({
-                uri: this.config.models[newModelType].url,
-                scale: this.config.models[newModelType].scale,
-                maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
-            });
-        } catch (e) {
-            console.error('更新实体模型时出错:', e);
-        }
-    }
-
-    async _loadRangeData() {
-      // 如果已存在，先移除
-      if (this.rangeDataSource) {
-          this.viewer.dataSources.remove(this.rangeDataSource);
+    this.currentVisible.forEach((entity, id) => {
+      if (!newVisibleIds.has(id)) {
+        entitiesToHide.push(id);
       }
-      
-      this.rangeDataSource = await Cesium.GeoJsonDataSource.load(
-          this.config.rangeUrl, 
-          { clampToGround: true, ...this.config.rangeStyle }
+    });
+
+    entitiesToHide.forEach((id) => {
+      const entity = this.currentVisible.get(id);
+      if (entity) {
+        entity.show = false;
+        entity._currentInView = false;
+      }
+    });
+
+    this._processVisiblePointsBatch(visiblePoints, cameraPosition, 0);
+  }
+
+  _processVisiblePointsBatch(visiblePoints, cameraPosition, startIndex) {
+    const batchSize = 50;
+    const endIndex = Math.min(startIndex + batchSize, visiblePoints.length);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      const point = visiblePoints[i];
+      this._updateOrCreateEntity(point, cameraPosition);
+    }
+
+    if (endIndex < visiblePoints.length) {
+      requestIdleCallback(
+        () => {
+          this._processVisiblePointsBatch(
+            visiblePoints,
+            cameraPosition,
+            endIndex
+          );
+        },
+        { timeout: 50 }
       );
-      this.viewer.dataSources.add(this.rangeDataSource);
-      this.rangeDataSource.show = false; // 初始隐藏
-    }
-
-    async _loadAllPoints() {
-      try {
-          const response = await fetch(this.config.pointUrl);
-          const geojson = await response.json();
-          
-          // 如果已存在，先移除
-          if (this.pointDataSource) {
-              this.viewer.dataSources.remove(this.pointDataSource);
-          }
-          
-          this.pointDataSource = new Cesium.CustomDataSource('treeModels');
-          this.viewer.dataSources.add(this.pointDataSource);
-
-          await this._processPointsInBatches(geojson.features);
-          this.loaded = true;
-      } catch (e) {
-          console.error('点数据加载失败:', e);
-      }
-    }
-
-    _processPointsInBatches(features) {
-        return new Promise((resolve) => {
-            let processed = 0;
-            
-            const processBatch = (deadline) => {
-                const startTime = performance.now();
-                
-                while (
-                    processed < features.length &&
-                    (deadline.timeRemaining() > 0 || deadline.didTimeout) &&
-                    (performance.now() - startTime < this.config.idleTimeout)
-                ) {
-                    const feature = features[processed];
-                    if (feature.geometry?.coordinates) {
-                        const [lon, lat] = feature.geometry.coordinates;
-                        this.allPoints.push({
-                            id: `tree_${processed}`,
-                            position: Cesium.Cartesian3.fromDegrees(lon, lat)
-                        });
-                    }
-                    processed++;
-                }
-
-                if (processed < features.length) {
-                    requestIdleCallback(processBatch, { timeout: 50 });
-                } else {
-                    console.log(`已加载 ${processed} 个树木位置`);
-                    resolve();
-                }
-            };
-
-            requestIdleCallback(processBatch, { timeout: 50 });
-        });
-    }
-
-    _setupCameraListener() {
-      // 移除之前的监听器
-      if (this.cameraChangedListener) {
-          this.viewer.camera.changed.removeEventListener(this.cameraChangedListener);
-      }
-      
-      let lastUpdate = 0;
-      this.cameraChangedListener = this.viewer.camera.changed.addEventListener(() => {
-          if (!this.isActive) return;
-          
-          const now = Date.now();
-          if (now - lastUpdate < 300) return;
-          lastUpdate = now;
-          
-          this._updateVisibility();
-      });
-    }
-
-    _updateVisibility() {
-      // 只有在激活状态下才更新可见性
-      if (!this.isActive) {
-          this._hideAllModels();
-          return;
-      }
-
-      const currentHeight = this.viewer.camera.positionCartographic.height;
-      
-      const shouldShowNow = currentHeight < this.config.heightThreshold;
-      
-      // 如果高度状态发生变化
-      if (shouldShowNow !== this.shouldShowModels) {
-        this.shouldShowModels = shouldShowNow;
-        
-        // 更新范围数据显示状态
-        if (this.rangeDataSource) {
-            this.rangeDataSource.show = !shouldShowNow;
-        }
-
-        if (!shouldShowNow) {
-            // 高度超过阈值，隐藏所有模型
-            this._hideAllModels();
-        }
-        return;
-      }
-      // 只有在应该显示模型时才进行后续处理
-      if (!this.shouldShowModels) {
-          return;
-      }
-
-      const cameraPosition = this.viewer.camera.position;
-      const visiblePoints = this._getPointsInView(cameraPosition);
-      this._syncModelVisibility(visiblePoints, cameraPosition);
-    }
-
-
-    _getPointsInView(cameraPosition) {
-        return this.allPoints.filter(point => {
-            const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
-            return distance <= this.config.visibleDistance;
-        });
-    }
-
-    _hideAllModels() {
-        this.currentVisible.forEach((entity, id) => {
-            try {
-                entity.show = false;
-                entity._currentInView = false;
-            } catch (e) {
-                console.warn('隐藏实体时出错:', e);
-            }
-        });
-    }
-
-    destroy() {
-      this.isActive = false;
-      if (this.pointDataSource) {
-          this.viewer.dataSources.remove(this.pointDataSource);
-      }
-      if (this.rangeDataSource) {
-          this.viewer.dataSources.remove(this.rangeDataSource);
-      }
-      this.currentVisible.clear();
-      this.allPoints = [];
     }
   }
 
-  // 初始化树木加载器（但不立即加载）
-  const initializeTreeLoader = async () => {
-      if (!treeLoader && viewer) {
-          treeLoader = new TreeDataLoader(viewer, {
-              heightThreshold: 4000,
-              models: {
-                  high: {
-                      url: './tree/tree.glb',
-                      scale: 2.0,
-                      maxDistance: 500
-                  },
-                  low: {
-                      url: './tree/l_tree.glb',
-                      scale: 2.0,
-                      maxDistance: 6000
-                  }
-              },
-              maximumScreenSpaceError: 4,
-              visibleDistance: 6000
-          });
-          
-          // 只初始化，不加载数据
-          await treeLoader.init();
-          console.log('树木加载器初始化完成');
+  _updateOrCreateEntity(point, cameraPosition) {
+    const inViewFrustum = this._isInViewFrustum(point.position);
+
+    let entity = this.currentVisible.get(point.id);
+
+    if (!inViewFrustum) {
+      if (entity) {
+        entity.show = false;
+        entity._currentInView = false;
       }
-      return treeLoader;
-  };
+      return;
+    }
 
-  // 智慧林地按钮点击事件
-  const toggleForest = async () => {
-      if (forestLoading.value) return;
-      
-      forestLoading.value = true;
-      try {
-          const loader = await initializeTreeLoader();
-          
-          if (loadedForest.value) {
-              // 当前已加载，需要隐藏
-              loader.deactivate();
-              loadedForest.value = false;
-              console.log('智慧林地已隐藏');
-          } else {
-              // 当前未加载，需要显示
-              await loader.activate();
-              loadedForest.value = true;
-              console.log('智慧林地已显示');
+    const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
+    const modelType = this._getAppropriateModel(distance);
 
-              //飞行
-              viewer.camera.flyTo({
-                destination: smartForestPosition,
-                duration: 2.0,
-                easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT
+    const currentModelType = this.modelInstances.get(point.id);
+
+    if (entity) {
+      if (currentModelType !== modelType) {
+        this._updateEntityModel(entity, point, modelType);
+        this.modelInstances.set(point.id, modelType);
+      }
+      entity.show = true;
+      entity._currentInView = true;
+    } else {
+      this._createEntity(point, modelType);
+    }
+  }
+
+  _createEntity(point, modelType) {
+    try {
+      const cachedModel = this.modelCaches[modelType];
+      if (!cachedModel) {
+        console.warn(`模型缓存不存在: ${modelType}`);
+        return;
+      }
+
+      const entity = this.pointDataSource.entities.add({
+        id: point.id,
+        position: point.position,
+        model: {
+          uri: this.config.models[modelType].url,
+          scale: this.config.models[modelType].scale,
+          maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        },
+        show: true,
+      });
+
+      entity._currentInView = true;
+
+      this.currentVisible.set(point.id, entity);
+      this.modelInstances.set(point.id, modelType);
+    } catch (e) {
+      console.error("创建实体时出错:", e);
+    }
+  }
+
+  _updateEntityModel(entity, point, newModelType) {
+    try {
+      entity.model = new Cesium.ModelGraphics({
+        uri: this.config.models[newModelType].url,
+        scale: this.config.models[newModelType].scale,
+        maximumScreenSpaceError: this.config.maximumScreenSpaceError,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      });
+    } catch (e) {
+      console.error("更新实体模型时出错:", e);
+    }
+  }
+
+  async _loadRangeData() {
+    // 如果已存在，先移除
+    if (this.rangeDataSource) {
+      this.viewer.dataSources.remove(this.rangeDataSource);
+    }
+
+    this.rangeDataSource = await Cesium.GeoJsonDataSource.load(
+      this.config.rangeUrl,
+      { clampToGround: true, ...this.config.rangeStyle }
+    );
+    this.viewer.dataSources.add(this.rangeDataSource);
+    this.rangeDataSource.show = false; // 初始隐藏
+  }
+
+  async _loadAllPoints() {
+    try {
+      const response = await fetch(this.config.pointUrl);
+      const geojson = await response.json();
+
+      // 如果已存在，先移除
+      if (this.pointDataSource) {
+        this.viewer.dataSources.remove(this.pointDataSource);
+      }
+
+      this.pointDataSource = new Cesium.CustomDataSource("treeModels");
+      this.viewer.dataSources.add(this.pointDataSource);
+
+      await this._processPointsInBatches(geojson.features);
+      this.loaded = true;
+    } catch (e) {
+      console.error("点数据加载失败:", e);
+    }
+  }
+
+  _processPointsInBatches(features) {
+    return new Promise((resolve) => {
+      let processed = 0;
+
+      const processBatch = (deadline) => {
+        const startTime = performance.now();
+
+        while (
+          processed < features.length &&
+          (deadline.timeRemaining() > 0 || deadline.didTimeout) &&
+          performance.now() - startTime < this.config.idleTimeout
+        ) {
+          const feature = features[processed];
+          if (feature.geometry?.coordinates) {
+            const [lon, lat] = feature.geometry.coordinates;
+            this.allPoints.push({
+              id: `tree_${processed}`,
+              position: Cesium.Cartesian3.fromDegrees(lon, lat),
             });
           }
-      } catch (error) {
-          console.error('操作智慧林地时出错:', error);
-      } finally {
-          forestLoading.value = false;
-      }
-  };
+          processed++;
+        }
 
-  // 最简单的智慧林地标记
-const addSmartForestMarker = () => {
-    if (viewer.entities.getById('smart-forest-marker')) {
-        return;
+        if (processed < features.length) {
+          requestIdleCallback(processBatch, { timeout: 50 });
+        } else {
+          console.log(`已加载 ${processed} 个树木位置`);
+          resolve();
+        }
+      };
+
+      requestIdleCallback(processBatch, { timeout: 50 });
+    });
+  }
+
+  _setupCameraListener() {
+    // 移除之前的监听器
+    if (this.cameraChangedListener) {
+      this.viewer.camera.changed.removeEventListener(
+        this.cameraChangedListener
+      );
     }
-    
-    viewer.entities.add({
-        id: 'smart-forest-marker',
-        name: '智慧林地',
-        position: smartForestPosition,
-        billboard: {
-            image: marker,
-            width: 40.85,
-            height: 95.8,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            pixelOffset: new Cesium.Cartesian2(0, 16)
+
+    let lastUpdate = 0;
+    this.cameraChangedListener = this.viewer.camera.changed.addEventListener(
+      () => {
+        if (!this.isActive) return;
+
+        const now = Date.now();
+        if (now - lastUpdate < 300) return;
+        lastUpdate = now;
+
+        this._updateVisibility();
+      }
+    );
+  }
+
+  _updateVisibility() {
+    // 只有在激活状态下才更新可见性
+    if (!this.isActive) {
+      this._hideAllModels();
+      return;
+    }
+
+    const currentHeight = this.viewer.camera.positionCartographic.height;
+
+    const shouldShowNow = currentHeight < this.config.heightThreshold;
+
+    // 如果高度状态发生变化
+    if (shouldShowNow !== this.shouldShowModels) {
+      this.shouldShowModels = shouldShowNow;
+
+      // 更新范围数据显示状态
+      if (this.rangeDataSource) {
+        this.rangeDataSource.show = !shouldShowNow;
+      }
+
+      if (!shouldShowNow) {
+        // 高度超过阈值，隐藏所有模型
+        this._hideAllModels();
+      }
+      return;
+    }
+    // 只有在应该显示模型时才进行后续处理
+    if (!this.shouldShowModels) {
+      return;
+    }
+
+    const cameraPosition = this.viewer.camera.position;
+    const visiblePoints = this._getPointsInView(cameraPosition);
+    this._syncModelVisibility(visiblePoints, cameraPosition);
+  }
+
+  _getPointsInView(cameraPosition) {
+    return this.allPoints.filter((point) => {
+      const distance = Cesium.Cartesian3.distance(
+        cameraPosition,
+        point.position
+      );
+      return distance <= this.config.visibleDistance;
+    });
+  }
+
+  _hideAllModels() {
+    this.currentVisible.forEach((entity, id) => {
+      try {
+        entity.show = false;
+        entity._currentInView = false;
+      } catch (e) {
+        console.warn("隐藏实体时出错:", e);
+      }
+    });
+  }
+
+  destroy() {
+    this.isActive = false;
+    if (this.pointDataSource) {
+      this.viewer.dataSources.remove(this.pointDataSource);
+    }
+    if (this.rangeDataSource) {
+      this.viewer.dataSources.remove(this.rangeDataSource);
+    }
+    this.currentVisible.clear();
+    this.allPoints = [];
+  }
+}
+
+// 初始化树木加载器（但不立即加载）
+const initializeTreeLoader = async () => {
+  if (!treeLoader && viewer) {
+    treeLoader = new TreeDataLoader(viewer, {
+      heightThreshold: 4000,
+      models: {
+        high: {
+          url: "./tree/tree.glb",
+          scale: 2.0,
+          maxDistance: 500,
         },
-        /*label: {
+        low: {
+          url: "./tree/l_tree.glb",
+          scale: 2.0,
+          maxDistance: 6000,
+        },
+      },
+      maximumScreenSpaceError: 4,
+      visibleDistance: 6000,
+    });
+
+    // 只初始化，不加载数据
+    await treeLoader.init();
+    console.log("树木加载器初始化完成");
+  }
+  return treeLoader;
+};
+
+// 智慧林地按钮点击事件
+const toggleForest = async () => {
+  if (forestLoading.value) return;
+
+  forestLoading.value = true;
+  try {
+    const loader = await initializeTreeLoader();
+
+    if (loadedForest.value) {
+      // 当前已加载，需要隐藏
+      loader.deactivate();
+      loadedForest.value = false;
+      console.log("智慧林地已隐藏");
+    } else {
+      // 当前未加载，需要显示
+      await loader.activate();
+      loadedForest.value = true;
+      console.log("智慧林地已显示");
+
+      //飞行
+      viewer.camera.flyTo({
+        destination: smartForestPosition,
+        duration: 2.0,
+        easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+      });
+    }
+  } catch (error) {
+    console.error("操作智慧林地时出错:", error);
+  } finally {
+    forestLoading.value = false;
+  }
+};
+
+// 最简单的智慧林地标记
+const addSmartForestMarker = () => {
+  if (viewer.entities.getById("smart-forest-marker")) {
+    return;
+  }
+
+  viewer.entities.add({
+    id: "smart-forest-marker",
+    name: "智慧林地",
+    position: smartForestPosition,
+    billboard: {
+      image: marker,
+      width: 40.85,
+      height: 95.8,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      pixelOffset: new Cesium.Cartesian2(0, 16),
+    },
+    /*label: {
             text: '智慧林地',
             font: 'bold 16px Helvetica',
             fillColor: Cesium.Color.CYAN,
             pixelOffset: new Cesium.Cartesian2(0, -60),
             showBackground: true
         }*/
-    });
+  });
 };
-
 
 //滑入
 async function boxesSlidein() {
   const boxes = document.querySelectorAll(".dataBoxView");
-  boxes.forEach(box => box.classList.add("fade-out")); 
+  boxes.forEach((box) => box.classList.add("fade-out"));
 
-  const leftBoxes = [0, 1, 2]; 
+  const leftBoxes = [0, 1, 2];
   leftBoxes.forEach((index, i) => {
     setTimeout(() => {
-      boxes[index].classList.remove("slide-out-left"); 
-      boxes[index].classList.add("slide-in"); 
-    }, 1000 + i * 500); 
+      boxes[index].classList.remove("slide-out-left");
+      boxes[index].classList.add("slide-in");
+    },  i * 500);
   });
-
 
   const rightBoxes = [3, 4, 5];
   rightBoxes.forEach((index, i) => {
     setTimeout(() => {
-      boxes[index].classList.remove("slide-out-right"); 
-      boxes[index].classList.add("slide-in"); 
-    }, 1000 + i * 500); 
+      boxes[index].classList.remove("slide-out-right");
+      boxes[index].classList.add("slide-in");
+    },  i * 500);
   });
 }
 
 // 滑出
 async function boxesSlideOut() {
   const boxes = document.querySelectorAll(".dataBoxView");
-  boxes.forEach(box => box.classList.add("fade-out")); 
+  boxes.forEach((box) => box.classList.add("fade-out"));
 
   const leftBoxes = [0, 1, 2];
   leftBoxes.forEach((index, i) => {
     setTimeout(() => {
-      boxes[index].classList.remove("slide-in"); 
-      boxes[index].classList.add("slide-out-left"); 
-    }, 1000 + i * 500);
+      boxes[index].classList.remove("slide-in");
+      boxes[index].classList.add("slide-out-left");
+    },  i * 500);
   });
 
   const rightBoxes = [3, 4, 5];
   rightBoxes.forEach((index, i) => {
     setTimeout(() => {
-      boxes[index].classList.remove("slide-in"); 
-      boxes[index].classList.add("slide-out-right"); 
-    }, 1000 + i * 500);
+      boxes[index].classList.remove("slide-in");
+      boxes[index].classList.add("slide-out-right");
+    },  i * 500);
   });
 
   const lis = document.querySelectorAll(".boxMenuView ul li");
@@ -1644,21 +1779,22 @@ async function boxesSlideOut() {
 async function initializeCesium() {
   // 请自己去cesium官网注册申请一个token替换
   //个人token全权限
-  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwODZhN2NiNi00N2JiLTQwMjQtOTFlZS1kZmY2MTdlMzE5M2UiLCJpZCI6MjcwODY2LCJpYXQiOjE3Mzk2Mjk1Mzh9.5jTz_wsmd8tYJSDLnUmxSpGE2d4gNp3EJqGTUjfGpf0"
+  Cesium.Ion.defaultAccessToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwODZhN2NiNi00N2JiLTQwMjQtOTFlZS1kZmY2MTdlMzE5M2UiLCJpZCI6MjcwODY2LCJpYXQiOjE3Mzk2Mjk1Mzh9.5jTz_wsmd8tYJSDLnUmxSpGE2d4gNp3EJqGTUjfGpf0";
   //个人令牌，双权限："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5ZGU2YTc1ZS0zMmVjLTQ0YjktODthisMC05YTUxMjthisYmE3MGIiLCJpZCI6MjcwODY2LCJpYXQiOjE3Mzc1OTkwMTl9.cebCb2cPYCxfd8jVXFVB-6HpmD63nQLiEVDtO2Z7Ccs"
   //默认令牌："eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmJkYzFiZi1jMGE2LTQ2YmYtYTAyZS1jOTNhODEwZTYzZjYiLCJpZCI6MjE2NTk4LCJpYXQiOjE3MTYyNTc5OTJ9.AbNDyzzy3zB6vFXXXnJ9HwVhNvBSbKAnhFRo3k9D3hE";
   viewer = new Cesium.Viewer("cesiumContainer", {
-    geocoder: false,               // 是否显示地名查找控件
-    sceneModePicker: false,         // 是否显示投影方式控件
-    navigationHelpButton: false,    // 是否显示帮助信息控件
-    baseLayerPicker: false,         // 是否显示图层选择控件
-    homeButton: false,              // 是否显示Home按钮
-    fullscreenButton: false,        // 是否显示全屏按钮
-    animation: false,               // 是否显示动画控件
-    shouldAnimate: true,           // 控制模型动画
-    timeline: false,                // 是否显示时间轴
-    selectionIndicator: false,      // 是否显示选中指示器
-    infoBox: false                 // 是否显示信息框
+    geocoder: false, // 是否显示地名查找控件
+    sceneModePicker: false, // 是否显示投影方式控件
+    navigationHelpButton: false, // 是否显示帮助信息控件
+    baseLayerPicker: false, // 是否显示图层选择控件
+    homeButton: false, // 是否显示Home按钮
+    fullscreenButton: false, // 是否显示全屏按钮
+    animation: false, // 是否显示动画控件
+    shouldAnimate: true, // 控制模型动画
+    timeline: false, // 是否显示时间轴
+    selectionIndicator: false, // 是否显示选中指示器
+    infoBox: false, // 是否显示信息框
     //terrain: new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'))//加载地形
     // 使用中国在线地图服务作为底图
     // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
@@ -1676,7 +1812,6 @@ async function initializeCesium() {
   // 初始化完再加载模型
   //await addFarmlandData();
 
-
   //await initializeterrain();
   //await initializeWater();
   await CesiumHandlerConfig();
@@ -1689,8 +1824,7 @@ async function initializeCesium() {
   //   model:{
   //       uri:'./building/building.glb',
   //   }
-  // })   
-
+  // })
 
   // // 倾斜视图 鼠标左键平移
   // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
@@ -1743,17 +1877,13 @@ async function initializeCesium() {
   // 鼠标悬浮
   handler.setInputAction(onMovement, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-
-
   // 监听地图视图改变事件--待修正
   viewer.scene.postRender.addEventListener(onMapViewChange, this);
 
-  toggleWaterFeatures();  
+  toggleWaterFeatures();
 
   // 监听地图鼠标移动事件
   // viewer.screenSpaceEventHandler.setInputAction(onMouseMove, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-
-
 
   // // 监听地图上的鼠标滚动事件
   // viewer.scene.canvas.addEventListener('wheel', onMouseWheel);
@@ -1770,113 +1900,125 @@ async function initializeCesium() {
 
   // }
   // // 定义目标位置
-  var destination = Cesium.Cartesian3.fromDegrees(114.3472038, 34.7961106, 10000);
+  var destination = Cesium.Cartesian3.fromDegrees(
+    114.3472038,
+    34.7961106,
+    10000
+  );
 
   // 缓慢飞行到指定位置并控制方向
   viewer.camera.flyTo({
     destination: destination,
-    duration: 8,// 以秒为单位的飞行时间，时间越长速度越慢
+    duration: 8, // 以秒为单位的飞行时间，时间越长速度越慢
     complete: function () {
       startRotation();
-    }
-  });
-// ========== 监测点配置数组（核心：把三个监测点的差异信息集中管理） ==========
-const monitorPoints = [
-  {
-    id: "waterChartMonitor",       
-    name: "水体图",                 
-    position: { lng: 114.358, lat: 34.805 }, 
-    imgSrc: "/images/水体/5.产品数据-月间水体变化/8-9.png",
-    imgSrc2: "/images/水体/6.产品数据-水体面积折线图/水域面积变化图.png" 
-  },
-  {
-    id: "vegetationCoverMonitor",
-    name: "植被覆盖图",
-    position: { lng: 114.33, lat: 34.81 },
-    imgSrc: "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240625FVC.png",
-    imgSrc2: "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/条带结果/20240625FVC.png"
-  },
-  {
-    id: "landCoverMonitor",
-    name: "土地覆盖",
-    position: { lng: 114.365, lat: 34.79 },
-    imgSrc: "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
-    imgSrc2: "/images/地物分类/3.产品数据-原始图像/202506开封数据制图.png"
-  }
-];
-
-// ========== 循环创建所有监测点实体（替代原来的三段硬编码） ==========
-monitorPoints.forEach(pointConfig => {
-  viewer.entities.add({
-    id: pointConfig.id,
-    name: pointConfig.name,
-    position: Cesium.Cartesian3.fromDegrees(pointConfig.position.lng, pointConfig.position.lat, 0),
-    billboard: {
-      image: marker, // 复用原有标记图片
-      width: 40.85,
-      height: 95.8,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-      pixelOffset: new Cesium.Cartesian2(0, 16)
     },
-    label: {
-      text: pointConfig.name,
-      font: "bold 30px Helvetica",
-      scale: 0.5,
-      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-      fillColor: new Cesium.Color.fromCssColorString('#47e8fe'),
-      outlineColor: new Cesium.Color(0, 0, 0, 0.3),
-      outlineWidth: 2.0,
-      pixelOffset: new Cesium.Cartesian2(0, -100),
-      showBackground: true,
-      backgroundImage: createGradientBackground(200, 50), // 复用渐变背景
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-      verticalOrigin: Cesium.VerticalOrigin.TOP,
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 100000)
-    },
-    monitoItems: {
-      data: {
-        name: pointConfig.name,
-        imgSrc: pointConfig.imgSrc,
-        imgSrc2: pointConfig.imgSrc2
-      }
-    }
   });
-});
+  // ========== 监测点配置数组（核心：把三个监测点的差异信息集中管理） ==========
+  const monitorPoints = [
+    {
+      id: "waterChartMonitor",
+      name: " 地表水资源",
+      className: "water",
+      position: { lng: 114.358, lat: 34.805 },
+      imgSrc: "/images/水体/5.产品数据-月间水体变化/水域面积时序.png",
+      imgSrc2: "/images/水体/6.产品数据-水体面积折线图/水域面积变化图.png",
+    },
+    {
+      id: "vegetationCoverMonitor",
+      name: "植被覆盖度",
+      className: "plant",
+      position: { lng: 114.33, lat: 34.81 },
+      imgSrc:
+        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240625FVC.png",
+      imgSrc2:
+        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/条带结果/20240625FVC.png",
+    },
+    {
+      id: "landCoverMonitor",
+      name: "地表水环境格局",
+      className: "land",
+      position: { lng: 114.365, lat: 34.79 },
+      imgSrc:
+        "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
+      imgSrc2: "/images/地物分类/3.产品数据-原始图像/202506开封数据制图.png",
+    },
+  ];
 
+  // ========== 循环创建所有监测点实体（替代原来的三段硬编码） ==========
+  monitorPoints.forEach((pointConfig) => {
+    viewer.entities.add({
+      id: pointConfig.id,
+      name: pointConfig.name,
+      position: Cesium.Cartesian3.fromDegrees(
+        pointConfig.position.lng,
+        pointConfig.position.lat,
+        0
+      ),
+      billboard: {
+        image: marker, // 复用原有标记图片
+        width: 40.85,
+        height: 95.8,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        pixelOffset: new Cesium.Cartesian2(0, 16),
+      },
+      label: {
+        text: pointConfig.name + "产品",
+        font: "bold 30px Helvetica",
+        scale: 0.5,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        fillColor: new Cesium.Color.fromCssColorString("#47e8fe"),
+        outlineColor: new Cesium.Color(0, 0, 0, 0.3),
+        outlineWidth: 2.0,
+        pixelOffset: new Cesium.Cartesian2(0, -100),
+        showBackground: true,
+        backgroundImage: createGradientBackground(200, 50), // 复用渐变背景
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        verticalOrigin: Cesium.VerticalOrigin.TOP,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+          0,
+          100000
+        ),
+      },
+      monitoItems: {
+        data: {
+          className: pointConfig.className,
+          name: pointConfig.name,
+          imgSrc: pointConfig.imgSrc,
+          imgSrc2: pointConfig.imgSrc2,
+        },
+      },
+    });
+  });
 }
 
 //建筑物模型
 function initializeBuildings() {
-  console.log("loadedBuildings:" + loadedBuildings.value)
+  console.log("loadedBuildings:" + loadedBuildings.value);
   if (!loadedBuildings.value) {
-
     viewer.entities.add({
-      id: 'model',
+      id: "model",
       position: position,
 
       model: {
-
-        uri: './building/building.glb',
-      }
+        uri: "./building/building.glb",
+      },
     });
 
     loadedBuildings.value = true;
 
     // 点击后自动飞到建筑
     flyTo(position);
-
   } else {
-
-    const modelEntity = viewer.entities.getById('model');
+    const modelEntity = viewer.entities.getById("model");
     if (modelEntity) {
-      viewer.entities.remove(modelEntity);  // 正确删除方式
-      }
+      viewer.entities.remove(modelEntity); // 正确删除方式
+    }
 
     loadedBuildings.value = false;
   }
-
 }
 function flyTo(pos) {
   viewer.camera.flyTo({
@@ -1885,20 +2027,21 @@ function flyTo(pos) {
       heading: 0,
       pitch: Cesium.Math.toRadians(-35),
     },
-    duration: 2
+    duration: 2,
   });
 }
 
-
 async function initializeterrain() {
-  viewer.terrain = new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl('./dixing'));
+  viewer.terrain = new Cesium.Terrain(
+    Cesium.CesiumTerrainProvider.fromUrl("./dixing")
+  );
   console.log("地形导入");
 }
 // 初始化失败--待处理
 // 初始化地球
 
 async function initializeWater() {
-  let promise = Cesium.GeoJsonDataSource.load('./water/water.geojson');
+  let promise = Cesium.GeoJsonDataSource.load("./water/water.geojson");
   // 数据加载完成后渲染
   promise.then((ds) => {
     let instances = [];
@@ -1907,10 +2050,12 @@ async function initializeWater() {
     entitys.forEach((e) => {
       let geometry = new Cesium.GeometryInstance({
         geometry: new Cesium.PolygonGeometry({
-          polygonHierarchy: new Cesium.PolygonHierarchy(e.polygon.hierarchy.getValue().positions),
+          polygonHierarchy: new Cesium.PolygonHierarchy(
+            e.polygon.hierarchy.getValue().positions
+          ),
           extrudedHeight: 0,
           height: 0,
-          vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+          vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
         }),
         // attributes: {
         //     color: Cesium.ColorGeometryInstanceAttribute.fromColor(
@@ -1922,7 +2067,6 @@ async function initializeWater() {
       });
       instances.push(geometry);
       viewer.flyTo(ds);
-
     });
 
     // 添加 GroundPrimitive 并设置其属性
@@ -1939,11 +2083,16 @@ async function initializeWater() {
               animationSpeed: 0.1, // 水体动画速度
               amplitude: 5.0, // 水波动幅度
               specularIntensity: 0.5, // 镜面反射强度
-              baseWaterColor: new Cesium.Color(0 / 255.0, 54 / 255.0, 84 / 255.0, 0.8) // 基础水颜色
-            }
-          }
-        })
-      })
+              baseWaterColor: new Cesium.Color(
+                0 / 255.0,
+                54 / 255.0,
+                84 / 255.0,
+                0.8
+              ), // 基础水颜色
+            },
+          },
+        }),
+      }),
     });
 
     // 将生成的 Primitive 添加到场景中，并缩放至目标区域
@@ -1953,25 +2102,24 @@ async function initializeWater() {
 }
 function createGradientBackground(width, height) {
   // 创建一个临时 Canvas 元素
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  
+  const ctx = canvas.getContext("2d");
+
   // 创建线性渐变（从左到右：浅蓝 → 深蓝，和原有实体标签渐变一致）
   const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-  gradient.addColorStop(0, 'rgba(10, 40, 80, 0.8)');
-  gradient.addColorStop(1, 'rgba(5, 20, 40, 0.8)');
-  
+  gradient.addColorStop(0, "rgba(10, 40, 80, 0.8)");
+  gradient.addColorStop(1, "rgba(5, 20, 40, 0.8)");
+
   // 填充渐变背景
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
+
   // 返回 Canvas 的 DataURL（Cesium 标签的 backgroundImage 支持该格式）
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL("image/png");
 }
 async function CesiumHandlerConfig() {
-
   // // 倾斜视图 鼠标左键平移
   // viewer.scene.screenSpaceCameraController.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG]
 
@@ -1984,7 +2132,7 @@ async function CesiumHandlerConfig() {
   // // 平移 添加鼠标右键  鼠标右键旋转
   // viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
 
-/*
+  /*
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
@@ -2004,17 +2152,11 @@ async function CesiumHandlerConfig() {
   // 鼠标悬浮
   handler.setInputAction(onMovement, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-
-
   // 监听地图视图改变事件--待修正
   viewer.scene.postRender.addEventListener(onMapViewChange, this);
 
-
-
   // 监听地图鼠标移动事件
   // viewer.screenSpaceEventHandler.setInputAction(onMouseMove, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-
-
 
   // // 监听地图上的鼠标滚动事件
   // viewer.scene.canvas.addEventListener('wheel', onMouseWheel);
@@ -2037,26 +2179,36 @@ async function CesiumHandlerConfig() {
 async function onEntityClick(movement) {
   // 获取点击位置的实体对象
   var pickedObject = viewer.scene.pick(movement.position);
-  console.log(pickedObject)
+  console.log(pickedObject);
   // 如果点击到了一个具有 monitoItems 属性的实体对象
   if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
     console.log("点击对象为一个具有 monitoItems 属性的实体对象");
     // 记录点击的位置，保存为当前时间的 Cartesian 坐标
-    lastClickedEntityPosition = pickedObject.id.position.getValue(Cesium.JulianDate.now());
+    lastClickedEntityPosition = pickedObject.id.position.getValue(
+      Cesium.JulianDate.now()
+    );
 
     showModal(); // 点击后显示信息框
 
     // 获取实体的位置信息（Cartesian 坐标）
-    const entityPosition = pickedObject.id.position.getValue(Cesium.JulianDate.now());
+    const entityPosition = pickedObject.id.position.getValue(
+      Cesium.JulianDate.now()
+    );
 
     // 将 Cartesian 坐标转换为窗口坐标
-    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, entityPosition);
-    console.log('坐标检查点2');
+    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
+      viewer.scene,
+      entityPosition
+    );
+    console.log("坐标检查点2");
     // 获取当前相机高度（Cartographic 坐标中的高度）
     const currentHeight = viewer.camera.positionCartographic.height;
     // 将实体位置从 Cartesian 坐标转换为 Cartographic 坐标（经度、纬度、高度）
-    const cartographicPosition = Cesium.Cartographic.fromCartesian(entityPosition);
-    console.log(cartographicPosition.longitude+" "+cartographicPosition.latitude); // 输出 Cartographic 坐标
+    const cartographicPosition =
+      Cesium.Cartographic.fromCartesian(entityPosition);
+    console.log(
+      cartographicPosition.longitude + " " + cartographicPosition.latitude
+    ); // 输出 Cartographic 坐标
 
     // 将相机飞行到实体位置，并保持当前高度
     // viewer.camera.flyTo({
@@ -2071,56 +2223,52 @@ async function onEntityClick(movement) {
     //   },
     //   duration: 2 // 飞行时间（秒）
     // });
-
-    // 关键修改1：声明所有需要的 DOM 变量（解决未定义错误）
-    const modalElement = document.getElementById('clickPopup');
-  const modalP = document.getElementById('clickPopup-p');
-  const modalContent = document.getElementById('clickPopup-content');
-  // 新增：图片容器 + 第二张图片
-  const imgContainer = document.querySelector('.popup-img-container');
-  const modalImg = document.getElementById('popup-img');
-  const modalImg2 = document.getElementById('popup-img2'); // 新增
-  const modalTitle = document.querySelector('.clickPopupTitleText');
-
-    // 关键修改2：判断元素是否存在（避免 null 报错）
-    if (!modalElement || !modalP || !modalImg ||!modalImg2) {
-      console.error("弹窗 DOM 元素未找到！");
-      return;
+    const monitorData = pickedObject.id.monitoItems.data; 
+    
+    const specialPoints = ["water", "plant", "land"];
+    console.log("monitorData.className:",monitorData.className)
+    if (specialPoints.includes(monitorData.className)) {
+      // 关闭普通弹窗，显示双弹窗
+      clickPopupShowNormal.value = false;
+      // 赋值双弹窗数据
+      leftPopupTitle.value = monitorData.name + "分布产品";
+      leftPopupImgSrc.value = monitorData.imgSrc;
+      rightPopupTitle.value = monitorData.name + "变化产品";
+      rightPopupImgSrc.value = monitorData.imgSrc2;
+      // 显示双弹窗（缩小间距）
+      clickPopupShowLeft.value = true;
+      clickPopupShowRight.value = true;
+      // 双弹窗定位（缩小与监测点的间距）
+      const leftModal = document.getElementById("clickPopupLeft");
+      const rightModal = document.getElementById("clickPopupRight");
+if (leftModal && rightModal && windowPosition) {
+  const popupWidth = leftModal.offsetWidth; // 单个弹窗宽度
+  const gap = 20; // 弹窗与监测点的间距
+  const popupHeight = leftModal.offsetHeight; // 单个弹窗高度
+  
+  // 左弹窗：监测点左侧（x - 弹窗宽度 - 间距）
+  leftModal.style.left = (windowPosition.x - popupWidth - gap) + "px";
+  leftModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+  leftModal.style.transform = "none"; // 清除可能的默认transform干扰
+  
+  // 右弹窗：监测点右侧（x + 间距）
+  rightModal.style.left = (windowPosition.x + gap) + "px";
+  rightModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+  rightModal.style.transform = "none"; // 清除可能的默认transform干扰
+}
+    } else {
+      // 普通监测点（水闸/泵站）→ 保留原有文本弹窗，不丢弃
+      clickPopupShowLeft.value = false;
+      clickPopupShowRight.value = false;
+      // 赋值普通弹窗数据（保留原有逻辑）
+      normalPopupTitle.value = monitorData.name || "监测点信息";
+      normalPopupContent.value = monitorData.text || `名称：${monitorData.name}\nID：${monitorData.id}`;
+      // 显示普通弹窗（保留原有定位逻辑，可微调间距）
+      clickPopupShowNormal.value = true;
+      const normalModal = document.getElementById("clickPopupNormal");
+      normalModal.style.left = windowPosition.x + "px";
+      normalModal.style.top = (windowPosition.y - 80) + "px"; // 缩小间距
     }
-
-    // 将弹窗定位到实体位置的窗口坐标
-    modalElement.style.left = windowPosition.x + 'px';
-    modalElement.style.top = windowPosition.y + 'px';
-
-    const monitorData = pickedObject.id.monitoItems.data;
-  if ((monitorData.name === "水体图"||monitorData.name === "植被覆盖图"||monitorData.name === "土地覆盖") 
-      && monitorData.imgSrc && monitorData.imgSrc2) { // 新增判断imgSrc2
-    // 是特殊监测点：显示图片容器（两张图），隐藏文本
-    modalTitle.textContent = monitorData.name; 
-    
-    // 加载第一张图片
-    modalImg.src = monitorData.imgSrc;
-    modalImg.onerror = function() {
-      console.error("第一张图片加载失败：", monitorData.imgSrc);
-      modalImg.src = "/images/default.png"; // 可选：默认占位图
-    };
-    
-    // 加载第二张图片（新增）
-    modalImg2.src = monitorData.imgSrc2;
-    modalImg2.onerror = function() {
-      console.error("第二张图片加载失败：", monitorData.imgSrc2);
-      modalImg2.src = "/images/default.png"; // 可选：默认占位图
-    };
-    
-    // 显示图片容器、隐藏文本（关键：替换原有单张图的display逻辑）
-    imgContainer.style.display = "flex"; // 用flex布局让两张图并排
-    modalP.style.display = "none"; 
-  } else {
-    // 其他实体（水闸、泵站）：显示文本，隐藏图片容器
-    modalTitle.textContent = monitorData.name || "监测点信息";
-    imgContainer.style.display = "none"; // 隐藏图片容器
-    modalP.style.display = "block";
-  }
 
     await boxesSlideOut();
   } else {
@@ -2129,12 +2277,15 @@ async function onEntityClick(movement) {
     await boxesSlidein();
     //====取消旋转======
     viewer.clock.onTick.removeEventListener(rotate);
-
     // 解锁相机
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+    
+    // 点击空白处关闭所有弹窗
+    clickPopupShowNormal.value = false;
+    clickPopupShowLeft.value = false;
+    clickPopupShowRight.value = false;
   }
 }
-
 // 显示弹窗
 async function showModal() {
   clickPopupShowRight.value = true;
@@ -2144,26 +2295,49 @@ async function closeModal() {
   clickPopupShowRight.value = false;
 }
 
-
 // 地图视图改变事件处理函数
 async function onMapViewChange() {
+  // 1. 先获取所有弹窗元素
+  const leftModal = document.getElementById("clickPopupLeft");
+  const rightModal = document.getElementById("clickPopupRight");
+  const normalModal = document.getElementById("clickPopupNormal");
 
-  // 如果弹窗正在显示且存在点击的位置，则更新弹窗位置为点击的位置
-  if (clickPopupShowRight && lastClickedEntityPosition) {
-    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, lastClickedEntityPosition);
-    const modalElement = document.getElementById('clickPopup');
-    // 将弹窗定位到实体位置的窗口坐标
-    modalElement.style.left = windowPosition.x + 'px';
-    modalElement.style.top = windowPosition.y + 'px';
+  // 2. 如果是【双弹窗】显示，同时更新左右弹窗位置
+  if (clickPopupShowLeft.value && clickPopupShowRight.value && lastClickedEntityPosition) {
+    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
+      viewer.scene,
+      lastClickedEntityPosition
+    );
+    if (windowPosition && leftModal && rightModal) {
+      const popupWidth = leftModal.offsetWidth;
+      const gap = 50;
+      const popupHeight = leftModal.offsetHeight;
+      
+      // 左弹窗位置
+      leftModal.style.left = (windowPosition.x - popupWidth - gap) + "px";
+      leftModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+      // 右弹窗位置
+      rightModal.style.left = (windowPosition.x + gap) + "px";
+      rightModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+    }
+  } 
+  // 3. 如果是【普通弹窗】显示，更新普通弹窗位置
+  else if (clickPopupShowNormal.value && lastClickedEntityPosition && normalModal) {
+    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
+      viewer.scene,
+      lastClickedEntityPosition
+    );
+    if (windowPosition) {
+      normalModal.style.left = windowPosition.x + "px";
+      normalModal.style.top = (windowPosition.y - 80) + "px";
+    }
   }
 }
-
 
 // 鼠标悬浮
 async function onMovement(movement) {
   // 获取点击位置的实体对象
   var pickedObject = viewer.scene.pick(movement.endPosition);
-
 
   // // 获取鼠标在屏幕上的位置
   // const screenPosition = new Cesium.Cartesian2(movement.endPosition.x, movement.endPosition.y);
@@ -2192,28 +2366,33 @@ async function onMovement(movement) {
 
   // 如果点击到了一个具有 monitoItems 属性的实体对象
   if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
-
     // 获取实体的位置信息（Cartesian 坐标）
-    const entityPosition = pickedObject.id.position.getValue(Cesium.JulianDate.now());
+    const entityPosition = pickedObject.id.position.getValue(
+      Cesium.JulianDate.now()
+    );
 
     // 将 Cartesian 坐标转换为窗口坐标
-    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, entityPosition);
+    const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
+      viewer.scene,
+      entityPosition
+    );
     // 获取弹窗元素
-    const modalElement = document.getElementById('hoverPopup');
-    const modal_P_Element = document.getElementById('hoverPopup-p');
+    const modalElement = document.getElementById("hoverPopup");
+    const modal_P_Element = document.getElementById("hoverPopup-p");
 
     // 将弹窗定位到实体位置的窗口坐标
-    modalElement.style.left = windowPosition.x + 'px';
-    modalElement.style.top = windowPosition.y + 'px';
-
-    // 在弹窗中显示实体的详细信息
-    modal_P_Element.innerHTML = `${JSON.stringify(pickedObject.id.monitoItems.data.name)}`;
+    if (modalElement && modal_P_Element) {
+      modalElement.style.left = windowPosition.x + "px";
+      modalElement.style.top = windowPosition.y + "px";
+      // 在悬浮窗中显示实体名称
+      modal_P_Element.innerHTML = pickedObject.id.monitoItems.data.name || "监测点";
+    }
 
     // 判断clickPopup状态决定是否显示hoverPopup
-    if (clickPopupShowRight.value) {
+    if (clickPopupShowRight.value || clickPopupShowLeft.value || clickPopupShowNormal.value) {
       hoverPopupShow.value = false; // 点击弹窗显示时，隐藏悬浮窗
     } else {
-      hoverPopupShow.value = true;  // 点击弹窗未显示时，显示悬浮窗
+      hoverPopupShow.value = true; // 点击弹窗未显示时，显示悬浮窗
     }
   } else {
     hoverPopupShow.value = false;
@@ -2239,12 +2418,14 @@ async function rotate() {
   // 控制弧度
   if (increasing) {
     heading += 0.1;
-    if (heading >= 300) { // 设定一个上限
+    if (heading >= 300) {
+      // 设定一个上限
       increasing = false;
     }
   } else {
     heading -= 0.1;
-    if (heading <= 0) { // 设定一个下限
+    if (heading <= 0) {
+      // 设定一个下限
       increasing = true;
     }
   }
@@ -2258,12 +2439,14 @@ async function rotate() {
     distance += 30;
   }
 
-
-  offset = new Cesium.HeadingPitchRange(Cesium.Math.toRadians(heading), -Cesium.Math.toRadians(pitch), distance);
+  offset = new Cesium.HeadingPitchRange(
+    Cesium.Math.toRadians(heading),
+    -Cesium.Math.toRadians(pitch),
+    distance
+  );
   // 锁定相机
   viewer.camera.lookAt(position, offset);
 }
-
 </script>
 
 <style lang="less" scoped>
@@ -2432,35 +2615,60 @@ async function rotate() {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
+  width: 100vw;  /* 全屏宽度 */
+  height: 100vh; /* 全屏高度 */
+  background-color: rgba(0, 0, 0, 0.7);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal-content {
   position: relative;
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 50%;
+  max-height: 50%;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.enlarge-close{
+  position: absolute;
+  top: -80px;
+  right: -10px;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+  cursor: pointer;
+  color: #1f7c81;
+  zoom: 1.5;
 }
 
 .close {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: -10px;
+  right: -10px;
   color: #ffffff;
-  font-size: 30px;
+  font-size: 24px;
   cursor: pointer;
   z-index: 10;
 }
 
 .enlarged-img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 100%; 
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 原有样式（保留） */
@@ -2468,7 +2676,8 @@ async function rotate() {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  cursor: url('../../../public/images/cesiumMap/cursor-RmLDFyYc32.png') 24 24, auto;
+  cursor: url("../../../public/images/cesiumMap/cursor-RmLDFyYc32.png") 24 24,
+    auto;
 }
 
 #cesiumContainer {
@@ -2476,45 +2685,79 @@ async function rotate() {
   width: 100%;
 }
 
-
-/* 弹窗内容容器 */
 .clickModal-content {
-  width: 450px;
+  width: 500px; 
   position: fixed;
   top: 0;
   left: 0;
-  background-color: rgba(2, 7, 17, .8);
-  // padding: 0 10px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  /* position: relative; */
-
-  /* X 轴左移一半，Y 轴向上偏移 100% */
-  transform: translate(-50%, -220%);
-
+  background:rgba(17, 17, 17, 0.5);
+  padding: 5px; 
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
   font-family: PuHuiTi, serif;
-  color: #ffffff;
+  color: #fff;
+  z-index: 9999; /* 确保置顶 */
+}
+.left-popup {
+  width: 500px; /* 和主容器宽度一致 */
+  height: 400px; 
+  min-height: 400px;
+  margin-left: -50px;
+  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5)); /* 匹配主弹窗浅色背景 */
 }
 
+.right-popup{
+  width: 500px; /* 和主容器宽度一致 */
+  height: 400px; 
+  min-height: 400px;
+  margin-left: 50px;
+  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5)); /* 匹配主弹窗浅色背景 */
+}
+/* 弹窗三角箭头 - 居中显示，指向监测点 */
 .clickModal-content::after {
   content: "";
   position: absolute;
   bottom: -13px;
-  /* 调整这个值来定位三角形 */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%); /* 仅箭头居中，不影响弹窗整体 */
   width: 0;
   height: 0;
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
-  border-top: 14px solid rgba(2, 7, 17, .8);
+  border-top: 14px solid rgba(2, 7, 17, 0.8);
+}
+/* 普通弹窗样式保留 */
+.normal-popup {
+  width: 400px; /* 普通弹窗略窄 */
+}
+.popup-img-container {
+  width: 100%;
+  margin-bottom: 10px;
+  display: none;
+  display: flex;
+  flex-wrap: wrap; 
+  align-items: center;
+  justify-content: center;
+  gap: 15px; 
+  padding: 10px 0;
 }
 
+.popup-img-item {
+  max-width: 500px; 
+  max-height:300px; 
+  height: 400px; 
+  width: 100%; 
+  cursor: zoom-in;
+  border-radius: 4px; 
+  object-fit: contain; 
+  margin: 5px auto;
+  display: block; 
+}
 .clickPopup-title {
   // width: 100%;
   height: 35px;
   line-height: 32px;
-  background: url('../../../public/images/cesiumMap/custom-styles-title-BXpsbnaH.png');
+  background: url("../../../public/images/cesiumMap/custom-styles-title-BXpsbnaH.png");
   background-size: 100% 100%;
   padding-left: 16px;
   user-select: none;
@@ -2529,10 +2772,9 @@ async function rotate() {
   /* 添加必要的字体样式 */
   -webkit-background-clip: text;
   background-clip: text;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   cursor: default;
 }
-
 
 .clickModal-content p {
   word-wrap: break-word;
@@ -2540,7 +2782,6 @@ async function rotate() {
   margin: 0;
   color: #bdbdbd;
 }
-
 
 /* 关闭按钮样式 */
 .close {
@@ -2556,7 +2797,9 @@ async function rotate() {
 .close:hover {
   color: #7dffff;
 }
-
+.enlarge-close:hover {
+  color: #7dffff;
+}
 /* 鼠标悬浮窗口 */
 .hoverModal-content {
   width: 300px;
@@ -2592,12 +2835,10 @@ async function rotate() {
   border-top: 14px solid rgba(0, 0, 0, 0.8);
 }
 
-
 .hoverModal-content p {
   padding: 0;
   margin: 0;
 }
-
 
 /* 动画点 */
 .mars3d-animation-point,
@@ -2689,12 +2930,6 @@ async function rotate() {
   }
 }
 
-
-
-
-
-
-
 /* loading */
 
 .loading-box {
@@ -2753,19 +2988,14 @@ async function rotate() {
   opacity: 0;
 }
 
-
-
-
-
 .headView {
   width: 100%;
   height: 80px;
-  background: url('../../../public/images/cesiumMap/header-CE2FZDIm.png');
+  background: url("../../../public/images/cesiumMap/header-CE2FZDIm.png");
   background-size: 100% 100%;
   position: fixed;
   top: -2px;
   z-index: 9;
-
 
   display: flex;
   justify-content: space-between;
@@ -2792,7 +3022,7 @@ async function rotate() {
   font-weight: 400;
   font-size: 30px;
   line-height: 70px;
-  letter-spacing: .1rem;
+  letter-spacing: 0.1rem;
 
   font-family: YouShe, serif;
   font-style: normal;
@@ -2829,18 +3059,21 @@ async function rotate() {
   pointer-events: none;
 }
 
-
 /* 盒子内容 */
 .dataBoxView {
   width: 25%;
-  height: calc(100%/3.5);
+  height: calc(100% / 3.5);
   position: fixed;
   z-index: 1;
   //left: 20px;
   top: 70px;
   /* 穿透效果 */
   /* pointer-events: none; */
-  background: linear-gradient(to right, rgba(37, 54, 54, .6) 0%, rgba(37, 54, 54, .4) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(37, 54, 54, 0.6) 0%,
+    rgba(37, 54, 54, 0.4) 100%
+  );
   user-select: none;
   border-radius: 6px 0 0 0;
 
@@ -2848,7 +3081,6 @@ async function rotate() {
   transition: opacity 2s ease-in-out, transform 2s ease-in-out;
   /* 初始位置在屏幕左侧之外 */
   transform: translateX(-200%);
-
 }
 
 .slide-in {
@@ -2896,7 +3128,7 @@ async function rotate() {
   font-weight: 400;
   font-size: 20px;
   line-height: 24px;
-  text-shadow: 0 2px 4px rgba(2, 7, 17, .8);
+  text-shadow: 0 2px 4px rgba(2, 7, 17, 0.8);
 }
 
 .dataCenter {
@@ -2906,7 +3138,6 @@ async function rotate() {
   height: 100%;
   // background-color: red;
 }
-
 
 // 底部菜单
 .boxMenuView {
@@ -2927,31 +3158,29 @@ async function rotate() {
       width: 151px;
       height: 40px;
       line-height: 40px;
-      text-shadow: 0 2px 4px rgba(2, 7, 17, .5);
-      letter-spacing: .2rem;
+      text-shadow: 0 2px 4px rgba(2, 7, 17, 0.5);
+      letter-spacing: 0.2rem;
       text-align: center;
       font-family: PangMenZhengDao, serif;
       font-style: normal;
       font-weight: 400;
       font-size: 18px;
       color: #ffffff;
-      background: url('../../../public/images/cesiumMap/menu-btn-unchecked-BbOiNvmo.png');
+      background: url("../../../public/images/cesiumMap/menu-btn-unchecked-BbOiNvmo.png");
       background-size: 100% 100%;
 
       opacity: 1;
     }
 
     li:nth-child(1) {
-      background: url('../../../public/images/cesiumMap/menu-btn-checked_2-DcHCg5DW.png');
+      background: url("../../../public/images/cesiumMap/menu-btn-checked_2-DcHCg5DW.png");
       background-size: 100% 100%;
       color: #ffdea3;
-
     }
 
     li:hover {
       color: #ffdea3;
     }
-
   }
 }
 
@@ -2998,47 +3227,47 @@ async function rotate() {
     height: calc(100% / 4) !important; /* 增加高度比例 */
     max-height: 220px; /* 限制最大高度 */
   }
-  
+
   /* 调整头部 */
   .headView {
     height: 70px;
   }
-  
+
   .headTitle {
     font-size: 24px;
     line-height: 60px;
   }
-  
+
   /* 调整底部菜单 */
   .boxMenuView {
     width: 700px;
     bottom: 10px;
   }
-  
+
   .boxMenuView ul li {
     width: 130px;
     height: 36px;
     line-height: 36px;
     font-size: 16px;
   }
-  
+
   /* 调整图片容器大小 */
   .img-container img,
   .feature-img-container img {
     max-width: 50% !important;
     max-height: 50% !important;
   }
-  
+
   .img-container2 img {
     max-width: 70% !important;
     max-height: 70% !important;
   }
-  
+
   /* 调整数据框内边距 */
   .dataCenter {
     padding: 15px;
   }
-  
+
   /* 调整弹窗位置 */
   .clickModal-content,
   .hoverModal-content {
@@ -3053,33 +3282,33 @@ async function rotate() {
     height: calc(100% / 3.8) !important;
     max-height: 200px;
   }
-  
+
   .boxMenuView {
     width: 650px;
   }
-  
+
   .boxMenuView ul li {
     width: 120px;
     font-size: 15px;
   }
-  
+
   /* 进一步缩小图片 */
   .img-container img,
   .feature-img-container img {
     max-width: 45% !important;
     max-height: 45% !important;
   }
-  
+
   .img-container2 img {
     max-width: 65% !important;
     max-height: 65% !important;
   }
-  
+
   /* 调整模块间距 */
   .dataBoxView[style*="top: 37%"] {
     top: 32% !important;
   }
-  
+
   .dataBoxView[style*="top: 67%"] {
     top: 62% !important;
   }
@@ -3090,16 +3319,16 @@ async function rotate() {
   .dataBoxView {
     width: 32% !important;
   }
-  
+
   .boxMenuView {
     width: 600px;
   }
-  
+
   .boxMenuView ul li {
     width: 110px;
     font-size: 14px;
   }
-  
+
   .headTitle {
     font-size: 22px;
   }
@@ -3108,7 +3337,7 @@ async function rotate() {
 /* 数据菜单按钮样式 */
 .data-menu-btn {
   position: fixed;
-  top: 6px; 
+  top: 6px;
   right: 60px;
   z-index: 10;
   /* 其他样式保持不变 */
@@ -3127,19 +3356,19 @@ async function rotate() {
   transition: all 0.3s ease;
   user-select: none;
   pointer-events: all;
-  
+
   i {
     margin-right: 0px;
     font-size: 16px;
   }
-  
+
   &:hover {
     background: rgba(71, 232, 254, 0.3);
     border-color: #47e8fe;
     box-shadow: 0 0 10px rgba(71, 232, 254, 0.5);
     transform: translateY(-2px);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
@@ -3150,7 +3379,7 @@ async function rotate() {
 @media screen and (max-width: 1440px) {
   /* 调整数据菜单按钮 */
   .data-menu-btn {
-    top: 24px; 
+    top: 24px;
     right: 20px;
     width: 110px;
     height: 34px;
@@ -3178,25 +3407,12 @@ async function rotate() {
     height: 30px;
     font-size: 11px;
   }
-  
+
   .data-menu-btn i {
     font-size: 14px;
     margin-right: 5px;
   }
 }
 
-/* 弹窗图片位置*/
-.clickModal-content {
-  width: 450px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: rgba(2, 7, 17, .8);
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  /* 关键修改：Y轴偏移从 -220% 改为 -180%，弹窗整体下移 */
-  transform: translate(50%, -80%);
-  font-family: PuHuiTi, serif;
-  color: #ffffff;
-}
+
 </style>
