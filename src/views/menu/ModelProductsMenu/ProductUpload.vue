@@ -13,8 +13,8 @@
     <div class="form-container" v-if="uploadCurrent === 0">
       <!-- 文件上传部分 -->
       <div class="upload-container">
-        <Dragger :multiple="false" accept=".tif,.png,.jpg,.hdr,.img,.dat,.tiff" style="margin-top: 20px" :beforeUpload="beforeUpload"
-          :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
+        <Dragger :multiple="false" accept=".tif,.png,.jpg,.hdr,.img,.dat,.tiff" style="margin-top: 20px"
+          :beforeUpload="beforeUpload" :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
           <p class="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
@@ -29,33 +29,43 @@
         <el-form-item label="产品名称：" required>
           <el-input v-model="filename" placeholder="请输入产品名称" clearable></el-input>
         </el-form-item>
-        
+
+        <!-- 产品类型（动态获取） -->
         <el-form-item label="产品类型：" required>
           <el-select v-model="className" placeholder="请选择产品类型" style="width: 100%">
-            <el-option label="植被产品" value="plant"></el-option>
-            <el-option label="土地产品" value="land"></el-option>
-            <el-option label="水体产品" value="water"></el-option>
+            <el-option v-for="item in classNameOptions" :key="item" :label="item" :value="item">
+            </el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="发布人：" required>
           <el-input v-model="publisher" placeholder="请输入发布人姓名" clearable></el-input>
         </el-form-item>
-        
-        <el-form-item label="观测日期：" required>
-          <el-date-picker v-model="observationDate" type="date" placeholder="选择观测日期" format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
+
+        <!-- 观测时间（支持三种格式） -->
+        <el-form-item label="观测时间：">
+          <el-input v-model="observationTime" placeholder="请输入观测时间" clearable>
+          </el-input>
+          <!-- <div style="font-size: 12px; color: #666; margin-top: 5px;">
+          支持格式：年（yyyy）、年月（yyyy-mm）、年月日（yyyy-mm-dd）
+        </div> -->
         </el-form-item>
 
-        <el-form-item label="开始时间：" required>
-          <el-date-picker v-model="startTime" type="datetime" placeholder="选择开始时间" format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%"></el-date-picker>
-        </el-form-item>
+        <!-- 时间段选择（开始时间和结束时间） -->
+        <el-form-item label="时间段：">
+          <div style="display: flex; gap: 10px;">
+            <el-input v-model="startTime" placeholder="开始时间" style="flex: 1">
+            </el-input>
+            <span style="line-height: 32px;">至</span>
+            <el-input v-model="endTime" placeholder="结束时间" style="flex: 1">
+            </el-input>
+          </div>
 
-        <el-form-item label="结束时间：" required>
-          <el-date-picker v-model="endTime" type="datetime" placeholder="选择结束时间" format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%"></el-date-picker>
         </el-form-item>
+        <div style="font-size: 12px; color: #666; margin-top: 5px;  padding:0 10%;">
+          支持格式：年（yyyy）、年月（yyyy-mm）、年月日（yyyy-mm-dd）<br>
+          注意：开始时间不能晚于结束时间
+        </div>
       </el-form>
 
       <!-- 按钮组 -->
@@ -134,7 +144,7 @@ import {
   ElSelect,
   ElOption
 } from 'element-plus'
-import { uploadModelProduct } from '@/api/getData'
+import { uploadModelProduct, getModelClassName } from '@/api/getData' // 移除了getTimesByType导入
 
 const { Dragger } = Upload
 
@@ -147,40 +157,64 @@ const loadingoptions = {
   background: 'rgba(0, 0, 0, 0.7)',
   text: '产品上传中...'
 }
-const userinfo = JSON.parse(localStorage.getItem('Userinfo'))
+
+const userinfo = JSON.parse(localStorage.getItem('userinfo'))
 const uploadCurrent = ref(0)
 const files = ref([])
 const publisher = ref(userinfo?.username || '')
 const filename = ref('')
-const className = ref('plant')
-const observationDate = ref('')
+const className = ref('')  // 清空默认值
+const classNameOptions = ref([])  // 分类选项
+const observationTime = ref('')  // 观测时间（用户输入）
 const startTime = ref('')
 const endTime = ref('')
 
+// 计算属性
 const infoData = computed(() => [
   { title: '产品名称', value: filename.value || '无' },
-  { title: '产品类型', value: className.value === 'plant' ? '植被产品' : className.value === 'land' ? '土地产品' : '水体产品' },
+  { title: '产品类型', value: className.value || '未选择' },
   { title: '发布人', value: publisher.value },
-  { title: '观测日期', value: observationDate.value },
-  { title: '开始时间', value: startTime.value },
-  { title: '结束时间', value: endTime.value }
+  { title: '观测时间', value: observationTime.value || '无' },
+  { title: '开始时间', value: startTime.value || '无' },
+  { title: '结束时间', value: endTime.value || '无' }
 ])
 
-// 计算属性
 const form = computed(() => ({
   filename: filename.value,
   className: className.value,
   publisher: publisher.value,
-  observationDate: observationDate.value,
+  observationTime: observationTime.value,
   startTime: startTime.value,
   endTime: endTime.value
 }))
+
+// 获取产品分类
+const fetchClassNames = () => {
+  getModelClassName()
+    .then((res) => {
+      const response = res.response?.value || res
+      if (response.code === 'SUCCESS') {
+        classNameOptions.value = response.body || []
+        // 如果没有选择分类，则默认选择第一个
+        if (classNameOptions.value.length > 0 && !className.value) {
+          className.value = classNameOptions.value[0]
+        }
+      } else {
+        message.error('获取产品分类失败: ' + (response.msg || '未知错误'))
+      }
+    })
+    .catch((error) => {
+      console.error('获取产品分类失败:', error)
+      message.error('获取产品分类失败')
+    })
+}
 
 // 生命周期
 onMounted(() => {
   if (userinfo) {
     publisher.value = userinfo.username || ''
   }
+  fetchClassNames()
 })
 
 // 格式化文件大小
@@ -192,10 +226,22 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+// 验证时间格式（支持三种格式：yyyy、yyyy-mm、yyyy-mm-dd）
+const validateTimeFormat = (time) => {
+  if (!time) return false
+
+  // 三种格式：yyyy、yyyy-mm、yyyy-mm-dd
+  const yearPattern = /^\d{4}$/
+  const monthPattern = /^\d{4}-\d{2}$/
+  const dayPattern = /^\d{4}-\d{2}-\d{2}$/
+
+  return yearPattern.test(time) || monthPattern.test(time) || dayPattern.test(time)
+}
+
 // 方法
 function beforeUpload(file) {
   // 检查文件类型
-  const validTypes = ['.tif','.png','.jpg', '.tiff', '.hdr', '.img', '.dat']
+  const validTypes = ['.tif', '.png', '.jpg', '.tiff', '.hdr', '.img', '.dat']
   const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
 
   if (!validTypes.includes(fileExt)) {
@@ -237,31 +283,63 @@ function handleCustomRequest({ file, onSuccess, onError }) {
   onSuccess()
 }
 
+// 验证表单
 function handleSubmit() {
-  if (!filename.value || !publisher.value || !observationDate.value || !startTime.value || !endTime.value) {
-    message.error('请填写完整表单信息')
+  // 验证必填字段
+  if (!filename.value || !publisher.value || !className.value) {
+    message.error('请填写产品名称、发布人和产品类型')
     return
   }
 
+  // 验证文件
   if (files.value.length === 0) {
     message.error('请上传文件')
     return
   }
 
+  // 验证时间：观测时间和开始/结束时间至少填写一个
+  const hasObservationTime = observationTime.value.trim() !== ''
+  const hasStartTime = startTime.value.trim() !== ''
+  const hasEndTime = endTime.value.trim() !== ''
+
+  if (!hasObservationTime && (!hasStartTime || !hasEndTime)) {
+    message.error('请填写观测时间或开始时间和结束时间')
+    return
+  }
+
+  // 如果填写了观测时间，验证格式
+  if (hasObservationTime && !validateTimeFormat(observationTime.value)) {
+    message.error('观测时间格式不正确，请使用：年（yyyy）、年月（yyyy-mm）、年月日（yyyy-mm-dd）格式')
+    return
+  }
+
+  // 如果填写了开始时间或结束时间，需要两个都填写
+  if (hasStartTime !== hasEndTime) {
+    message.error('开始时间和结束时间需要同时填写')
+    return
+  }
+
+  // 如果填写了开始时间和结束时间，验证格式
+  if (hasStartTime && hasEndTime) {
+    if (!validateTimeFormat(startTime.value)) {
+      message.error('开始时间格式不正确，请使用：年（yyyy）、年月（yyyy-mm）、年月日（yyyy-mm-dd）格式')
+      return
+    }
+    if (!validateTimeFormat(endTime.value)) {
+      message.error('结束时间格式不正确，请使用：年（yyyy）、年月（yyyy-mm）、年月日（yyyy-mm-dd）格式')
+      return
+    }
+
+    // 验证开始时间不晚于结束时间（根据字符串比较，需要格式一致）
+    if (startTime.value > endTime.value) {
+      message.error('开始时间不能晚于结束时间')
+      return
+    }
+  }
+
   uploadCurrent.value = 1
 }
 
-function handleCancel() {
-  publisher.value = userinfo?.username || ''
-  filename.value = ''
-  className.value = 'plant'
-  observationDate.value = ''
-  startTime.value = ''
-  endTime.value = ''
-  files.value = []
-  uploadCurrent.value = 0
-  emit('cancel')
-}
 
 function handlePrevious() {
   uploadCurrent.value = 0
@@ -277,19 +355,23 @@ async function handleConfirm() {
 
   try {
     const formData = new FormData()
-    
+
     // 添加文件
     formData.append('productFile', files.value[0])
-    
+
     // 添加其他表单数据
     formData.append('className', className.value)
     formData.append('filename', filename.value)
     formData.append('userName', publisher.value)
-    formData.append('observationTime', observationDate.value + ' 00:00:00')
+
+    // 添加时间数据
+
+    formData.append('observationTime', observationTime.value)
+
     formData.append('startTime', startTime.value)
     formData.append('endTime', endTime.value)
 
-    // 仿照 PlantUpload 的方式调用接口
+    // 调用上传接口
     uploadModelProduct(formData)
       .then((res) => {
         const response = res.response.value
@@ -334,11 +416,23 @@ async function handleConfirm() {
   }
 }
 
+function handleCancel() {
+  publisher.value = userinfo?.username || ''
+  filename.value = ''
+  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0] : ''
+  observationTime.value = ''
+  startTime.value = ''
+  endTime.value = ''
+  files.value = []
+  uploadCurrent.value = 0
+  emit('cancel')
+}
+
 function handleContinue() {
   files.value = []
   filename.value = ''
-  className.value = 'plant'
-  observationDate.value = ''
+  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0] : ''
+  observationTime.value = ''
   startTime.value = ''
   endTime.value = ''
   uploadCurrent.value = 0

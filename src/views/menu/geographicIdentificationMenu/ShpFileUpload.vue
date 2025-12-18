@@ -411,11 +411,7 @@ const handleSubmit = async () => {
   }
   
   // 调用API提交
-  apiFunction(formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  apiFunction(formData)
     .then((res) => {
       const result = res.response.value
       if (result?.code === 'SUCCESS' || result?.success) {

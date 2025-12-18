@@ -994,14 +994,14 @@ export function uploadPumpingStationShpfiles(data: any) {
 }
 //湖泊点位文件上传
 export function uploadlakesByShpfiles(data: any) {
-  return useAxiosApi('/api/lakes/getAlllakesByConditions', {
+  return useAxiosApi('/api/lakes/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
 }
 //渠道点位文件上传
 export function uploadChannelByShpfiles(data: any) {
-  return useAxiosApi('/api/Channel/selectAllByconditions', {
+  return useAxiosApi('/api/Channel/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
