@@ -1370,3 +1370,15 @@ export function getFarmlandgeojson(data: any) {
   });
 
 }
+/**
+ * 产品单文件上传
+ * @returns UseAxiosReturn
+ */
+export function uploadModelProduct(data: any) {
+  return useAxiosApi('/api/modelFile/uploadModelProducts', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
