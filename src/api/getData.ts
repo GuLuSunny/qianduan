@@ -994,14 +994,14 @@ export function uploadPumpingStationShpfiles(data: any) {
 }
 //湖泊点位文件上传
 export function uploadlakesByShpfiles(data: any) {
-  return useAxiosApi('/api/lakes/getAlllakesByConditions', {
+  return useAxiosApi('/api/lakes/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
 }
 //渠道点位文件上传
 export function uploadChannelByShpfiles(data: any) {
-  return useAxiosApi('/api/Channel/selectAllByconditions', {
+  return useAxiosApi('/api/Channel/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
@@ -1364,6 +1364,18 @@ export function landFilesUploadMul(data: any) {
  */
 export function getFarmlandgeojson(data: any) {
   return useAxiosApi('/api/farmland/exportGeojson', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
+/**
+ * 产品单文件上传
+ * @returns UseAxiosReturn
+ */
+export function uploadModelProduct(data: any) {
+  return useAxiosApi('/api/modelFile/uploadModelProducts', {
     method: 'POST',
     data: data,
     responseType: 'blob'

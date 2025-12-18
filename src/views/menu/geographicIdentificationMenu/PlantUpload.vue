@@ -179,21 +179,34 @@ const uploadType = ref('dual') // 'dual' 或 'full'
 const modelName = ref('')
 
 // 双极化数据所需文件
+// 双极化数据所需文件（更新为中文描述）
 const dualPolarizationFiles = [
-  'Alpha.tif', 'Entropy.tif', 'HA.tif',
-  'C11.tif', 'C12_imag.tif', 'C22.tif',
-  'DpRVI.tif'
+  'Alpha.tif - Cloude-Pottier分解参数(Alpha)',
+  'Entropy.tif - Cloude-Pottier分解参数(Entropy)',
+  'HA.tif - Cloude-Pottier分解参数(HA)',
+  'C11.tif - 协方差矩阵(C11)',
+  'C12_imag.tif - 协方差矩阵(C12_imag)',
+  'C22.tif - 协方差矩阵(C22)',
+  'DpRVI.tif - 双极化雷达植被指数(DpRVI)'
 ]
 
-// 全极化数据所需文件
+// 全极化数据所需文件（更新为中文描述，使用替代名称）
 const fullPolarizationFiles = [
-  'HV.tif', 'VV.tif',
-  'Pauli_b.tif',
-  'l1.tif', 'Span.tif',
-  'Alpha.tif', 'Entropy.tif', '1mH1mA.tif',
-  'VZ_dbl.tif', 'VZ_vol.tif',
-  'Free_vol.tif',
-  'Yama_surf.tif', 'Yama_vol.tif'
+  'HV.tif - 后向散射系数(HV)',
+  'VV.tif - 后向散射系数(VV)',
+  'Pauli_b.tif - Pauli分解参数(Pauli_b)',
+  'l1.tif - 相干矩阵(l1代替λ1)',
+  'l2.tif - 相干矩阵(l2代替λ2)',
+  'l3.tif - 相干矩阵(l3代替λ3)',
+  'Span.tif - 相干矩阵(Span)',
+  'Alpha.tif - Cloude-Pottier分解参数(Alpha)',
+  'Entropy.tif - Cloude-Pottier分解参数(Entropy)',
+  '1mH1mA.tif - Cloude-Pottier分解参数(1mH1mA)',
+  'VZ_dbl.tif - Van Zyl分解参数(VZ_dbl)',
+  'VZ_vol.tif - Van Zyl分解参数(VZ_vol)',
+  'Free_vol.tif - Freeman分解参数(Free_vol)',
+  'Yama_surf.tif - Yamaguchi分解参数(Yama_surf)',
+  'Yama_vol.tif - Yamaguchi分解参数(Yama_vol)'
 ]
 
 // 可用模型列表
@@ -237,17 +250,19 @@ const hasMissingFiles = computed(() => {
 })
 
 // 检查单个文件是否缺失
-const isFileMissing = (fileName) => {
+const isFileMissing = (fileDisplayName) => {
   if (files.value.length === 0) return true
   if (files.value.some(file => file.name.toLowerCase().endsWith('.zip'))) return false
 
+  // 从显示名称中提取实际文件名（去掉中文描述部分）
+  const actualFileName = fileDisplayName.split(' - ')[0].toLowerCase().replace('.tif', '')
+  
   const uploadedFileNames = files.value.map(file =>
     file.name.toLowerCase().replace('.tif', '')
   )
-  const requiredName = fileName.toLowerCase().replace('.tif', '')
-  return !uploadedFileNames.includes(requiredName)
+  
+  return !uploadedFileNames.includes(actualFileName)
 }
-
 // 生命周期
 onMounted(() => {
   if (userinfo) {
