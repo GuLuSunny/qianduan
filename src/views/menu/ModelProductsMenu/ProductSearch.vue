@@ -142,7 +142,7 @@
       >
         <el-table-column type="selection" width="auto" ></el-table-column>
         <el-table-column prop="owner" label="所有者" width="auto"  />
-        <el-table-column prop="filename" label="文件名称" width="auto" show-overflow-tooltip   />
+        <el-table-column prop="filename" label="文件名称" width="auto" :min-width="150" show-overflow-tooltip   />
         <el-table-column prop="className" label="产品分类" width="auto"  />
         <el-table-column prop="type" label="文件类型" width="auto"  />
         <el-table-column prop="observationTime" label="观测时间" width="auto"  />

@@ -349,13 +349,13 @@
 </transition>
 
     <!-- 鼠标悬浮窗口 -->
-    <transition name="fade">
+    <!-- <transition name="fade">
       <div v-show="hoverPopupShow">
         <div class="hoverModal-content" id="hoverPopup">
           <p id="hoverPopup-p">我悬浮窗口哦</p>
         </div>
       </div>
-    </transition>
+    </transition> -->
 
     <!-- 图片放大模态框 -->
     <transition name="fade">
