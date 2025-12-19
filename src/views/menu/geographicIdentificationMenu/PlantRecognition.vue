@@ -27,10 +27,10 @@
               </el-select>
             </el-form-item>
 
-            <!-- 添加观测日期字段 -->
-            <el-form-item label="观测日期：" required>
+            <!-- 修改观测日期字段 -->
+            <el-form-item label="观测日期" required>
               <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
+                value-format="YYYY-MM-DD" :disabled-date="disabledDate" style="width: 100%"></el-date-picker>
             </el-form-item>
 
             <!-- 预测参数选项 -->
@@ -53,23 +53,14 @@
                 </div>
               </div>
             </el-form-item> -->
-            
+
             <!-- 在预测参数和按钮组之间添加轮询状态 -->
             <div v-if="isPolling" class="polling-status">
-              <el-alert
-                title="任务正在执行中，请稍候..."
-                type="info"
-                :closable="false"
-                show-icon
-              >
+              <el-alert title="任务正在执行中，请稍候..." type="info" :closable="false" show-icon>
                 <template #default>
                   <div class="polling-progress">
-                    <el-progress
-                      :percentage="pollingProgress"
-                      :status="pollingStatus === 'failed' ? 'exception' : ''"
-                      :stroke-width="8"
-                      :show-text="false"
-                    />
+                    <el-progress :percentage="pollingProgress" :status="pollingStatus === 'failed' ? 'exception' : ''"
+                      :stroke-width="8" :show-text="false" />
                     <div class="polling-info">
                       <span v-if="pollingStatus === 'executing'">正在处理...</span>
                       <span v-if="pollingStatus === 'success'" style="color: #67c23a">任务完成！</span>
@@ -79,27 +70,17 @@
                   </div>
                 </template>
               </el-alert>
-              <el-button 
-                v-if="pollingStatus === 'failed'" 
-                @click="stopPolling" 
-                type="danger" 
-                size="small"
-                class="stop-polling-btn"
-              >
+              <el-button v-if="pollingStatus === 'failed'" @click="stopPolling" type="danger" size="small"
+                class="stop-polling-btn">
                 停止轮询
               </el-button>
             </div>
 
             <div class="button-group">
-                <el-button 
-                  @click="handlePredict" 
-                  class="submit-button" 
-                  type="primary" 
-                  :loading="predictLoading"
-                  :disabled="isPolling"
-                >
-                  {{ isPolling ? '任务执行中...' : '开始预测' }}
-                </el-button>
+              <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading"
+                :disabled="isPolling">
+                {{ isPolling ? '任务执行中...' : '开始预测' }}
+              </el-button>
             </div>
 
             <!-- 结果获取参数选项 -->
@@ -169,8 +150,8 @@
                 {{ selectedTrainModel === '1DResnet' ? `下载步骤${downloadStep + 1}文件` : '下载模型文件' }}
               </el-button> -->
 
-              <!-- 1DResnet模型专用的一键下载按钮 -->
-               <!-- <el-button v-if="selectedTrainModel === '1DResnet'" @click="handleBatchDownload" type="warning"
+            <!-- 1DResnet模型专用的一键下载按钮 -->
+            <!-- <el-button v-if="selectedTrainModel === '1DResnet'" @click="handleBatchDownload" type="warning"
                 :loading="batchDownloadLoading">
                 一键下载全部文件
               </el-button> 
@@ -277,7 +258,8 @@ import {
   plantCoverPredict,
   getPlantResultByType,
   DownloadPlantTrainModelFiles,
-  getModelStatusByConditions
+  getModelStatusByConditions,
+  getTimesByType
 } from '@/api/getData'
 
 // 定义emit事件
@@ -312,6 +294,8 @@ const optionalResultOptions = ref([
   { value: 'evaluate', label: '统计报告' }
 ])
 
+const availableDates = ref([])
+
 // 修改结果选项为多选结构
 const permanentOptions = ref({
   preview_png: true,
@@ -323,7 +307,7 @@ const optionalOptions = ref({
   evaluate: false
 })
 
-const predictOptions = ref(['preview_png','evaluate'])
+const predictOptions = ref(['preview_png', 'evaluate'])
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -426,23 +410,63 @@ watch(selectedModel, (newVal) => {
   )
 })
 
+// 新增方法：获取植物类别的可用日期
+const fetchAvailableDates = () => {
+  getTimesByType({
+    type: 'modelfiles',
+    searchTimeType: 'day',
+    className: 'plant'  // 固定为 plant
+  })
+    .then((res) => {
+      const response = res?.response?.value || res?.value || res
+      if (response?.code === 'SUCCESS') {
+        // 过滤掉可能的 null 值
+        availableDates.value = (response.body?.date || []).filter(date => date !== null && date !== undefined)
+
+        // 如果有可用日期，将默认日期设置为最后一个日期
+        if (availableDates.value.length > 0) {
+          observationDate.value = availableDates.value[availableDates.value.length - 1]
+        }
+      } else {
+        message.warning(response?.msg || '获取可用日期失败')
+      }
+    })
+    .catch((error) => {
+      console.error('获取日期数据失败:', error)
+      message.error('获取日期数据失败，请稍后再试')
+    })
+}
+
+// 新增方法：禁用不可用日期
+const disabledDate = (time) => {
+  if (!availableDates.value || availableDates.value.length === 0) {
+    return false
+  }
+
+  const dateString = `${time.getFullYear()}-${(time.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
+
+  return !availableDates.value.includes(dateString)
+}
+
+
 // 生命周期
 onMounted(() => {
   fetchModels()
-  const today = new Date()
-  observationDate.value = today.toISOString().split('T')[0]
+  fetchAvailableDates()
 })
 
 // 轮询相关方法
 const startPolling = () => {
   stopPolling()
-  
+
   isPolling.value = true
   pollingCount.value = 0
   pollingProgress.value = 0
   pollingStatus.value = 'executing'
   taskStartTime.value = new Date()
-  
+
   pollingTimer.value = setInterval(() => {
     checkTaskStatus()
   }, pollingInterval)
@@ -464,7 +488,7 @@ const checkTaskStatus = async () => {
   }
 
   pollingCount.value++
-  
+
   const elapsedTime = new Date() - taskStartTime.value
   const estimatedMaxTime = maxPollingCount * pollingInterval
   pollingProgress.value = Math.min(90, Math.round((elapsedTime / estimatedMaxTime) * 100))
@@ -474,9 +498,9 @@ const checkTaskStatus = async () => {
     if (!userData) {
       throw new Error('用户信息未找到')
     }
-    
+
     const userinfo = JSON.parse(userData)
-    
+
     const params = {
       userName: userinfo.username,
       createUserid: userinfo.id,
@@ -484,43 +508,43 @@ const checkTaskStatus = async () => {
       observationTime: observationDate.value,
       className: "plant"
     }
-    
+
     // 假设有查询植物任务状态的接口
     const res = await getModelStatusByConditions(params)
     const response = res?.response?.value || res?.value || res
-    
+
     if (response?.code === 'SUCCESS') {
       const taskData = response.body?.[0]
-      
+
       if (taskData) {
         const status = taskData.usageStatus?.toLowerCase()
-        
+
         if (status === 'success') {
           pollingStatus.value = 'success'
           pollingProgress.value = 100
           message.success('任务执行成功！')
-          
+
           stopPolling()
-          
+
           setTimeout(() => {
             predictCurrent.value = 1
             if (permanentOptions.value.preview_png && isOptionAvailable('preview_png', 'result')) {
               fetchPreviewImage()
             }
           }, 500)
-          
+
         } else if (status === 'failed') {
           pollingStatus.value = 'failed'
           pollingProgress.value = 100
           message.error('任务执行失败，请检查参数或联系管理员')
           stopPolling()
-          
+
         } else if (status === 'executing') {
           pollingStatus.value = 'executing'
         }
       }
     }
-    
+
   } catch (err) {
     console.error('查询任务状态失败:', err)
     if (pollingCount.value > 10) {
@@ -819,7 +843,7 @@ const downloadPreviewImage = () => {
   }
 
   const blob = downloadFiles.value.preview_png
-  const fileName = `${selectedModel.value}_preview.png`
+  const fileName = `${observationDate.value}-${selectedModel.value}_preview.png`
 
   const downloadUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -841,7 +865,7 @@ const downloadTifFile = () => {
   }
 
   const blob = downloadFiles.value.tif
-  const fileName = `${selectedModel.value}_result.tif`
+  const fileName = `${observationDate.value}-${selectedModel.value}_result.tif`
 
   const downloadUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -1062,6 +1086,31 @@ const handleBack = () => {
 </script>
 
 <style scoped>
+/* 调整日期选择器的垂直对齐 */
+:deep(.el-form-item__label) {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  line-height: 1;
+}
+
+/* 确保日期选择器与标签垂直对齐 */
+.el-form-item :deep(.el-date-editor) {
+  line-height: 32px;
+}
+
+/* 调整日期选择器容器内的垂直对齐 */
+.el-form-item :deep(.el-input__wrapper) {
+  display: flex;
+  align-items: center;
+}
+
+/* 针对日期选择器的特定调整 */
+.date-picker-item :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+}
+
 .feature-container {
   margin: 0 auto;
   max-width: 1200px;
