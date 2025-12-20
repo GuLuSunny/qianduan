@@ -33,7 +33,7 @@
         <!-- 产品类型（动态获取） -->
         <el-form-item label="产品类型：" required>
           <el-select v-model="className" placeholder="请选择产品类型" style="width: 100%">
-            <el-option v-for="item in classNameOptions" :key="item" :label="item" :value="item">
+            <el-option v-for="item in classNameOptions" :key="item.value" :label="item.label" :value="item.value">
             </el-option>
           </el-select>
         </el-form-item>
@@ -169,6 +169,17 @@ const observationTime = ref('')  // 观测时间（用户输入）
 const startTime = ref('')
 const endTime = ref('')
 
+const classNameInfo = ref({
+  'plant': '地表水生态',
+  'plantChange': '地表水生态变化',
+  'land': '地表水环境',
+  'landChange': '地表水环境变化',
+  'water': '地表水资源',
+  'waterChange': '地表水资源变化',
+  'RSEI': '遥感生态指数',
+  'RSEIChange': '遥感生态指数变化'
+})
+
 // 计算属性
 const infoData = computed(() => [
   { title: '产品名称', value: filename.value || '无' },
@@ -194,10 +205,14 @@ const fetchClassNames = () => {
     .then((res) => {
       const response = res.response?.value || res
       if (response.code === 'SUCCESS') {
-        classNameOptions.value = response.body || []
+        // 将英文值转换为包含中文显示的选项
+        classNameOptions.value = (response.body || []).map(item => ({
+          value: item, // 英文值，用于提交
+          label: classNameInfo.value[item] || item // 中文显示
+        }))
         // 如果没有选择分类，则默认选择第一个
         if (classNameOptions.value.length > 0 && !className.value) {
-          className.value = classNameOptions.value[0]
+          className.value = classNameOptions.value[0].value
         }
       } else {
         message.error('获取产品分类失败: ' + (response.msg || '未知错误'))
