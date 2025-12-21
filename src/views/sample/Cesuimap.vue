@@ -1932,7 +1932,7 @@ async function initializeCesium() {
       imgSrc:
         "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240625FVC.png",
       imgSrc2:
-        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/条带结果/20240625FVC.png",
+        "/images/植被覆盖度/变化产品/2024-38.png",
     },
     {
       id: "landCoverMonitor",
