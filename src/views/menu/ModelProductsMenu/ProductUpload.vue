@@ -431,10 +431,12 @@ async function handleConfirm() {
   }
 }
 
+// 修改 handleCancel 函数
 function handleCancel() {
   publisher.value = userinfo?.username || ''
   filename.value = ''
-  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0] : ''
+  // 修复：只设置值，而不是整个对象
+  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0].value : ''
   observationTime.value = ''
   startTime.value = ''
   endTime.value = ''
@@ -443,10 +445,12 @@ function handleCancel() {
   emit('cancel')
 }
 
+// 修改 handleContinue 函数
 function handleContinue() {
   files.value = []
   filename.value = ''
-  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0] : ''
+  // 修复：只设置值，而不是整个对象
+  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0].value : ''
   observationTime.value = ''
   startTime.value = ''
   endTime.value = ''
