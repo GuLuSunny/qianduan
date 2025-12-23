@@ -450,7 +450,7 @@ function handleContinue() {
   files.value = []
   filename.value = ''
   // 修复：只设置值，而不是整个对象
-  className.value = classNameOptions.value.length > 0 ? classNameOptions.value[0].value : ''
+  className.value = className.value == ''?(classNameOptions.value.length > 0 ? classNameOptions.value[0].value : '') : className.value
   observationTime.value = ''
   startTime.value = ''
   endTime.value = ''

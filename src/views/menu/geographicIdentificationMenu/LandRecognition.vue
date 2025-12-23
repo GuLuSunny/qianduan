@@ -145,7 +145,7 @@
           <h3>结果文件下载</h3>
           <div class="download-buttons">
             <!-- TIF文件下载按钮 - 始终可用 -->
-            <el-button @click="downloadFile('tif')" type="success" plain icon="Download">
+            <el-button @click="downloadFile('tif')" type="success" plain :icon="Download">
               TIF文件
             </el-button>
 
@@ -154,7 +154,7 @@
               混淆矩阵
             </el-button> -->
             <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')"
-              @click="downloadFile('evaluate')" type="primary" plain icon="Download">
+              @click="downloadFile('evaluate')" type="primary" plain :icon="Download">
               统计报告
             </el-button>
 
@@ -168,10 +168,10 @@
 
         <!-- 操作按钮 -->
         <div class="button-group">
-          <el-button @click="handlePredictPrevious" class="cancel-button" icon="Back">
+          <el-button @click="handlePredictPrevious" class="cancel-button" :icon="Back">
             上一步
           </el-button>
-          <el-button @click="handlePredictContinue" class="submit-button" type="primary" icon="Refresh">
+          <el-button @click="handlePredictContinue" class="submit-button" type="primary" :icon="Refresh">
             继续预测
           </el-button>
         </div>

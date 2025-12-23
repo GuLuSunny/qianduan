@@ -22,7 +22,7 @@
                     <div class="form-horizontal-group">
                         <div class="form-column-full">
                             <!-- 早期文件上传 -->
-                            <el-form-item label="早期文件：" required>
+                            <el-form-item label="早期文件" required>
                                 <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
                                     <el-input v-model="earlyFilePath" placeholder="请选择早期地类分类文件" readonly
                                         style="width: 100%;" clearable @clear="handleRemoveFile('early')"
@@ -42,7 +42,7 @@
                             </el-form-item>
 
                             <!-- 后期文件上传 -->
-                            <el-form-item label="后期文件：" required>
+                            <el-form-item label="后期文件" required>
                                 <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
                                     <el-input v-model="lateFilePath" placeholder="请选择后期地类分类文件" readonly
                                         style="width: 100%;" clearable @clear="handleRemoveFile('late')"
@@ -62,7 +62,7 @@
                             </el-form-item>
 
                             <!-- 显示模式选择 -->
-                            <el-form-item label="显示模式：" required>
+                            <el-form-item label="显示模式" required>
                                 <el-radio-group v-model="displayMode" class="radio-group">
                                     <el-radio label="changes_only">仅显示变化区域</el-radio>
                                     <el-radio label="all">显示全部类别</el-radio>
@@ -70,7 +70,7 @@
                             </el-form-item>
 
                             <!-- 配置文件上传（可选） -->
-                            <el-form-item label="配置文件：">
+                            <el-form-item label="配置文件">
                                 <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
                                     <el-input v-model="configFilePath" placeholder="请选择配置文件（可选）" readonly
                                         style="width: 100%;" clearable @clear="handleRemoveFile('config')"
@@ -123,7 +123,7 @@
                                             <Check />
                                         </el-icon>
                                         <span>配置文件: {{ configFilePath }} ({{ (configFileObject.size / 1024).toFixed(2)
-                                            }} KB)</span>
+                                        }} KB)</span>
                                     </div>
                                 </div>
                             </el-form-item>
@@ -176,7 +176,7 @@
                                                     @mouseleave="hoveredCard = ''">
                                                     <div class="stat-card-value">{{
                                                         totalStats.total_pixels?.toLocaleString() || '0'
-                                                        }}</div>
+                                                    }}</div>
                                                     <div class="stat-card-label">总像素数</div>
                                                 </div>
                                                 <div class="stat-card"
@@ -185,7 +185,7 @@
                                                     @mouseleave="hoveredCard = ''">
                                                     <div class="stat-card-value">{{
                                                         totalStats.valid_pixels?.toLocaleString() || '0'
-                                                        }}</div>
+                                                    }}</div>
                                                     <div class="stat-card-label">有效像素</div>
                                                 </div>
                                                 <div class="stat-card stat-card-changed"
@@ -238,20 +238,21 @@
                                                                 :data-percent="value.percentage !== undefined ?
                                                                     value.percentage :
                                                                     totalStats.valid_pixels > 0 ?
-                                                                        ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0" :style="{
-                                                                width: `${value.percentage !== undefined ?
-                                                                    value.percentage :
-                                                                    totalStats.valid_pixels > 0 ?
-                                                                        ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0}%`
-                                                            }"></div>
+                                                                        ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0"
+                                                                :style="{
+                                                                    width: `${value.percentage !== undefined ?
+                                                                        value.percentage :
+                                                                        totalStats.valid_pixels > 0 ?
+                                                                            ((value.count || value) * 100.0 / totalStats.valid_pixels) : 0}%`
+                                                                }"></div>
                                                         </div>
                                                         <span class="stat-item-percent">
                                                             {{ value.percentage !== undefined ?
                                                                 value.percentage.toFixed(2) :
                                                                 totalStats.valid_pixels > 0 ?
                                                                     ((value.count || value) * 100.0 /
-                                                            totalStats.valid_pixels).toFixed(2) :
-                                                            '0.00' }}%
+                                                                        totalStats.valid_pixels).toFixed(2) :
+                                                                    '0.00' }}%
                                                         </span>
                                                     </div>
                                                 </div>
@@ -281,7 +282,7 @@
                                                             <span class="count-label">像素数：</span>
                                                             <span class="count-value">{{ change.count?.toLocaleString()
                                                                 || '0'
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="change-progress">
                                                             <div class="progress-bar">
@@ -292,7 +293,7 @@
                                                             </div>
                                                             <span class="change-percent">{{
                                                                 change.percentage?.toFixed(2) || '0.00'
-                                                                }}%</span>
+                                                            }}%</span>
                                                         </div>
                                                     </div>
                                                 </div>

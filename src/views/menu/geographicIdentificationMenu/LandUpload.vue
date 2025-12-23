@@ -32,7 +32,7 @@
         <div class="upload-container" v-if="uploadType === 'full'">
           <h3 class="section-title">全极化数据上传</h3>
           <Dragger :multiple="false" accept=".tif,.zip" :beforeUpload="beforeUpload"
-            :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove">
+            :customRequest="handleCustomRequest" :fileList="files" :onRemove="onRemove" :height= "200">
             <p class="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
@@ -1073,6 +1073,13 @@ function hideInfo() {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+.ant-upload-drag-icon{
+  margin: 24px;
+}
+
+.ant-upload-hint{
+  margin: 14px;
+}
 /* 响应式设计 */
 @media (max-width: 992px) {
   .horizontal-layout {

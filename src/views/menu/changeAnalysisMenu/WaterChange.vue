@@ -22,7 +22,7 @@
           <div class="form-horizontal-group">
             <div class="form-column-full">
               <!-- 早期文件上传 -->
-              <el-form-item label="早期文件：" required>
+              <el-form-item label="早期文件" required>
                 <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
                   <el-input
                     v-model="earlyFilePath"
@@ -51,7 +51,7 @@
               </el-form-item>
 
               <!-- 后期文件上传 -->
-              <el-form-item label="后期文件：" required>
+              <el-form-item label="后期文件" required>
                 <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
                   <el-input
                     v-model="lateFilePath"
@@ -101,7 +101,7 @@
                 </div>
               </el-form-item>
               
-              <el-form-item label="水体标签值：" prop="waterTagValue">
+              <el-form-item label="水体标签值" prop="waterTagValue">
                 <el-input-number
                   v-model="form.waterTagValue"
                   :min="0"

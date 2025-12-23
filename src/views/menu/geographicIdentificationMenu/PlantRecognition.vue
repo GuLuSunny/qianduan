@@ -189,12 +189,12 @@
           <div class="download-buttons">
             <!-- 预览图下载 -->
             <el-button v-if="permanentOptions.preview_png && isOptionAvailable('preview_png', 'result')"
-              @click="downloadPreviewImage" type="primary" plain icon="Download">
+              @click="downloadPreviewImage" type="primary" plain :icon="Download">
               下载预览图
             </el-button>
 
             <!-- TIF文件下载 -->
-            <el-button v-if="permanentOptions.tif" @click="downloadTifFile" type="success" plain icon="Download">
+            <el-button v-if="permanentOptions.tif" @click="downloadTifFile" type="success" plain :icon="Download">
               下载TIF文件
             </el-button>
 
@@ -204,7 +204,7 @@
               混淆矩阵
             </el-button> -->
             <el-button v-if="optionalOptions.evaluate && isOptionAvailable('evaluate', 'result')"
-              @click="downloadFile('evaluate')" type="primary" plain icon="Download">
+              @click="downloadFile('evaluate')" type="primary" plain :icon="Download">
               统计报告
             </el-button>
           </div>
@@ -212,10 +212,10 @@
 
         <!-- 操作按钮 -->
         <div class="button-group">
-          <el-button @click="handlePredictPrevious" class="cancel-button" icon="Back">
+          <el-button @click="handlePredictPrevious" class="cancel-button" :icon="Back">
             上一步
           </el-button>
-          <el-button @click="handlePredictContinue" class="submit-button" type="primary" icon="Refresh">
+          <el-button @click="handlePredictContinue" class="submit-button" type="primary" :icon="Refresh">
             继续预测
           </el-button>
         </div>

@@ -1943,6 +1943,15 @@ async function initializeCesium() {
         "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
       imgSrc2: "/images/地物分类/3.产品数据-原始图像/202506开封数据制图.png",
     },
+    {
+      id: "RSEIMonitor",
+      name: "遥感生态指数",
+      className: "RSEI",
+      position: { lng: 114.3472038, lat: 34.7961106 },
+      imgSrc:
+        "/images/生态/遥感生态指数分布产品/24年8月.png",
+      imgSrc2: "/images/生态/遥感生态指数变化产品/24年4月至24年8月.png",
+    }
   ];
 
   // ========== 循环创建所有监测点实体（替代原来的三段硬编码） ==========
@@ -2225,7 +2234,7 @@ async function onEntityClick(movement) {
     // });
     const monitorData = pickedObject.id.monitoItems.data; 
     
-    const specialPoints = ["water", "plant", "land"];
+    const specialPoints = ["water", "plant", "land","RSEI"];
     console.log("monitorData.className:",monitorData.className)
     if (specialPoints.includes(monitorData.className)) {
       // 关闭普通弹窗，显示双弹窗
