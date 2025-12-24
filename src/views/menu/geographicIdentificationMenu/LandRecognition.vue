@@ -9,7 +9,7 @@
         </div>
         <div :class="['step-item', { 'active': predictCurrent === 1 }]">
           <div class="step-number">2</div>
-          <div class="step-title">预测结果</div>
+          <div class="step-title">分类结果</div>
         </div>
       </div>
     </div>
@@ -21,7 +21,7 @@
           <!-- 表单列 -->
           <div class="form-column-full">
             <el-form-item label="可用模型" :required="true">
-              <el-select v-model="selectedModel" placeholder="请选择预测模型">
+              <el-select v-model="selectedModel" placeholder="请选择分类模型">
                 <el-option v-for="model in models" :key="model.id" :label="model.modelInfo || model.modelName"
                   :value="model.modelName"></el-option>
               </el-select>
@@ -45,8 +45,8 @@
               </el-form-item>
             </div>
 
-            <!-- 预测参数选项 -->
-            <el-form-item label="预测参数">
+            <!-- 分类参数选项 -->
+            <el-form-item label="分类参数">
               <el-checkbox-group v-model="predictOptions">
                 <el-checkbox v-for="option in allPredictOptions" :key="option.value" :label="option.value"
                   :disabled="!isOptionAvailable(option.value, 'predict')">
@@ -91,7 +91,7 @@
             <div class="button-group">
               <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading"
                 :disabled="isPolling">
-                {{ isPolling ? '任务执行中...' : '开始预测' }}
+                {{ isPolling ? '任务执行中...' : '开始分类' }}
               </el-button>
             </div>
 
@@ -110,7 +110,7 @@
             <div class="button-group">
               <el-button @click="fetchResultFiles" type="success" :loading="loadingResults"
                 :disabled="!selectedModel || !observationDate">
-                获取预测结果
+                获取分类结果
               </el-button>
             </div>
           </div>
@@ -118,13 +118,13 @@
       </el-form>
     </div>
 
-    <!-- 预测结果页面 -->
+    <!-- 分类结果页面 -->
     <div class="result-container" v-if="predictCurrent === 1">
       <div class="result-content">
         <!-- 图片展示区域 -->
         <div class="image-section" v-if="previewData">
           <div class="result-image">
-            <img :src="previewData" alt="预测结果预览" />
+            <img :src="previewData" alt="分类结果预览" />
           </div>
           <el-button @click="openImageDialog" type="primary" plain class="view-full-button">
             <el-icon>
@@ -172,7 +172,7 @@
             上一步
           </el-button>
           <el-button @click="handlePredictContinue" class="submit-button" type="primary" :icon="Refresh">
-            继续预测
+            继续分类
           </el-button>
         </div>
       </div>
@@ -636,10 +636,10 @@ const checkTaskStatus = async () => {
   }
 }
 
-// 处理预测请求
+// 处理分类请求
 const handlePredict = () => {
   if (!selectedModel.value) {
-    message.error('请选择预测模型')
+    message.error('请选择分类模型')
     return
   }
 
@@ -693,11 +693,11 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测任务已提交，正在等待执行结果...')
+        message.success('分类任务已提交，正在等待执行结果...')
         // 不立即跳转，开始轮询任务状态
         startPolling()
       } else {
-        const msg = response?.msg || '预测任务提交失败'
+        const msg = response?.msg || '分类任务提交失败'
         error.value = msg
         message.error(msg)
       }
@@ -902,7 +902,7 @@ const handlePredictPrevious = () => {
   }
 }
 
-// 继续预测（同时停止轮询）
+// 继续分类（同时停止轮询）
 const handlePredictContinue = () => {
   stopPolling()
   predictCurrent.value = 0

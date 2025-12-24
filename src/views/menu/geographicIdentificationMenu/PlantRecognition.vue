@@ -9,7 +9,7 @@
         </div>
         <div :class="['step-item', { 'active': predictCurrent === 1 }]">
           <div class="step-number">2</div>
-          <div class="step-title">预测结果</div>
+          <div class="step-title">反演结果</div>
         </div>
       </div>
     </div>
@@ -21,7 +21,7 @@
           <!-- 表单列 -->
           <div class="form-column-full">
             <el-form-item label="可用模型" :required="true">
-              <el-select v-model="selectedModel" placeholder="请选择预测模型">
+              <el-select v-model="selectedModel" placeholder="请选择反演模型">
                 <el-option v-for="model in models" :key="model.id" :label="model.modelInfo || model.modelName"
                   :value="model.modelName"></el-option>
               </el-select>
@@ -33,8 +33,8 @@
                 value-format="YYYY-MM-DD" :disabled-date="disabledDate" style="width: 100%"></el-date-picker>
             </el-form-item>
 
-            <!-- 预测参数选项 -->
-            <el-form-item label="预测参数">
+            <!-- 反演参数选项 -->
+            <el-form-item label="反演参数">
               <el-checkbox-group v-model="predictOptions">
                 <el-checkbox v-for="option in allPredictOptions" :key="option.value" :label="option.value"
                   :disabled="!isOptionAvailable(option.value, 'predict')">
@@ -54,7 +54,7 @@
               </div>
             </el-form-item> -->
 
-            <!-- 在预测参数和按钮组之间添加轮询状态 -->
+            <!-- 在反演参数和按钮组之间添加轮询状态 -->
             <div v-if="isPolling" class="polling-status">
               <el-alert title="任务正在执行中，请稍候..." type="info" :closable="false" show-icon>
                 <template #default>
@@ -79,7 +79,7 @@
             <div class="button-group">
               <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading"
                 :disabled="isPolling">
-                {{ isPolling ? '任务执行中...' : '开始预测' }}
+                {{ isPolling ? '任务执行中...' : '开始反演' }}
               </el-button>
             </div>
 
@@ -120,7 +120,7 @@
             <div class="button-group">
               <el-button @click="handleGetResults" type="success" :loading="loadingResults"
                 :disabled="!selectedModel || !observationDate">
-                获取预测结果
+                获取反演结果
               </el-button>
             </div>
 
@@ -161,13 +161,13 @@
       </el-form>
     </div>
 
-    <!-- 预测结果页面 -->
+    <!-- 反演结果页面 -->
     <div class="result-container" v-if="predictCurrent === 1">
       <div class="result-content">
         <!-- 图片展示区域 -->
         <div class="image-section" v-if="previewData">
           <div class="result-image">
-            <img :src="previewData" alt="预测结果预览" />
+            <img :src="previewData" alt="反演结果预览" />
           </div>
           <el-button @click="openImageDialog" type="primary" plain class="view-full-button">
             <el-icon>
@@ -216,7 +216,7 @@
             上一步
           </el-button>
           <el-button @click="handlePredictContinue" class="submit-button" type="primary" :icon="Refresh">
-            继续预测
+            继续反演
           </el-button>
         </div>
       </div>
@@ -565,21 +565,21 @@ const fetchModels = () => {
       if (response?.code === 'SUCCESS') {
         const allModels = response?.body || []
 
-        // 过滤预测模型
+        // 过滤反演模型
         models.value = allModels.filter(model => {
           if (!model.functions) return false
           const functionList = model.functions.split(',').map(func => func.trim())
-          // 排除纯训练模型，只保留包含预测功能的模型
+          // 排除纯训练模型，只保留包含反演功能的模型
           return !functionList.includes('train') &&
             functionList.some(func =>
               ['preview_png', 'confusion_matrix', 'class_stats', 'heatmaps_summary'].includes(func)
             )
         })
 
-        // 过滤训练模型 - 包含原有训练模型和指定的预测模型
+        // 过滤训练模型 - 包含原有训练模型和指定的反演模型
         trainModels.value = allModels.filter(model => {
           if (!model.functions) return false
-          // 包括训练模型和指定的预测模型
+          // 包括训练模型和指定的反演模型
           return model.functions === 'train' ||
             model.modelName === 'fanyanV2' ||
             model.modelName === 'fanyanRF'
@@ -592,7 +592,7 @@ const fetchModels = () => {
             currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
           }
         } else {
-          message.warning('未找到可用预测模型')
+          message.warning('未找到可用反演模型')
         }
 
         if (trainModels.value.length > 0) {
@@ -608,10 +608,10 @@ const fetchModels = () => {
       message.error('请求失败: ' + error.message)
     })
 }
-// 处理预测请求
+// 处理反演请求
 const handlePredict = () => {
   if (!selectedModel.value) {
-    message.error('请选择预测模型')
+    message.error('请选择反演模型')
     return
   }
 
@@ -652,11 +652,11 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测任务已提交，正在等待执行结果...')
+        message.success('反演任务已提交，正在等待执行结果...')
         // 不立即跳转，开始轮询任务状态
         startPolling()
       } else {
-        const msg = response?.msg || '预测失败'
+        const msg = response?.msg || '反演失败'
         error.value = msg
         message.error(msg)
       }
@@ -791,7 +791,7 @@ const fetchTifFile = () => {
     })
 }
 
-// 处理获取预测结果 - 只跳转不调用接口
+// 处理获取反演结果 - 只跳转不调用接口
 const handleGetResults = () => {
   if (!selectedModel.value) {
     message.error('请选择模型')
@@ -1073,7 +1073,7 @@ const handlePredictPrevious = () => {
   }
 }
 
-// 继续预测
+// 继续反演
 const handlePredictContinue = () => {
   predictCurrent.value = 0
   emit('continue-predict')

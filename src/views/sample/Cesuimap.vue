@@ -1921,8 +1921,8 @@ async function initializeCesium() {
       name: " 地表水资源",
       className: "water",
       position: { lng: 114.358, lat: 34.805 },
-      imgSrc: "/images/水体/5.产品数据-月间水体变化/水域面积时序.png",
-      imgSrc2: "/images/水体/6.产品数据-水体面积折线图/水域面积变化图.png",
+      imgSrc: "/images/各月份水体/25-0624.png",
+      imgSrc2: "/images/年间水体变化/2425.png",
     },
     {
       id: "vegetationCoverMonitor",
@@ -1941,7 +1941,7 @@ async function initializeCesium() {
       position: { lng: 114.365, lat: 34.79 },
       imgSrc:
         "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
-      imgSrc2: "/images/地物分类/3.产品数据-原始图像/202506开封数据制图.png",
+      imgSrc2: "/images/地物分类/2020-2025年地表水环境格局演变产品/稳定区域.png",
     },
     {
       id: "RSEIMonitor",
@@ -1950,7 +1950,7 @@ async function initializeCesium() {
       position: { lng: 114.3472038, lat: 34.7961106 },
       imgSrc:
         "/images/生态/遥感生态指数分布产品/24年8月.png",
-      imgSrc2: "/images/生态/遥感生态指数变化产品/24年4月至24年8月.png",
+      imgSrc2: "/images/生态/遥感生态指数变化产品/20年9月至24年8月.png",
     }
   ];
 

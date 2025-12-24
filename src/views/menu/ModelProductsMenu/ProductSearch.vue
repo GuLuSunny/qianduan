@@ -472,10 +472,11 @@ function downloadFile(row) {
   })
     .then((res) => {
       loadingInstance.close()
-      
+      const response = res.response?.value || res
+
       // 创建 Blob 对象
-      const blob = new Blob([res], { 
-        type: getMimeType(row.filename) 
+      const blob = new Blob([response], { 
+        type: getMimeType(row.type) 
       })
       
       // 创建下载链接
@@ -484,7 +485,14 @@ function downloadFile(row) {
       link.href = url
       
       // 设置下载文件名 - 兼容 Linux 和 Windows
-      const fileName = row.filename || `download_${row.id}`
+            // 设置下载文件名 - 兼容 Linux 和 Windows
+      let fileName = row.filename || `download_${row.id}`
+
+      // 如果文件名没有扩展名，尝试从type字段添加
+      if (!fileName.includes('.') && row.type) {
+        fileName = `${fileName}.${row.type.toLowerCase()}`
+      }
+
       link.setAttribute('download', fileName)
       
       // 兼容不同平台的下载方式
@@ -504,8 +512,8 @@ function downloadFile(row) {
 }
 
 // 根据文件名获取 MIME 类型
-function getMimeType(filename) {
-  const ext = filename.split('.').pop().toLowerCase()
+function getMimeType(type) {
+  const ext = type
   const mimeTypes = {
     'png': 'image/png',
     'jpg': 'image/jpeg',

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <!-- 植被覆盖度变化检测功能 -->
+        <!-- 植被覆盖度变化生产功能 -->
         <div class="feature-container">
             <!-- 自定义步骤条 -->
             <div class="steps-container">
@@ -11,7 +11,7 @@
                     </div>
                     <div :class="['step-item', { 'active': predictCurrent === 1 }]">
                         <div class="step-number">2</div>
-                        <div class="step-title">检测结果</div>
+                        <div class="step-title">生产结果</div>
                     </div>
                 </div>
             </div>
@@ -133,7 +133,7 @@
                                 <el-checkbox-group v-model="outputOptions">
                                     <el-checkbox label="change_stats">变化统计</el-checkbox>
                                     <el-checkbox label="change_image">变化预览图</el-checkbox>
-                                    <el-checkbox label="classified_tif">分类结果下载</el-checkbox>
+                                    <el-checkbox label="classified_tif">分析结果下载</el-checkbox>
                                     <el-checkbox label="raw_tif">原始变化数据下载</el-checkbox>
                                 </el-checkbox-group>
                             </el-form-item>
@@ -141,7 +141,7 @@
                             <div class="button-group">
                                 <el-button @click="handleChangeDetection" class="submit-button" type="primary"
                                     :loading="detectionLoading" :disabled="!earlyFileObject || !lateFileObject">
-                                    {{ detectionLoading ? '处理中...' : '开始检测' }}
+                                    {{ detectionLoading ? '处理中...' : '开始生产' }}
                                 </el-button>
                             </div>
                         </div>
@@ -149,7 +149,7 @@
                 </el-form>
             </div>
 
-            <!-- 检测结果页面 -->
+            <!-- 生产结果页面 -->
             <div class="result-container" v-if="predictCurrent === 1">
                 <div class="result-content">
                     <!-- 结果内容区域 - 左右布局 -->
@@ -331,7 +331,7 @@
                         </el-button>
                         <el-button @click="handleDetectionContinue" type="primary" :icon="Refresh"
                                    class="animate__animated" @mouseenter="animateButton($event)">
-                            继续检测
+                            继续生产
                         </el-button>
                     </div>
                 </div>
@@ -498,7 +498,7 @@ function beforeUpload(file, expectedType) {
     return true
 }
 
-//变化检测处理
+//变化生产处理
 const handleChangeDetection = async () => {
     if (!earlyFileObject.value || !lateFileObject.value) {
         message.error('请上传早期和后期FVC文件')
@@ -525,7 +525,7 @@ const handleChangeDetection = async () => {
         const response = res?.response?.value || res?.value || res
 
         if (response?.code === 'SUCCESS') {
-            message.success('植被覆盖度变化检测完成')
+            message.success('植被覆盖度变化生产完成')
             const body = response.body
 
             // 解析统计数据
@@ -625,14 +625,14 @@ const handleChangeDetection = async () => {
             }
             predictCurrent.value = 1
         } else {
-            const msg = response?.msg || '检测失败'
+            const msg = response?.msg || '生产失败'
             error.value = msg
             message.error(msg)
         }
     } catch (err) {
-        console.error('检测失败:', err)
-        error.value = '检测失败: ' + err.message
-        message.error('检测失败: ' + err.message)
+        console.error('生产失败:', err)
+        error.value = '生产失败: ' + err.message
+        message.error('生产失败: ' + err.message)
     } finally {
         detectionLoading.value = false
     }

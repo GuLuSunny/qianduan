@@ -11,7 +11,7 @@
           </div>
           <div :class="['step-item', { 'active': predictCurrent === 1 }]">
             <div class="step-number">2</div>
-            <div class="step-title">预测结果</div>
+            <div class="step-title">生产结果</div>
           </div>
         </div>
       </div>
@@ -115,8 +115,8 @@
                 </div>
               </el-form-item>
               
-              <!-- 预测参数选项 -->
-              <el-form-item label="预测参数">
+              <!-- 生产参数选项 -->
+              <el-form-item label="生产参数">
                 <el-checkbox-group v-model="predictOptions">
                   <el-checkbox label="change_stats">变化统计</el-checkbox>
                   <el-checkbox label="change_image">变化预览</el-checkbox>
@@ -132,7 +132,7 @@
                   :loading="predictLoading"
                   :disabled="!earlyFileObject || !lateFileObject"
                 >
-                  {{ predictLoading ? '上传并预测中...' : '开始预测' }}
+                  {{ predictLoading ? '上传并生产中...' : '开始生产' }}
                 </el-button>
               </div>
             </div>
@@ -140,7 +140,7 @@
         </el-form>
       </div>
 
-      <!-- 预测结果页面 -->
+      <!-- 生产结果页面 -->
       <div class="result-container" v-if="predictCurrent === 1">
         <div class="result-content">
           <!-- 结果内容区域 -->
@@ -213,7 +213,7 @@
               上一步
             </el-button>
             <el-button @click="handlePredictContinue" type="primary" :icon="RefreshRight">
-              继续预测
+              继续生产
             </el-button>
           </div>
         </div>
@@ -345,7 +345,7 @@ function beforeUpload(file) {
   return true
 }
 
-// 预测处理
+// 生产处理
 const handlePredict = async () => {
   if (!earlyFileObject.value || !lateFileObject.value) {
     message.error('请上传早期和后期文件')
@@ -380,7 +380,7 @@ const handlePredict = async () => {
     const response = res?.response?.value || res?.value || res
 
     if (response?.code === 'SUCCESS') {
-      message.success('预测完成')
+      message.success('生产完成')
       const body = response.body
       
       // 根据用户选择的参数显示对应的结果
@@ -400,14 +400,14 @@ const handlePredict = async () => {
       
       predictCurrent.value = 1
     } else {
-      const msg = response?.msg || '预测失败'
+      const msg = response?.msg || '生产失败'
       error.value = msg
       message.error(msg)
     }
   } catch (err) {
-    console.error('预测失败:', err)
-    error.value = '预测失败: ' + err.message
-    message.error('预测失败: ' + err.message)
+    console.error('生产失败:', err)
+    error.value = '生产失败: ' + err.message
+    message.error('生产失败: ' + err.message)
   } finally {
     predictLoading.value = false
   }

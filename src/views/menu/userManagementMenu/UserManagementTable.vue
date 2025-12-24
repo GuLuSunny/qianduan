@@ -33,8 +33,8 @@
             :disabled="!isButtonDelDisabled"
             >批量删除</el-button
           >
-          <el-button @click="addButton" class="searchButton"
-            ><el-icon> <DocumentAdd /> </el-icon>新增</el-button
+          <el-button @click="addButton" class="searchButton" 
+            ><el-icon> <UserFilled /> </el-icon>新增</el-button
           >
         </el-form-item>
       </el-form>
@@ -269,7 +269,7 @@ import {
   register
 } from '@/api/getData'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search,UserFilled } from '@element-plus/icons-vue'
 const multipleSelection = ref([]) // 用于存储多选框被选中的行数据
 const centerDialogVisible = ref(false) // 提示框
 const userInfoDialogFormVisible = ref(false) // 修改用户信息弹出框
@@ -629,13 +629,13 @@ const addSubmitForm = (formEl) => {
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
-      addUser()
+      addUserFunction()
     }
   })
 }
 
 // 调用信息新增接口
-function addUser () {
+function addUserFunction () {
   const loadingInstance = ElLoading.service(loadingoptions)
   // 或者使用展开运算符（更现代且简洁的方式）
   const requestObject = { ...infoAddForm.value }

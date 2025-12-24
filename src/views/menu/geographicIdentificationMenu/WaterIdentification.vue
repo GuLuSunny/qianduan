@@ -11,7 +11,7 @@
           </div>
           <div :class="['step-item', { 'active': predictCurrent === 1 }]">
             <div class="step-number">2</div>
-            <div class="step-title">预测结果</div>
+            <div class="step-title">生产结果</div>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@
             <el-form-item label="可用模型" :required="true">
               <el-select 
                 v-model="selectedModel" 
-                placeholder="请选择预测模型" 
+                placeholder="请选择生产模型" 
                 class="model-select"
                 @change="handleModelChange"
               >
@@ -106,8 +106,8 @@
               </el-select>
             </el-form-item>
 
-            <!-- 预测参数选项 -->
-            <el-form-item label="预测参数">
+            <!-- 生产参数选项 -->
+            <el-form-item label="生产参数">
               <el-checkbox-group v-model="predictOptions" class="checkbox-group">
                 <el-checkbox label="preview_png">预览图</el-checkbox>
                 <el-checkbox label="class_stats">检测参数</el-checkbox>
@@ -145,14 +145,14 @@
                 :loading="predictLoading"
                 :disabled="!selectedModel || !isFileSelectionValid"
               >
-                {{ predictLoading ? '上传并预测中...' : '开始预测' }}
+                {{ predictLoading ? '上传并生产中...' : '开始生产' }}
               </el-button>
             </div>
           </div>
         </el-form>
       </div>
 
-      <!-- 预测结果页面 -->
+      <!-- 生产结果页面 -->
       <div class="result-container" v-if="predictCurrent === 1">
         <div class="result-content">
           <!-- 结果内容区域 -->
@@ -182,7 +182,7 @@
               <div class="download-section">
                 <h3 class="result-title">结果文件下载</h3>
                 <el-button @click="downloadPrediction" type="primary" plain :icon="Download" class="download-button">
-                  下载预测结果
+                  下载生产结果
                 </el-button>
               </div>
             </div>
@@ -192,7 +192,7 @@
               <h3 class="result-title">预览图</h3>
               <div class="preview-container">
                 <div v-if="previewData" class="preview-image-wrapper">
-                  <img :src="previewData" alt="预测结果预览" class="preview-image" />
+                  <img :src="previewData" alt="生产结果预览" class="preview-image" />
                   <el-button @click="openImageDialog" type="primary" plain class="view-large-button">
                     <el-icon><ZoomIn /></el-icon>
                     查看大图
@@ -212,7 +212,7 @@
               上一步
             </el-button>
             <el-button @click="handlePredictContinue" type="primary" :icon="Refresh">
-              继续预测
+              继续生产
             </el-button>
           </div>
         </div>
@@ -285,7 +285,7 @@ const focusedInput = ref('')
 const predictCurrent = ref(0)
 const models = ref([])
 const selectedModel = ref('')
-// 默认勾选所有预测参数
+// 默认勾选所有生产参数
 const predictOptions = ref(['preview_png', 'class_stats', 'result_file_download'])
 const detectionData = ref({
   area: '0 km²',
@@ -318,7 +318,7 @@ const handleModelChange = (newModel) => {
   handleRemoveFile('sar')
   handleRemoveFile('optical')
   
-  // 根据新模型的功能更新预测参数
+  // 根据新模型的功能更新生产参数
   const currentModel = models.value.find(m => m.modelName === newModel)
   if (currentModel && currentModel.functions) {
     const availableFunctions = currentModel.functions.split(',')
@@ -457,7 +457,7 @@ const fetchModels = () => {
         if (models.value.length > 0) {
           selectedModel.value = models.value[0].modelName
           
-          // 根据第一个模型的功能设置默认预测参数
+          // 根据第一个模型的功能设置默认生产参数
           const firstModel = models.value[0]
           if (firstModel.functions) {
             const availableFunctions = firstModel.functions.split(',')
@@ -479,10 +479,10 @@ const fetchModels = () => {
     })
 }
 
-// 处理预测请求
+// 处理生产请求
 const handlePredict = async () => {
   if (!selectedModel.value) {
-    message.error('请选择预测模型')
+    message.error('请选择生产模型')
     return
   }
 
@@ -525,7 +525,7 @@ const handlePredict = async () => {
       formData.append('optFile', opticalFileObject.value)
     }
     
-    // 添加预测参数
+    // 添加生产参数
     formData.append('predictOptions', JSON.stringify(predictOptions.value))
     
     formData.append('userName', userinfo.username)
@@ -535,7 +535,7 @@ const handlePredict = async () => {
     const response = res?.response?.value || res?.value || res
 
     if (response?.code === 'SUCCESS') {
-      message.success('预测完成')
+      message.success('生产完成')
       
       // 保存检测参数数据
       if (response.body && response.body.length > 0) {
@@ -549,12 +549,12 @@ const handlePredict = async () => {
       
       predictCurrent.value = 1
     } else {
-      const msg = response?.msg || '预测失败'
+      const msg = response?.msg || '生产失败'
       message.error(msg)
     }
   } catch (err) {
-    console.error('预测失败:', err)
-    message.error('预测失败: ' + err.message)
+    console.error('生产失败:', err)
+    message.error('生产失败: ' + err.message)
   } finally {
     predictLoading.value = false
   }
@@ -605,10 +605,10 @@ const loadPreviewImage = async (imagePath) => {
   }
 }
 
-// 下载预测结果文件
+// 下载生产结果文件
 const downloadPrediction = async () => {
   if (!detectionData.value || !detectionData.value.prediction) {
-    message.error('没有可下载的预测结果文件');
+    message.error('没有可下载的生产结果文件');
     return;
   }
 
@@ -671,7 +671,7 @@ const handlePredictPrevious = () => {
   }
 }
 
-// 继续预测
+// 继续生产
 const handlePredictContinue = () => {
   predictCurrent.value = 0
 }

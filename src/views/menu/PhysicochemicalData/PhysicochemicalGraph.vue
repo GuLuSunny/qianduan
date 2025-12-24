@@ -256,6 +256,7 @@ function handleVisibleChange (visibility, type, searchTimeType) {
         }
       })
       .catch((error) => {
+        console.log(error)
         ElMessage({
           showClose: true,
           message: '获取数据失败，请稍后再试',
