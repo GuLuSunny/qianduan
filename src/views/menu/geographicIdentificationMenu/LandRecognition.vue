@@ -148,13 +148,15 @@
             <el-button @click="downloadFile('tif')" type="success" plain :icon="Download">
               TIF文件
             </el-button>
-
+            <el-button @click="downloadFile('preview_png')" type="success" plain :icon="Download">
+              png预览图
+            </el-button>
             <!-- <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
                       @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button> -->
-            <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')"
-              @click="downloadFile('evaluate')" type="primary" plain :icon="Download">
+            <el-button v-if="downloadFiles.class_stats && isOptionAvailable('class_stats', 'result')"
+              @click="downloadFile('class_stats')" type="primary" plain :icon="Download">
               统计报告
             </el-button>
 
@@ -253,20 +255,20 @@ const taskStartTime = ref(null)
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' }, // class_stats对应统计报告
+  { value: 'class_stats', label: '统计报告' }, // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' }, // heatmaps_summary对应热力图
 ])
 
 const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' }, // class_stats对应统计报告
+  { value: 'class_stats', label: '统计报告' }, // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' },
   { value: 'tif', label: 'TIF文件' }  // 添加TIF选项
 ])
 
-const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
-const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'tif']) // 默认包含tif
+const predictOptions = ref(['preview_png', 'confusion_matrix', 'class_stats', 'heatmap'])
+const resultOptions = ref(['preview_png', 'confusion_matrix', 'class_stats', 'tif']) // 默认包含tif
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -373,7 +375,7 @@ const form = computed(() => ({
 }))
 
 const hasDownloadableFiles = computed(() => {
-  return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate || downloadFiles.value.heatmap
+  return downloadFiles.value.confusion_matrix || downloadFiles.value.class_stats || downloadFiles.value.heatmap
 })
 
 // 检查是否可以下载热力图（模型为xgbv1且heatmaps_summary为true）
@@ -394,7 +396,7 @@ const isOptionAvailable = (optionValue, type) => {
   const functionMap = {
     'preview_png': 'preview_png',
     'confusion_matrix': 'confusion_matrix',
-    'evaluate': 'class_stats', // 前端统计报告对应后端class_stats
+    'class_stats': 'class_stats', // 前端统计报告对应后端class_stats
     'heatmap': 'heatmaps_summary' // 前端热力图对应后端heatmaps_summary
   }
 
@@ -665,7 +667,7 @@ const handlePredict = () => {
     modelName: selectedModel.value,
     preview_png: predictOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: predictOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: predictOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
+    class_stats: predictOptions.value.includes('class_stats') ? "True" : "False", // class_stats对应class_stats
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False", // heatmap对应heatmaps_summary
     userName: userinfo.username,
     createUserId: userinfo.id
@@ -742,7 +744,7 @@ const fetchResultFiles = () => {
     modelName: selectedModel.value,
     preview_png: resultOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: resultOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False",
+    class_stats: resultOptions.value.includes('class_stats') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
     className: "land"
@@ -830,16 +832,18 @@ const loadPreviewImage = () => {
 // 下载文件
 const downloadFile = (type) => {
   const fileNameMap = {
+    preview_png: `${selectedModel.value}_preview.png`,
     tif: `${selectedModel.value}_result.tif`,
     confusion_matrix: `${selectedModel.value}_confusion_matrix.png`,
-    evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应统计报告文件
+    class_stats: `${selectedModel.value}_class_stats.txt`, // class_stats对应统计报告文件
     heatmap: `class_heatmaps_summary.png`
   }
 
   const apiCallMap = {
+    preview_png: getLandResultPreview,
     tif: getLandResultTif, // 添加TIF下载接口
     confusion_matrix: getLandResultConfusionMatrix,
-    evaluate: getLandResultConfusionMatrixClassStats, // evaluate对应class_stats接口  
+    class_stats: getLandResultConfusionMatrixClassStats, // class_stats对应class_stats接口  
     heatmap: getLandResultHeatmap
   }
 
@@ -868,7 +872,7 @@ const downloadFile = (type) => {
       const response = res?.response?.value || res?.value || res
 
       const contentType = type === 'tif' ? 'image/tiff' :
-        type === 'evaluate' ? 'text/plain' : 'image/png'
+        type === 'class_stats' ? 'text/plain' : 'image/png'
 
       const blob = new Blob([response], {
         type: contentType

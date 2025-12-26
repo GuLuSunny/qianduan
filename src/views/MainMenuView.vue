@@ -170,16 +170,16 @@ const menus_pre = [
     items: [
       {
         key: '20',
-        title: '植被覆盖度产品生产',
+        title: '植被覆盖度分布产品生产',
         component: PlantCoverIdentification,
-        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度产品生产'],
+        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度分布产品生产'],
         pressionKey: 'menu_subE_d'
       },
       {
         key: '25',
-        title: '区域水生态状况产品生产',
+        title: '植被覆盖度演变产品生产',
         component: PlangtChange,
-        breadcrumb: ['地表水生态遥感产品生产', '区域水生态状况产品生产'],
+        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度演变产品生产'],
         pressionKey: 'menu_subE_d'
       }
     ]

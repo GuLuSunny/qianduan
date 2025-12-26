@@ -691,6 +691,7 @@ async function handleConfirm() {
     } else {
       message.error('部分文件上传失败，请检查后重新提交')
     }
+    loadingInstance.close()
   } else {
     // 双极化数据 - 使用新的多文件上传接口
     const formData = new FormData()
@@ -745,12 +746,15 @@ async function handleConfirm() {
             } catch (e) {
               console.error('解析响应失败:', e)
               message.error('上传过程中发生错误')
+              loadingInstance.close()
             }
           }
           reader.readAsText(response)
+          loadingInstance.close()
         } else {
           // 正常成功响应
           console.log(response)
+          loadingInstance.close()
           message.success(`成功上传 ${files.value.length} 个文件`)
           uploadCurrent.value = 2
         }
@@ -758,10 +762,10 @@ async function handleConfirm() {
       .catch((error) => {
         console.error('上传失败:', error)
         message.error('上传过程中发生错误')
+        loadingInstance.close()
       })
 
   }
-  loadingInstance.close()
 }
 
 // 继续提交 - 重置字段

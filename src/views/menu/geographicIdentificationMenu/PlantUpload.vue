@@ -196,8 +196,6 @@ const fullPolarizationFiles = [
   'VV.tif - 后向散射系数(VV)',
   'Pauli_b.tif - Pauli分解参数(Pauli_b)',
   'l1.tif - 相干矩阵(l1代替λ1)',
-  'l2.tif - 相干矩阵(l2代替λ2)',
-  'l3.tif - 相干矩阵(l3代替λ3)',
   'Span.tif - 相干矩阵(Span)',
   'Alpha.tif - Cloude-Pottier分解参数(Alpha)',
   'Entropy.tif - Cloude-Pottier分解参数(Entropy)',

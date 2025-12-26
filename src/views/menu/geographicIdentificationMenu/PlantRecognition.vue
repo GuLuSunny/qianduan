@@ -203,8 +203,8 @@
               @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button> -->
-            <el-button v-if="optionalOptions.evaluate && isOptionAvailable('evaluate', 'result')"
-              @click="downloadFile('evaluate')" type="primary" plain :icon="Download">
+            <el-button v-if="optionalOptions.class_stats && isOptionAvailable('class_stats', 'result')"
+              @click="downloadClassStatus" type="primary" plain :icon="Download">
               统计报告
             </el-button>
           </div>
@@ -285,13 +285,13 @@ const batchDownloadLoading = ref(false)
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' },
+  { value: 'class_stats', label: '统计报告' },
   // { value: 'heatmap', label: '热力图' },
 ])
 
 const optionalResultOptions = ref([
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' }
+  { value: 'class_stats', label: '统计报告' }
 ])
 
 const availableDates = ref([])
@@ -304,10 +304,10 @@ const permanentOptions = ref({
 
 const optionalOptions = ref({
   confusion_matrix: false,
-  evaluate: false
+  class_stats: false
 })
 
-const predictOptions = ref(['preview_png', 'evaluate'])
+const predictOptions = ref(['preview_png', 'class_stats'])
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -372,7 +372,7 @@ const form = computed(() => ({
 
 const hasDownloadableFiles = computed(() => {
   return permanentOptions.value.preview_png || permanentOptions.value.tif ||
-    optionalOptions.value.confusion_matrix || optionalOptions.value.evaluate
+    optionalOptions.value.confusion_matrix || optionalOptions.value.class_stats
 })
 
 // 检查选项是否可用
@@ -382,7 +382,7 @@ const isOptionAvailable = (optionValue, type) => {
   const functionMap = {
     'preview_png': 'preview_png',
     'confusion_matrix': 'confusion_matrix',
-    'evaluate': 'class_stats',
+    'class_stats': 'class_stats',
     'heatmap': 'heatmaps_summary'
   }
 
@@ -632,7 +632,7 @@ const handlePredict = () => {
     modelName: selectedModel.value,
     preview_png: predictOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: predictOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: predictOptions.value.includes('evaluate') ? "True" : "False",
+    class_stats: predictOptions.value.includes('class_stats') ? "True" : "False",
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
@@ -760,7 +760,6 @@ const fetchTifFile = () => {
     .then((res) => {
       console.log('获取TIF文件响应:', res)
 
-      const blob = res.data
       const response = res?.response?.value || res?.value || res
 
       if (response instanceof Blob && response.type === 'application/json') {
@@ -779,7 +778,7 @@ const fetchTifFile = () => {
 
       if (response) {
         downloadFiles.value.tif = response
-        message.success('TIF文件获取成功，请再次点击下载')
+        message.success('TIF文件获取成功')
       }
     })
     .catch((err) => {
@@ -788,6 +787,63 @@ const fetchTifFile = () => {
     })
     .finally(() => {
       loadingResults.value = false
+    })
+}
+
+// 获取TIF文件
+const fetchClasStatus = () => {
+  if (!selectedModel.value || !observationDate.value) {
+    message.error('请选择模型和观测日期')
+    return
+  }
+
+  const userData = localStorage.getItem('Userinfo')
+  if (!userData) {
+    message.error('用户信息未找到，请重新登录')
+    return
+  }
+
+  const userinfo = JSON.parse(userData)
+
+  loadingResults.value = true
+
+  const params = {
+    modelName: selectedModel.value,
+    type: 'txt',
+    userName: userinfo.username,
+    createUserId: userinfo.id,
+    observationTime: observationDate.value,
+    className: "plant"
+  }
+
+  getPlantResultByType(params)
+    .then((res) => {
+      console.log('获取统计报告响应:', res)
+
+      const response = res?.response?.value || res?.value || res
+
+      if (response instanceof Blob && response.type === 'application/json') {
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const errorJson = JSON.parse(reader.result)
+            message.error(errorJson.msg || '获取统计报告失败')
+          } catch (e) {
+            message.error('获取统计报告失败')
+          }
+        }
+        reader.readAsText(response)
+        return
+      }
+
+      if (response) {
+        downloadFiles.value.txt = response
+        message.success('统计报告获取成功')
+      }
+    })
+    .catch((err) => {
+      console.error('获取统计报告失败:', err)
+      handleErrorResponse(err.response?.data || err.message)
     })
 }
 
@@ -861,7 +917,6 @@ const downloadTifFile = () => {
   if (!downloadFiles.value.tif) {
     // 如果还没有获取TIF文件，先获取再下载
     fetchTifFile()
-    return
   }
 
   const blob = downloadFiles.value.tif
@@ -878,6 +933,23 @@ const downloadTifFile = () => {
   setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 }
 
+const downloadClassStatus=()=>{
+  if(!downloadFiles.value.txt){
+    fetchClasStatus()
+  }
+  const blob = downloadFiles.value.tif
+  const fileName = `${observationDate.value}-${selectedModel.value}__class_stats.txt`
+
+  const downloadUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = downloadUrl
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
+}
 // 下载模型文件 - 修复版本
 const handleDownloadModel = () => {
   if (!selectedTrainModel.value) {
