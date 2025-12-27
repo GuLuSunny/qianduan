@@ -1921,8 +1921,8 @@ async function initializeCesium() {
       name: " 地表水资源",
       className: "water",
       position: { lng: 114.358, lat: 34.805 },
-      imgSrc: "/images/各月份水体/25-0624.png",
-      imgSrc2: "/images/年间水体变化/2425.png",
+      imgSrc: "/images/水体/水资源分布产品图/2024-09.jpg",
+      imgSrc2: "/images/水体/水资源变化产品图/2023-2024.png",
     },
     {
       id: "vegetationCoverMonitor",
@@ -1930,9 +1930,9 @@ async function initializeCesium() {
       className: "plant",
       position: { lng: 114.33, lat: 34.81 },
       imgSrc:
-        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240625FVC.png",
+        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240716FVC.png",
       imgSrc2:
-        "/images/植被覆盖度/变化产品/2024-38.png",
+        "/images/植被覆盖度/变化产品/2024-67.png",
     },
     {
       id: "landCoverMonitor",
@@ -1940,17 +1940,17 @@ async function initializeCesium() {
       className: "land",
       position: { lng: 114.365, lat: 34.79 },
       imgSrc:
-        "/images/地物分类/4.产品数据-2020及2025年地物分布/开封制图2020.png",
-      imgSrc2: "/images/地物分类/2020-2025年地表水环境格局演变产品/稳定区域.png",
+        "/images/地物分类/4.产品数据-2020及2025年地物分布/2020.png",
+      imgSrc2: "/images/地物分类/2020-2025年地表水环境格局演变产品/增长.png",
     },
     {
       id: "RSEIMonitor",
-      name: "遥感生态指数",
+      name: "生态指数",
       className: "RSEI",
       position: { lng: 114.3472038, lat: 34.7961106 },
       imgSrc:
-        "/images/生态/遥感生态指数分布产品/24年8月.png",
-      imgSrc2: "/images/生态/遥感生态指数变化产品/20年9月至24年8月.png",
+        "/images/生态/遥感生态指数分布产品/20年4月.png",
+      imgSrc2: "/images/生态/遥感生态指数变化产品/20年4月至24年4月.png",
     }
   ];
 
@@ -2242,7 +2242,12 @@ async function onEntityClick(movement) {
       // 赋值双弹窗数据
       leftPopupTitle.value = monitorData.name + "分布产品";
       leftPopupImgSrc.value = monitorData.imgSrc;
-      rightPopupTitle.value = monitorData.name + "变化产品";
+      if(monitorData.className=="land")
+      {
+        rightPopupTitle.value = monitorData.name + "演变产品";  
+      }else{
+        rightPopupTitle.value = monitorData.name + "变化产品";
+      }
       rightPopupImgSrc.value = monitorData.imgSrc2;
       // 显示双弹窗（缩小间距）
       clickPopupShowLeft.value = true;

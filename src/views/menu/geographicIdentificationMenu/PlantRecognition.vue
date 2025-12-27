@@ -96,15 +96,16 @@
                     :disabled="!isOptionAvailable('preview_png', 'result')" label="preview_png">
                     预览图
                   </el-checkbox>
-                  <el-checkbox v-model="permanentOptions.tif" label="tif" disabled>
-                    TIF格式（默认）
-                  </el-checkbox>
-
                   <!-- 可选功能 -->
                   <el-checkbox v-for="option in optionalResultOptions" :key="option.value" :label="option.value"
                     :disabled="!isOptionAvailable(option.value, 'result')" v-model="optionalOptions[option.value]">
                     {{ option.label }}
                   </el-checkbox>
+                  <el-checkbox v-model="permanentOptions.tif" label="tif" disabled>
+                    TIF格式（默认）
+                  </el-checkbox>
+
+
                 </div>
               </div>
             </el-form-item>
@@ -192,7 +193,10 @@
               @click="downloadPreviewImage" type="primary" plain :icon="Download">
               下载预览图
             </el-button>
-
+            <el-button v-if="optionalOptions.class_stats && isOptionAvailable('class_stats', 'result')"
+              @click="downloadClassStatus" type="primary" plain :icon="Download">
+              统计报告
+            </el-button>
             <!-- TIF文件下载 -->
             <el-button v-if="permanentOptions.tif" @click="downloadTifFile" type="success" plain :icon="Download">
               下载TIF文件
@@ -203,10 +207,7 @@
               @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button> -->
-            <el-button v-if="optionalOptions.class_stats && isOptionAvailable('class_stats', 'result')"
-              @click="downloadClassStatus" type="primary" plain :icon="Download">
-              统计报告
-            </el-button>
+
           </div>
         </div>
 
@@ -778,7 +779,7 @@ const fetchTifFile = () => {
 
       if (response) {
         downloadFiles.value.tif = response
-        message.success('TIF文件获取成功')
+        message.success('TIF文件获取校验成功,请再次点击下载！')
       }
     })
     .catch((err) => {
@@ -838,7 +839,7 @@ const fetchClasStatus = () => {
 
       if (response) {
         downloadFiles.value.txt = response
-        message.success('统计报告获取成功')
+        message.success('统计报告获取校验成功,请再次点击下载！')
       }
     })
     .catch((err) => {
@@ -917,6 +918,7 @@ const downloadTifFile = () => {
   if (!downloadFiles.value.tif) {
     // 如果还没有获取TIF文件，先获取再下载
     fetchTifFile()
+    return
   }
 
   const blob = downloadFiles.value.tif
@@ -933,11 +935,12 @@ const downloadTifFile = () => {
   setTimeout(() => URL.revokeObjectURL(downloadUrl), 100)
 }
 
-const downloadClassStatus=()=>{
-  if(!downloadFiles.value.txt){
+const downloadClassStatus = () => {
+  if (!downloadFiles.value.txt) {
     fetchClasStatus()
+    return
   }
-  const blob = downloadFiles.value.tif
+  const blob = downloadFiles.value.txt
   const fileName = `${observationDate.value}-${selectedModel.value}__class_stats.txt`
 
   const downloadUrl = URL.createObjectURL(blob)
@@ -1143,11 +1146,13 @@ const handlePredictPrevious = () => {
   if (predictCurrent.value > 0) {
     predictCurrent.value -= 1
   }
+  loadingResults.value=false
 }
 
 // 继续反演
 const handlePredictContinue = () => {
   predictCurrent.value = 0
+  loadingResults.value = false
   emit('continue-predict')
 }
 

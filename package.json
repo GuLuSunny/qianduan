@@ -1,6 +1,6 @@
 {
-  "name": "ydsw1",
-  "version": "0.1.0",
+  "name": "地表水资源综合信息遥感监测系统",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

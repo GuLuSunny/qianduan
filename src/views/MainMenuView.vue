@@ -148,16 +148,16 @@ const menus_pre = [
     items: [
       {
         key: '18',
-        title: '水生态格局分布产品生产',
+        title: '水环境格局分布产品生产',
         component: LandIdentification,
-        breadcrumb: ['地表水环境遥感产品生产', '水生态格局分布产品生产'],
+        breadcrumb: ['地表水环境遥感产品生产', '水环境格局分布产品生产'],
         pressionKey: 'menu_subE_b'
       },
       {
         key: '24',
-        title: '水生态格局演变产品生产',
+        title: '水环境格局演变产品生产',
         component: LandChange,
-        breadcrumb: ['地表水环境遥感产品生产', '水生态格局演变产品生产'],
+        breadcrumb: ['地表水环境遥感产品生产', '水环境格局演变产品生产'],
         pressionKey: 'menu_subE_b'
       }
     ]
@@ -177,9 +177,9 @@ const menus_pre = [
       },
       {
         key: '25',
-        title: '植被覆盖度演变产品生产',
+        title: '植被覆盖度变化产品生产',
         component: PlangtChange,
-        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度演变产品生产'],
+        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度变化产品生产'],
         pressionKey: 'menu_subE_d'
       }
     ]

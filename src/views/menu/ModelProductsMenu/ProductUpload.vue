@@ -173,11 +173,11 @@ const classNameInfo = ref({
   'plant': '地表水生态',
   'plantChange': '地表水生态变化',
   'land': '地表水环境',
-  'landChange': '地表水环境变化',
+  'landChange': '地表水格局演变',
   'water': '地表水资源',
   'waterChange': '地表水资源变化',
-  'RSEI': '遥感生态指数',
-  'RSEIChange': '遥感生态指数变化'
+  'RSEI': '生态指数',
+  'RSEIChange': '生态指数变化'
 })
 
 // 计算属性
