@@ -205,13 +205,13 @@ const menus_pre = [
     title: '地表水文数据查询',
     icon: FormOutlined,
     items: [
-      // {
-      //   key: '5',
-      //   title: '气象',
-      //   component: atmosphereQuery,
-      //   breadcrumb: ['数据查询', '气象'],
-      //   pressionKey: 'menu_subB_a'
-      // },
+      {
+        key: '5',
+        title: '气象',
+        component: atmosphereQuery,
+        breadcrumb: ['数据查询', '气象'],
+        pressionKey: 'menu_subB_a'
+      },
       // {
       //   key: '6',
       //   title: '水鸟',

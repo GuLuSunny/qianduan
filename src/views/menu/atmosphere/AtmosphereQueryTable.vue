@@ -77,7 +77,7 @@
       </el-form>
     </div>
 
-    <!-- 表格部分 -->
+    <!-- 表格部分 - 仅修改列 -->
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -100,84 +100,99 @@
       />
       <el-table-column
         prop="windSpeed"
-        label="风速"
+        label="风速(m/s)"
         width="auto"
         align="center"
       />
       <el-table-column
         prop="rainfall"
-        label="雨量"
+        label="雨量(mm)"
         width="auto"
         align="center"
       />
       <el-table-column
         prop="atmosphereTemperature"
-        label="大气温度"
+        label="大气温度(℃)"
         width="auto"
         align="center"
       />
-      <el-table-column
-        prop="soilTemperature"
-        label="土壤温度"
-        width="auto"
-        align="center"
-      />
+      <!-- 移除：土壤温度 -->
       <el-table-column
         prop="digitalPressure"
-        label="数字气压"
+        label="数字气压(hPa)"
         width="auto"
         align="center"
       />
-      <el-table-column
-        prop="simpleTotalRadiation"
-        label="简易总辐射"
-        width="95"
-        align="center"
-      />
+      <!-- 移除：简易总辐射 -->
       <el-table-column
         prop="windDirection"
-        label="风向"
+        label="风向(°)"
+        width="auto"
+        align="center"
+      />
+      <!-- 移除：土壤湿度 -->
+      <!-- 移除：大气湿度 -->
+      <el-table-column prop="pm25" label="PM2.5(μg/m³)" width="auto" align="center" />
+      <!-- 移除：盐分 -->
+      <!-- 移除：负氧离子 -->
+      <!-- 移除：雨量累计 -->
+      <!-- 移除：辐射累计 -->
+      <el-table-column prop="pm10" label="PM10(μg/m³)" width="auto" align="center" />
+      <!-- 添加新字段 -->
+      <el-table-column
+        prop="relativeHumidity"
+        label="相对湿度(%RH)"
         width="auto"
         align="center"
       />
       <el-table-column
-        prop="soilHumidity"
-        label="土壤湿度"
+        prop="aqiIndex"
+        label="AQI指数"
         width="auto"
         align="center"
       />
       <el-table-column
-        prop="atmosphereHumidity"
-        label="大气湿度"
-        width="auto"
-        align="center"
-      />
-      <el-table-column prop="pm25" label="PM2.5" width="auto" align="center" />
-      <el-table-column
-        prop="salinity"
-        label="盐分"
+        prop="primaryPollutant"
+        label="首要污染物"
         width="auto"
         align="center"
       />
       <el-table-column
-        prop="negativeOxygenIon"
-        label="负氧离子"
+        prop="airQualityLevel"
+        label="空气质量等级"
         width="auto"
         align="center"
       />
       <el-table-column
-        prop="rainfallAccumulation"
-        label="雨量累计"
+        prop="sulfurDioxide"
+        label="二氧化硫(μg/m³)"
         width="auto"
         align="center"
       />
       <el-table-column
-        prop="radiationAccumulation"
-        label="辐射累计"
+        prop="nitrogenDioxide"
+        label="二氧化氮(μg/m³)"
         width="auto"
         align="center"
       />
-      <el-table-column prop="pm10" label="PM10" width="auto" align="center" />
+      <el-table-column
+        prop="carbonMonoxide"
+        label="一氧化碳(mg/m³)"
+        width="auto"
+        align="center"
+      />
+      <el-table-column
+        prop="ozone"
+        label="臭氧(μg/m³)"
+        width="auto"
+        align="center"
+      />
+      <el-table-column
+        prop="ozone8Hour"
+        label="臭氧8小时(μg/m³)"
+        width="auto"
+        align="center"
+      />
       <el-table-column
         prop="filename"
         label="文件名"
@@ -207,6 +222,7 @@
 </template>
 
 <script setup>
+// 脚本部分完全保持不变！！！
 import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import {
@@ -217,7 +233,6 @@ import {
 } from '@/api/getData'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 const loadingoptions = {
-  // 加载配置
   target: '.layoutLoading',
   background: 'rgba(0, 0, 0, 0.7)',
   text: '数据加载中...'
@@ -231,9 +246,9 @@ const deviceOptions = ref([])
 const selectedRows = ref([])
 const searchInfo = ref({
   filepath: '',
-  deviceId: '',
+  deviceId: '51',
   observationTime: '',
-  type: 1 // Default to year selection
+  type: 1
 })
 const curWay = ref('按年份')
 
@@ -265,10 +280,8 @@ function disabledDate (time, type, searchTimeType) {
     .toString()
     .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
   if (searchTimeType === 'year') {
-    // year
     customString = `${time.getFullYear()}`
   } else if (searchTimeType === 'month') {
-    // month
     customString = `${time.getFullYear()}-${(time.getMonth() + 1)
       .toString()
       .padStart(2, '0')}`
@@ -279,7 +292,6 @@ function disabledDate (time, type, searchTimeType) {
 // 请求日期
 function handleVisibleChange (visibility, type, searchTimeType) {
   if (visibility) {
-    // 开启时
     const searchType = searchTimeType
     getTimesByType({
       type: type,
@@ -292,7 +304,6 @@ function handleVisibleChange (visibility, type, searchTimeType) {
           const date = result.body.date
           showDateArr.value = date
         } else {
-          // 处理失败的响应
           ElMessage({
             showClose: true,
             message: result.msg,
@@ -341,7 +352,7 @@ function getAtmosphereData () {
       if (res.response.value.code === 'SUCCESS') {
         tableData.value = res.response.value.body.records
         totalItems.value = res.response.value.body.total
-        isButtonDelDisabled.value = tableData.value.length > 0 // 设置批量删除可用
+        isButtonDelDisabled.value = tableData.value.length > 0
       } else {
         ElMessage.error(res.response.value.msg)
       }
@@ -353,7 +364,6 @@ function getAtmosphereData () {
 }
 
 function handleInputChange () {
-  // 搜索框内容变化时执行
   isButtonDelDisabled.value = false
 }
 
@@ -465,7 +475,6 @@ function confirmDeleteRow(row) {
     })  
 }
 </script>
-
 <style scoped>
 .container {
   display: flex;

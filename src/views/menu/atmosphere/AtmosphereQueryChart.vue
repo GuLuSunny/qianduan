@@ -72,9 +72,9 @@
       style="width: 70%; height: auto; table-layout: fixed"
       :header-cell-style="{ backgroundColor: '#f2f2f2' }"
     >
-      <el-table-column prop="monthMin" label="日最低数据" align="center" />
-      <el-table-column prop="monthAvg" label="日最高数据" align="center" />
-      <el-table-column prop="monthMax" label="日平均数据" align="center" />
+      <el-table-column prop="monthMin" label="月最小值" align="center" />
+      <el-table-column prop="monthAvg" label="月平均值" align="center" />
+      <el-table-column prop="monthMax" label="月最大值" align="center" />
     </el-table>
   </div>
 </template>
@@ -85,42 +85,53 @@ import { ElMessage, ElLoading } from 'element-plus'
 import {
   findAtmosphere,
   getTimesByType,
-  queryDeviceByMultiWord
+  queryDeviceByMultiWord,
+  selectByMonthAndDevice  // 新增接口
 } from '@/api/getData'
 import { ref, onMounted, getCurrentInstance, watch, computed } from 'vue'
 
+
 const datePicked = ref('')
 const sitePicked = ref(null)
-const selectedValue = ref(10)
+const selectedValue = ref(6) // 修改默认选中值为PM2.5
 const periodDataList = ref([])
-const atmosphereData = ref([{ monthMin: 0, monthAvg: 0, monthMax: 0 }]) // Define atmosphereData
+const atmosphereData = ref([{ monthMin: 0, monthAvg: 0, monthMax: 0 }]) // 统计数据显示
 const chart = ref()
 const deviceOptions = ref([])
-const isLoading = ref(true) // 加载状态 
+const isLoading = ref(true)
+const monthlyStatistics = ref({}) // 存储从新接口获取的月度统计数据
 let myChart = null
 const loadingoptions = {
-  // 加载配置
   target: '.layoutLoading',
   background: 'rgba(0, 0, 0, 0.7)',
   text: '数据加载中...'
 }
 
+// 修改switchItems，移除弃用字段，添加新字段
 const switchItems = ref([
   { value: 1, text: '风速', visible: false },
   { value: 2, text: '雨量', visible: false },
   { value: 3, text: '大气温度', visible: false },
-  { value: 4, text: '土壤温度', visible: false },
-  { value: 5, text: '数字气压', visible: false },
-  { value: 6, text: '简易总辐射', visible: false },
-  { value: 7, text: '风向', visible: false },
-  { value: 8, text: '大气湿度', visible: false },
-  { value: 9, text: '土壤湿度', visible: false },
-  { value: 10, text: 'PM2.5', visible: true },
-  { value: 11, text: '盐分', visible: false },
-  { value: 12, text: '负氧离子', visible: false },
-  { value: 13, text: '雨量累计', visible: false },
-  { value: 14, text: '辐射累积', visible: false },
-  { value: 15, text: 'PM10', visible: false }
+  // 移除: { value: 4, text: '土壤温度', visible: false },
+  { value: 4, text: '数字气压', visible: false },
+  // 移除: { value: 6, text: '简易总辐射', visible: false },
+  { value: 5, text: '风向', visible: false },
+  // 移除: { value: 8, text: '大气湿度', visible: false },
+  // 移除: { value: 9, text: '土壤湿度', visible: false },
+  { value: 6, text: 'PM2.5', visible: true },
+  // 移除: { value: 11, text: '盐分', visible: false },
+  // 移除: { value: 12, text: '负氧离子', visible: false },
+  // 移除: { value: 13, text: '雨量累计', visible: false },
+  // 移除: { value: 14, text: '辐射累积', visible: false },
+  { value: 7, text: 'PM10', visible: false },
+  // 添加新字段
+  { value: 8, text: '相对湿度', visible: false },
+  { value: 9, text: 'AQI指数', visible: false },
+  { value: 10, text: '二氧化硫', visible: false },
+  { value: 11, text: '二氧化氮', visible: false },
+  { value: 12, text: '一氧化碳', visible: false },
+  { value: 13, text: '臭氧', visible: false },
+  { value: 14, text: '臭氧8小时', visible: false }
 ])
 
 // Fetch device options
@@ -129,19 +140,18 @@ async function fetchDeviceOptions () {
     const res = await queryDeviceByMultiWord({ type: '03' })  
     if (res.response.value.code === 'SUCCESS') {  
       deviceOptions.value = res.response.value.body  
-      // 检查设备选项是否包含 id 为 24 的设备  
       const deviceExists = deviceOptions.value.some(device => device.id === 24)  
-      sitePicked.value = deviceExists ? 24 : deviceOptions.value[0]?.id // 设置为 24 或第一个可用设备 ID  
+      sitePicked.value = deviceExists ? 24 : deviceOptions.value[0]?.id
     } else {  
       ElMessage.error(res.response.value.msg)  
     }  
   } catch {  
     ElMessage.error('获取设备数据失败，请稍后再试')  
   } finally {  
-    isLoading.value = false // 设置加载完成  
+    isLoading.value = false
   }  
-}  
-// Computed property to get the selected device name
+}
+
 const selectedDeviceName = computed(() => {
   const device = deviceOptions.value.find((d) => d.id === sitePicked.value)
   return device ? device.deviceName : ''
@@ -169,51 +179,34 @@ const onSwitchChange = (item) => {
   }
 }
 
-// Calculate min, max, and average values
-const calculateStats = () => {
-  if (periodDataList.value.length === 0) {
-    atmosphereData.value = [{ monthMin: '0.00', monthAvg: '0.00', monthMax: '0.00' }]
+// 从新接口获取月度统计数据
+async function getMonthlyStatistics() {
+  if (!datePicked.value || !sitePicked.value) {
+    atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
     return
   }
-
-  const chartOptions = {
-    1: { dataKey: 'windSpeed', unit: 'm/s' },
-    2: { dataKey: 'rainfall', unit: 'mm' },
-    3: { dataKey: 'atmosphereTemperature', unit: '℃' },
-    4: { dataKey: 'soilTemperature', unit: '℃' },
-    5: { dataKey: 'digitalPressure', unit: 'hPa' },
-    6: { dataKey: 'simpleTotalRadiation', unit: 'W/m²' },
-    7: { dataKey: 'windDirection', unit: '°' },
-    8: { dataKey: 'atmosphereHumidity', unit: '%RH' },
-    9: { dataKey: 'soilHumidity', unit: '%RH' },
-    10: { dataKey: 'pm25', unit: 'μg/m³' },
-    11: { dataKey: 'salinity', unit: 'mg/L' },
-    12: { dataKey: 'negativeOxygenIon', unit: '个' },
-    13: { dataKey: 'rainfallAccumulation', unit: 'mm' },
-    14: { dataKey: 'radiationAccumulation', unit: 'MJ/㎡' },
-    15: { dataKey: 'pm10', unit: 'μg/m³' }
-  }
-
-  const { dataKey, unit } = chartOptions[selectedValue.value]
-  const dataList = periodDataList.value.map((item) =>
-    parseFloat(item.atmosphere[dataKey])
-  )
-
-  const min = Math.min(...dataList).toFixed(2)
-  const max = Math.max(...dataList).toFixed(2)
-  const avg = (
-    dataList.reduce((sum, value) => sum + value, 0) / dataList.length
-  ).toFixed(2)
-
-  // Add units to the values
-  atmosphereData.value = [
-    {
-      monthMin: `${min} ${unit}`,
-      monthAvg: `${avg} ${unit}`,
-      monthMax: `${max} ${unit}`
+  
+  try {
+    const loadingInstance = ElLoading.service(loadingoptions)
+    const res = await selectByMonthAndDevice({
+      deviceId: sitePicked.value.toString(),
+      observationTime: datePicked.value
+    })
+    loadingInstance.close()
+    
+    if (res.response.value.code === 'SUCCESS') {
+      monthlyStatistics.value = res.response.value.body
+      updateStatisticsDisplay()
+    } else {
+      ElMessage.error(res.response.value.msg || '获取统计数据失败')
+      atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
     }
-  ]
+  } catch (error) {
+    ElMessage.error('获取统计数据失败，请稍后再试')
+    atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
+  }
 }
+
 
 const showDateArr = ref([])
 // 可用日期
@@ -241,6 +234,7 @@ function handleVisibleChange (visibility, type, searchTimeType) {
 const createOption = () => {
   if (periodDataList.value.length === 0) return {}
 
+  // 修改字段映射
   const chartOptions = {
     1: {
       title: '风速变化图',
@@ -263,89 +257,91 @@ const createOption = () => {
       seriesName: '大气温度(℃)',
       dataKey: 'atmosphereTemperature'
     },
+    // 移除土壤温度
     4: {
-      title: '土壤温度变化图',
-      yAxisName: '土壤温度',
-      yAxisFormatter: '{value} ℃',
-      seriesName: '土壤温度(℃)',
-      dataKey: 'soilTemperature'
-    },
-    5: {
       title: '数字气压变化图',
       yAxisName: '数字气压',
       yAxisFormatter: '{value} hPa',
       seriesName: '数字气压(hPa)',
       dataKey: 'digitalPressure'
     },
-    6: {
-      title: '简易总辐射变化图',
-      yAxisName: '简易总辐射',
-      yAxisFormatter: '{value} W/m2',
-      seriesName: '简易总辐射(W/m2)',
-      dataKey: 'simpleTotalRadiation'
-    },
-    7: {
+    // 移除简易总辐射
+    5: {
       title: '风向变化图',
       yAxisName: '风向',
       yAxisFormatter: '{value} 度',
-      seriesName: '风向/度',
+      seriesName: '风向(度)',
       dataKey: 'windDirection'
     },
-    8: {
-      title: '大气湿度变化图',
-      yAxisName: '大气湿度',
-      yAxisFormatter: '{value} %RH',
-      seriesName: '大气湿度(%RH)',
-      dataKey: 'atmosphereHumidity'
-    },
-    9: {
-      title: '土壤湿度变化图',
-      yAxisName: '土壤湿度',
-      yAxisFormatter: '{value} %RH',
-      seriesName: '土壤湿度(%RH)',
-      dataKey: 'soilHumidity'
-    },
-    10: {
+    // 移除大气湿度
+    // 移除土壤湿度
+    6: {
       title: 'PM2.5变化图',
       yAxisName: 'PM2.5',
       yAxisFormatter: '{value} μg/m³',
       seriesName: 'PM2.5(μg/m³)',
       dataKey: 'pm25'
     },
-    11: {
-      title: '盐分变化图',
-      yAxisName: '盐分',
-      yAxisFormatter: '{value} mg/L',
-      seriesName: '盐分(mg/L)',
-      dataKey: 'salinity'
-    },
-    12: {
-      title: '负氧离子变化图',
-      yAxisName: '负氧离子',
-      yAxisFormatter: '{value} 个',
-      seriesName: '负氧离子(个)',
-      dataKey: 'negativeOxygenIon'
-    },
-    13: {
-      title: '雨量累计变化图',
-      yAxisName: '雨量累计',
-      yAxisFormatter: '{value} mm',
-      seriesName: '雨量累计(mm)',
-      dataKey: 'rainfallAccumulation'
-    },
-    14: {
-      title: '辐射累积变化图',
-      yAxisName: '辐射累积',
-      yAxisFormatter: '{value} MJ/㎡',
-      seriesName: '辐射累积(MJ/㎡)',
-      dataKey: 'radiationAccumulation'
-    },
-    15: {
+    // 移除盐分
+    // 移除负氧离子
+    // 移除雨量累计
+    // 移除辐射累积
+    7: {
       title: 'PM10变化图',
       yAxisName: 'PM10',
       yAxisFormatter: '{value} μg/m³',
       seriesName: 'PM10(μg/m³)',
       dataKey: 'pm10'
+    },
+    // 添加新字段
+    8: {
+      title: '相对湿度变化图',
+      yAxisName: '相对湿度',
+      yAxisFormatter: '{value} %RH',
+      seriesName: '相对湿度(%RH)',
+      dataKey: 'relativeHumidity'
+    },
+    9: {
+      title: 'AQI指数变化图',
+      yAxisName: 'AQI指数',
+      yAxisFormatter: '{value}',
+      seriesName: 'AQI指数',
+      dataKey: 'aqiIndex'
+    },
+    10: {
+      title: '二氧化硫变化图',
+      yAxisName: '二氧化硫',
+      yAxisFormatter: '{value} μg/m³',
+      seriesName: '二氧化硫(μg/m³)',
+      dataKey: 'sulfurDioxide'
+    },
+    11: {
+      title: '二氧化氮变化图',
+      yAxisName: '二氧化氮',
+      yAxisFormatter: '{value} μg/m³',
+      seriesName: '二氧化氮(μg/m³)',
+      dataKey: 'nitrogenDioxide'
+    },
+    12: {
+      title: '一氧化碳变化图',
+      yAxisName: '一氧化碳',
+      yAxisFormatter: '{value} mg/m³',
+      seriesName: '一氧化碳(mg/m³)',
+      dataKey: 'carbonMonoxide'
+    },
+    13: {
+      title: '臭氧变化图',
+      yAxisName: '臭氧',
+      yAxisFormatter: '{value} μg/m³',
+      seriesName: '臭氧(μg/m³)',
+      dataKey: 'ozone'
+    },
+    14: {
+      title: '臭氧8小时变化图',
+      yAxisName: '臭氧8小时',
+      yAxisFormatter: '{value} μg/m³',
+      seriesName: '臭氧8小时(μg/m³)',
+      dataKey: 'ozone8Hour'
     }
   }
 
@@ -373,58 +369,175 @@ const createOption = () => {
     series: [
       {
         name: seriesName,
-        data: periodDataList.value.map((item) =>
-          parseFloat(item.atmosphere[dataKey]).toFixed(2)
-        ),
-        type: 'line'
+        data: periodDataList.value.map((item) => {
+          const value = item.atmosphere[dataKey]
+          // 处理"缺测"值
+          return value === '缺测' || value === null ? null : parseFloat(value).toFixed(2)
+        }),
+        type: 'line',
+        connectNulls: false
       }
     ],
-    valueFormatter: (value) => `${value}${yAxisFormatter.split(' ')[1]}`
+    valueFormatter: (value) => `${value}${yAxisFormatter.split(' ')[1] || ''}`
   }
 }
 
+// 修改后的calculateStats函数，使用原来的方法从每日数据计算最小值和最大值
+const calculateStats = () => {
+  if (periodDataList.value.length === 0) {
+    atmosphereData.value = [{ 
+      monthMin: '--', 
+      monthAvg: '--', 
+      monthMax: '--' 
+    }]
+    return
+  }
+
+  // 字段映射表
+  const fieldMapping = {
+    1: 'windSpeed',
+    2: 'rainfall', 
+    3: 'atmosphereTemperature',
+    4: 'digitalPressure',
+    5: 'windDirection',
+    6: 'pm25',
+    7: 'pm10',
+    8: 'relativeHumidity',
+    9: 'aqiIndex',
+    10: 'sulfurDioxide',
+    11: 'nitrogenDioxide',
+    12: 'carbonMonoxide',
+    13: 'ozone',
+    14: 'ozone8Hour'
+  }
+
+  // 单位映射表
+  const unitMapping = {
+    1: 'm/s',
+    2: 'mm',
+    3: '℃',
+    4: 'hPa',
+    5: '°',
+    6: 'μg/m³',
+    7: 'μg/m³',
+    8: '%RH',
+    9: '',
+    10: 'μg/m³',
+    11: 'μg/m³',
+    12: 'mg/m³',
+    13: 'μg/m³',
+    14: 'μg/m³'
+  }
+
+  const fieldName = fieldMapping[selectedValue.value]
+  const unit = unitMapping[selectedValue.value]
+  
+  if (!fieldName) {
+    atmosphereData.value = [{ 
+      monthMin: `-- ${unit}`, 
+      monthAvg: `-- ${unit}`, 
+      monthMax: `-- ${unit}` 
+    }]
+    return
+  }
+
+  // 从每日数据中计算最小值和最大值（原来的方法）
+  const validDataList = periodDataList.value
+    .map((item) => {
+      const value = item.atmosphere[fieldName]
+      return value === '缺测' || value === null ? null : parseFloat(value)
+    })
+    .filter(value => value !== null && !isNaN(value))
+
+  if (validDataList.length === 0) {
+    atmosphereData.value = [{ 
+      monthMin: `-- ${unit}`, 
+      monthAvg: `-- ${unit}`, 
+      monthMax: `-- ${unit}` 
+    }]
+    return
+  }
+
+  const min = Math.min(...validDataList).toFixed(2)
+  const max = Math.max(...validDataList).toFixed(2)
+  
+  // 平均值从新接口获取，如果没有则显示"--"
+  const avgFromAPI = monthlyStatistics.value[fieldName]
+  const avg = avgFromAPI !== undefined && avgFromAPI !== null 
+    ? parseFloat(avgFromAPI).toFixed(2) 
+    : '--'
+
+  atmosphereData.value = [
+    {
+      monthMin: `${min} ${unit}`,
+      monthAvg: `${avg} ${unit}`,
+      monthMax: `${max} ${unit}`
+    }
+  ]
+}
+
+
+// 修改getWaterPhy函数中的逻辑
 const getWaterPhy = () => {
+  if (!datePicked.value || !sitePicked.value) return
+  
   const loadingInstance = ElLoading.service(loadingoptions)
-  findAtmosphere({ time: datePicked.value, device: sitePicked.value })
-    .then((res) => {
+  
+  // 同时获取每日数据和月度统计数据
+  Promise.all([
+    findAtmosphere({ time: datePicked.value, device: sitePicked.value }),
+    selectByMonthAndDevice({
+      deviceId: sitePicked.value.toString(),
+      observationTime: datePicked.value
+    })
+  ])
+    .then(([dailyRes, statsRes]) => {
       loadingInstance.close()
-      const result = res.response.value
-      if (result.code === 'SUCCESS') {
-        if (result.body.length === 0) {
+      
+      // 处理每日数据
+      const dailyResult = dailyRes.response.value
+      if (dailyResult.code === 'SUCCESS') {
+        if (dailyResult.body.length === 0) {
           ElMessage({ showClose: true, message: '数据不存在', center: true })
         } else {
-          periodDataList.value = result.body
+          periodDataList.value = dailyResult.body
           updateChart()
         }
       } else {
-        ElMessage({ showClose: true, message: result.msg, center: true })
+        ElMessage({ showClose: true, message: dailyResult.msg, center: true })
+      }
+      
+      // 处理月度统计数据
+      const statsResult = statsRes.response.value
+      if (statsResult.code === 'SUCCESS') {
+        monthlyStatistics.value = statsResult.body
+        // 这里调用calculateStats来计算统计值
+        calculateStats()
+      } else {
+        ElMessage.error(statsResult.msg || '获取统计数据失败')
+        // 即使统计数据失败，也尝试从每日数据计算
+        calculateStats()
       }
     })
     .catch(() => {
       loadingInstance.close()
-      ElMessage.error('获取气象数据失败，请稍后再试')
+      ElMessage.error('获取数据失败，请稍后再试')
+      // 出错时尝试从每日数据计算
+      calculateStats()
     })
 }
 
 onMounted(async () => {  
   const instance = getCurrentInstance();  
   if (instance) {  
-    await instance.proxy.$nextTick(); // 等待下一个 DOM 更新周期  
-
-    await fetchDeviceOptions(); // 等待 fetchDeviceOptions 完成 
-    updateChart(); // 更新图表 
-    const countVisible = switchItems.value.filter(control => control.visible).length;  
-    if (countVisible === 0) {  
-      item.visible = true; // 如果没有可见的项目，则设置为可见  
-    }  
-
-    await getTimesByTypeChange('qixiang', 'month'); // 等待获取时间数据  
+    await instance.proxy.$nextTick();
+    await fetchDeviceOptions();
+    await getTimesByTypeChange('qixiang', 'month');
   }  
 });
 
 // 日期过滤
 function getTimesByTypeChange (type, searchTimeType) {
-  // 开启时
   const searchType = searchTimeType
   getTimesByType({
     type: type,
@@ -438,11 +551,10 @@ function getTimesByTypeChange (type, searchTimeType) {
         showDateArr.value = date
         if (date && date.length > 0) {
           const latestDate = date.sort((a, b) => b.localeCompare(a))[0]
-          datePicked.value = latestDate // 设置最新日期为默认值
+          datePicked.value = latestDate
           getWaterPhy()
         }
       } else {
-        // 处理失败的响应
         ElMessage({
           showClose: true,
           message: result.msg,
@@ -460,10 +572,12 @@ function getTimesByTypeChange (type, searchTimeType) {
     })
 }
 
+// 修改updateChart函数，确保调用calculateStats
 const updateChart = () => {
   if (myChart) myChart.dispose()
   myChart = echarts.init(chart.value)
   myChart.setOption(createOption())
+  // 确保图表更新后计算统计数据
   calculateStats()
 }
 </script>
