@@ -16,11 +16,11 @@
         tab="水位数据"
         v-if="$hasPermission('menu_subA_a_b')"
       />
-      <!-- <a-tab-pane
+      <a-tab-pane
         key="3"
         tab="气象数据"
         v-if="$hasPermission('menu_subA_a_c')"
-      /> -->
+      />
     </a-tabs>
     <!-- 下方动态切换的组件区域 -->
     <div class="content-box">
@@ -55,14 +55,13 @@ const tabs = [
     pressionKey: 'menu_subA_a_b',
     tab: '水位数据',
     currentComponent: WaterLevel
+  },
+  {
+    key: '3',
+    pressionKey: 'menu_subA_a_c',
+    tab: '气象数据',
+    currentComponent: Atmosphere
   }
-  // },
-  // {
-  //   key: '3',
-  //   pressionKey: 'menu_subA_a_c',
-  //   tab: '气象数据',
-  //   currentComponent: Atmosphere
-  // }
 ]
 
 function tabs_Pression () {

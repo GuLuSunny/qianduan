@@ -165,7 +165,8 @@ const onSwitchChange = (item) => {
       }
     })
     selectedValue.value = item.value
-    getWaterPhy()
+    // 只需要更新图表，不需要重新获取数据
+    updateChart()  // 去掉 getWaterPhy()，改为 updateChart()
   } else {
     const anyVisible = switchItems.value.some((control) => control.visible)
     if (!anyVisible) {
@@ -176,34 +177,6 @@ const onSwitchChange = (item) => {
         center: true
       })
     }
-  }
-}
-
-// 从新接口获取月度统计数据
-async function getMonthlyStatistics() {
-  if (!datePicked.value || !sitePicked.value) {
-    atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
-    return
-  }
-  
-  try {
-    const loadingInstance = ElLoading.service(loadingoptions)
-    const res = await selectByMonthAndDevice({
-      deviceId: sitePicked.value.toString(),
-      observationTime: datePicked.value
-    })
-    loadingInstance.close()
-    
-    if (res.response.value.code === 'SUCCESS') {
-      monthlyStatistics.value = res.response.value.body
-      updateStatisticsDisplay()
-    } else {
-      ElMessage.error(res.response.value.msg || '获取统计数据失败')
-      atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
-    }
-  } catch (error) {
-    ElMessage.error('获取统计数据失败，请稍后再试')
-    atmosphereData.value = [{ monthMin: '--', monthAvg: '--', monthMax: '--' }]
   }
 }
 
