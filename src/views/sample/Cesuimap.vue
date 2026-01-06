@@ -757,8 +757,8 @@ function selectAllSluicesDatas() {
   selectAllSluicesByConditions({}).then((res) => {
     const result = res.response.value;
     console.log(result);
-    if (result.code === "SUCCESS") {
-      sluiceDatas.value = result.body;
+    if (result.success) {
+      sluiceDatas.value = result.data;
       console.log(sluiceDatas);
       const sluicePoints = [];
       // 遍历每个水闸数据并加载GLB模型
@@ -817,8 +817,8 @@ function selectAllPumpDatas() {
   selectAllPumpingStationByConditions({}).then((res) => {
     const result = res.response.value;
     console.log(result);
-    if (result.code === "SUCCESS") {
-      pumpDatas.value = result.body;
+    if (result.success) {
+      pumpDatas.value = result.data;
       console.log(pumpDatas);
       const pumpPoints = [];
       // 遍历每个泵站数据并加载GLB模型
