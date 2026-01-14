@@ -293,9 +293,9 @@ const menus_pre = [
     items: [
       {
         key: '1',
-        title: '径流与水位',
+        title: '径流、水位与气象',
         component: AutoDetect,
-        breadcrumb: ['地表水文数据上传', '径流与水位'],
+        breadcrumb: ['地表水文数据上传', '径流、水位与气象'],
         pressionKey: 'menu_subA_a'
       },
       {

@@ -92,9 +92,9 @@ function handleTabChange (key) {
   } else if (key === '2') {
     currentComponent.value = WaterLevel
   }
-  //  else if (key === '3') {
-  //   currentComponent.value = Atmosphere
-  // }
+   else if (key === '3') {
+    currentComponent.value = Atmosphere
+  }
 }
 </script>
 <style scoped>
