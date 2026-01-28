@@ -94,6 +94,7 @@ import Birdsdata from './menu/DataBirds/Birdsdata.vue'
 import PhysicochemicalPanel from './menu/PhysicochemicalData/PhysicochemicalPanel.vue'
 import RunoffQuery from './menu/runoff/RunoffQuery.vue'
 import configManagement from './menu/configManagementMenu/ConfigManagement.vue'
+import modelManagement from './menu/modelManagementMenu/modelManagement.vue'
 import RemoteSensingQuery from './menu/remoteSensingMenu/RemoteSensingQuery.vue'
 import GeographicIdentificationUpload from './menu/geographicIdentificationMenu/GeographicIdentificationUpload.vue'
 import LandIdentification from './menu/geographicIdentificationMenu/LandIdentification.vue'
@@ -348,6 +349,13 @@ const menus_pre = [
         component: ShpFileUpload,
         breadcrumb: ['系统管理', 'SHP文件上传'],
         pressionKey: 'menu_subF_a'
+      },
+      {
+        key: '26',
+        title: '智能遥感数据管理',
+        component: modelManagement,
+        breadcrumb: ['系统管理', '水资源数据管理'],
+        pressionKey: 'menu_subD_a'
       }
     ]
   }
