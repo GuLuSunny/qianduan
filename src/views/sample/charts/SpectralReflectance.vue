@@ -8,19 +8,26 @@
       justify-content: center;
       align-items: center;
     "
-  >
-    123
-  </div>
+  ></div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
-import data from '@/../public/json/fullscreenSampleJson/spectralReflectance.json' // 注意路径，可能需要调整
 import * as echarts from 'echarts'
+import { findReflectanceByTimeAndDevice, getTimesByType } from '@/api/getData'
+import { ElMessage, ElLoading } from 'element-plus'
 
 const chart = ref()
 const chartData = ref([])
+const dateSelected = ref('')
 let myChart = null
+
+// 加载配置
+const loadingoptions = {
+  target: '.layoutLoading',
+  background: 'rgba(0, 0, 0, 0.7)',
+  text: '数据加载中...'
+}
 
 // 更新颜色列表
 const colors = [
@@ -35,18 +42,110 @@ const colors = [
 // 监听window对象的resize事件
 window.addEventListener('resize', updateChart)
 
-onMounted(() => {
-  // 处理数据
-  chartData.value = data.map((item) => {
-    const wavelengths = item.wavelength.split(',').map(Number)
-    const data = item.data.split(',').map(Number)
-    return {
-      name: item.deviceName, // 假设每个对象有一个 name 属性来标识这条线
-      data: wavelengths.map((wavelength, index) => [wavelength, data[index]])
-    }
+const showDateArr = ref([])
+let firBool = false
+
+// 请求日期
+function handleVisibleChange (visibility, type, searchTimeType) {
+  if (visibility) {
+    // 开启时
+    const searchType = searchTimeType
+    getTimesByType({
+      type: type,
+      searchTimeType: searchType
+    })
+      .then((res) => {
+        const result = res.response.value
+        if (result.code === 'SUCCESS') {
+          const type = result.body.type
+          const date = result.body.date
+          showDateArr.value = date
+          if (date && date.length > 0) {
+            const latestDate = date.sort((a, b) => b.localeCompare(a))[0]
+            if (firBool === false) {
+              dateSelected.value = latestDate // 设置最新日期为默认值
+              getReflectance()
+              firBool = true
+            }
+          }
+        } else {
+          // 处理失败的响应
+          ElMessage({
+            showClose: true,
+            message: result.msg,
+            center: true
+          })
+        }
+      })
+      .catch((error) => {
+        ElMessage({
+          showClose: true,
+          message: '获取日期数据失败，请稍后再试',
+          center: true,
+          type: 'error'
+        })
+      })
+  } else if (!visibility) {
+    getReflectance()
+  }
+}
+
+function getReflectance () {
+  if (!dateSelected.value) return
+  
+  const loadingInstance = ElLoading.service(loadingoptions)
+  findReflectanceByTimeAndDevice({
+    time: dateSelected.value,
+    device: '' // 传空获取所有设备
   })
-  // 初始化图表
-  updateChart()
+    .then((res) => {
+      loadingInstance.close()
+      const result = res.response.value
+      if (result.code === 'SUCCESS') {
+        if (result.body.length === 0) {
+          ElMessage({
+            showClose: true,
+            message: '数据不存在',
+            center: true
+          })
+        } else {
+          chartData.value = result.body
+            .map((item) => {
+              const wavelengths = item.wavelength.split(',').map(Number)
+              const data = item.data.split(',').map(Number)
+              return {
+                name: item.deviceName,
+                data: wavelengths.map((wavelength, index) => [
+                  wavelength,
+                  data[index]
+                ])
+              }
+            })
+            .sort((a, b) => parseInt(a.name) - parseInt(b.name))
+          updateChart()
+        }
+      } else {
+        ElMessage({
+          showClose: true,
+          message: result.msg,
+          center: true
+        })
+      }
+    })
+    .catch((error) => {
+      loadingInstance.close()
+      ElMessage({
+        showClose: true,
+        message: '获取数据失败，请稍后再试',
+        center: true,
+        type: 'error'
+      })
+    })
+}
+
+onMounted(() => {
+  // 初始化时获取最新日期的数据
+  handleVisibleChange(true, 'guangpu', 'day')
 })
 
 onBeforeUnmount(() => {
@@ -61,11 +160,8 @@ function updateChart () {
   // 页面大小设置
   const viewportHeightInPx = window.innerHeight
   const viewportWidthInPx = window.innerWidth
-  // const gridHeight = viewportHeightInPx * 0.14
-  // const gridWidth = viewportWidthInPx * 0.23
   const gridleft = viewportWidthInPx * 0.003
-  // console.log('viewportHeightInPx:', viewportHeightInPx)
-  // console.log('viewportWidthInPx:', viewportWidthInPx)
+  
   let aHeight = 0.14
   let aWidth = 0.23
   if (viewportHeightInPx > 850 && viewportHeightInPx < 920) {
@@ -93,8 +189,6 @@ function updateChart () {
 
   // 位置
   const grid = {
-    // width:'80%',
-    // height:'50%',
     left: gridleft,
     width: gridWidth,
     height: gridHeight,
@@ -115,7 +209,7 @@ function updateChart () {
 
   const option = {
     title: {
-      text: '2025-05-20 黑岗口水库光谱反射率曲线',
+      text: (dateSelected.value || '') + ' 黑岗口水库光谱反射率曲线',
       left: 'center',
       textStyle: {
         color: '#ffffff',
@@ -233,5 +327,5 @@ function updateChart () {
 </script>
 
 <style scoped>
-/* 添加样式以确保图表正确显示 */
+/* 样式保持不变 */
 </style>

@@ -4,13 +4,13 @@
     <div class="water-title">{{ title }}</div>
     <div class="titleContent">
       <div class="tit">样点</div>
-      <div class="tit">水温</div>
+      <div class="tit">水温(℃)</div>
       <div class="tit">PH</div>
-      <div class="tit">浊度</div>
-      <div class="tit">导电率</div>
       <div class="tit">溶解氧</div>
-      <div class="tit">透明度</div>
-      <div class="tit">TSS</div>
+      <div class="tit">高锰酸盐指数</div>
+      <div class="tit">总磷</div>
+      <div class="tit">水位</div>
+      <div class="tit">气温(℃)</div>
     </div>
 
     <!-- 配置详情请见 README.md -->
@@ -34,14 +34,14 @@
       :wheel="false"
     >
       <div class="countContent" v-for="(item, i) in periodDataList" :key="i">
-        <div class="descr">{{ item.deviceId }}</div>
-        <div class="descr">{{ formatNumber(item.waterTemperature) }}</div>
+        <div class="descr">{{ item.deviceId || '--' }}</div>
+        <div class="descr">{{ formatNumber(item.waterTemperature, '℃') }}</div>
         <div class="descr">{{ formatNumber(item.ph) }}</div>
-        <div class="descr">{{ formatNumber(item.turbidity) }}</div>
-        <div class="descr">{{ formatNumber(item.conductivity) }}</div>
         <div class="descr">{{ formatNumber(item.dissolvedOxygen) }}</div>
-        <div class="descr">{{ formatNumber(item.transparency) }}</div>
-        <div class="descr">{{ formatNumber(item.tss) }}</div>
+        <div class="descr">{{ formatNumber(item.codmn) }}</div>
+        <div class="descr">{{ formatNumber(item.tp) }}</div>
+        <div class="descr">{{ formatNumber(item.waterLevel) }}</div>
+        <div class="descr">{{ formatNumber(item.airTemperature, '℃') }}</div>
       </div>
     </vue3-seamless-scroll>
   </div>
@@ -50,47 +50,112 @@
 <script setup>
 import { ref, defineComponent, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import { Vue3SeamlessScroll } from 'vue3-seamless-scroll'
-import data from '@/../public/json/fullscreenSampleJson/waterPhysicochemistry.json' // 注意路径，可能需要调整
-import { getWaterPhyBigScreen } from '@/api/getData' // 导入 API 请求方法
+import { getWaterPhyBigScreen, getTimesByType } from '@/api/getData' // 导入 API 请求方法
+import { ElMessage, ElLoading } from 'element-plus'
+
 const periodDataList = ref([]) // 响应式数组用于保存水体数据
 const hasExtraScroll1 = ref(true)
 const hasExtraScroll2 = ref(false)
 const hasExtraScroll3 = ref(false)
+const dateSelected = ref('') // 选择的日期
 
-// 实时日期时间，用于标题显示
-const now = ref(new Date())
+// 加载配置
+const loadingoptions = {
+  target: '.layoutLoading',
+  background: 'rgba(0, 0, 0, 0.7)',
+  text: '数据加载中...'
+}
 
 const title = computed(() => {
-  // const d = now.value
-  // const y = d.getFullYear()
-  // const m = String(d.getMonth() + 1).padStart(2, '0')
-  // const day = String(d.getDate()).padStart(2, '0')
-  // const hh = String(d.getHours()).padStart(2, '0')
-  // const mm = String(d.getMinutes()).padStart(2, '0')
-  // const ss = String(d.getSeconds()).padStart(2, '0')
-  return `2025-05-20 黑岗口水库水质`
+  return dateSelected.value ? `${dateSelected.value} 水质数据` : '水质数据'
 })
 
-function formatNumber (number) {
-  if (!isNaN(number) && number !== '') {
-    const numberValue = Number(number) // 将字符串转换为数字
-    return numberValue.toFixed(2)
+function formatNumber (number, unit = '') {
+  // 处理空值、null、undefined或空字符串
+  if (number === null || number === undefined || number === '' || number === 'NaN') {
+    return '--'
+  }
+  
+  // 处理小于号开头的检测限值（如<0.005）
+  if (typeof number === 'string' && number.startsWith('<')) {
+    return number
+  }
+  
+  // 如果是字符串，尝试转换为数字
+  const numberValue = Number(number)
+  
+  // 检查是否为有效数字
+  if (!isNaN(numberValue)) {
+    // pH值通常保留1位小数，其他水质参数通常保留2位小数
+    // 但根据具体需求，这里统一保留2位小数
+    return numberValue.toFixed(2) + (unit ? ` ${unit}` : '')
   } else {
-    return ''
+    return '--'
   }
 }
 
 // 监听window对象的resize事件
 window.addEventListener('resize', changeSize)
+
+const showDateArr = ref([])
+let firBool = false
+
+// 请求日期
+function handleVisibleChange (visibility, type, searchTimeType) {
+  if (visibility) {
+    // 开启时
+    const searchType = searchTimeType
+    getTimesByType({
+      type: type,
+      searchTimeType: searchType
+    })
+      .then((res) => {
+        const result = res.response.value
+        if (result.code === 'SUCCESS') {
+          const type = result.body.type
+          const date = result.body.date
+          showDateArr.value = date
+          if (date && date.length > 0) {
+            const latestDate = date.sort((a, b) => b.localeCompare(a))[0]
+            if (firBool === false) {
+              dateSelected.value = latestDate // 设置最新日期为默认值
+              getWaterPhy()
+              firBool = true
+            }
+          } else {
+            ElMessage({
+              showClose: true,
+              message: '暂无可用数据',
+              center: true,
+              type: 'warning'
+            })
+          }
+        } else {
+          // 处理失败的响应
+          ElMessage({
+            showClose: true,
+            message: result.msg,
+            center: true,
+            type: 'error'
+          })
+        }
+      })
+      .catch((error) => {
+        ElMessage({
+          showClose: true,
+          message: '获取日期数据失败，请稍后再试',
+          center: true,
+          type: 'error'
+        })
+      })
+  } else if (!visibility && dateSelected.value) {
+    getWaterPhy()
+  }
+}
+
 function changeSize () {
   // 页面大小设置
   const viewportHeightInPx = window.innerHeight
-  const viewportWidthInPx = window.innerWidth
-  // const gridHeight = viewportHeightInPx * 0.14
-  // const gridWidth = viewportWidthInPx * 0.23
-  const gridleft = viewportWidthInPx * 0.003
-  // console.log('viewportHeightInPx:', viewportHeightInPx)
-  // console.log('viewportWidthInPx:', viewportWidthInPx)
   if (viewportHeightInPx > 850 && viewportHeightInPx < 920) {
     hasExtraScroll1.value = true
     hasExtraScroll2.value = false
@@ -108,16 +173,64 @@ function changeSize () {
   }
 }
 
+// 获取水质数据
+function getWaterPhy () {
+  if (!dateSelected.value) return
+  
+  const loadingInstance = ElLoading.service(loadingoptions)
+  getWaterPhyBigScreen({ 
+    time: dateSelected.value, 
+    device: '' // 传空获取所有设备
+  })
+    .then((res) => {
+      loadingInstance.close()
+      const result = res.response.value
+      if (result.code === 'SUCCESS') {
+        if (result.body.length === 0) {
+          ElMessage({
+            showClose: true,
+            message: `日期 ${dateSelected.value} 暂无数据`,
+            center: true,
+            type: 'warning'
+          })
+          periodDataList.value = []
+        } else {
+          // 直接使用接口返回的数据，确保字段对应
+          periodDataList.value = result.body
+        }
+      } else {
+        ElMessage({
+          showClose: true,
+          message: result.msg,
+          center: true,
+          type: 'error'
+        })
+      }
+    })
+    .catch((error) => {
+      loadingInstance.close()
+      console.error('获取水质数据失败:', error)
+      ElMessage({
+        showClose: true,
+        message: '获取数据失败，请稍后再试',
+        center: true,
+        type: 'error'
+      })
+    })
+}
+
 onMounted(() => {
   changeSize()
-  periodDataList.value = data
-  now.value = new Date()
+  // 初始化时获取最新日期的数据
+  handleVisibleChange(true, 'shuitilihua', 'day')
 })
+
 onBeforeUnmount(() => {
   // 销毁实例
   window.removeEventListener('resize', changeSize)
 })
 </script>
+
 <style scoped>
 .tit {
   font-size: 10px !important;

@@ -18,10 +18,7 @@
     <!-- ====================== 6个模块====================== -->
     <div v-if="currentModuleGroup === 'old'">
       <!-- 1：水位 -->
-      <div
-        class="dataBoxView"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
-      >
+      <div class="dataBoxView" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">水位</div>
         <div class="dataCenter">
@@ -29,11 +26,7 @@
         </div>
       </div>
       <!-- 2：径流 -->
-      <div
-        class="dataBoxView"
-        style="top: 37%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
-      >
+      <div class="dataBoxView" style="top: 37%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">径流</div>
         <div class="dataCenter">
@@ -41,11 +34,7 @@
         </div>
       </div>
       <!-- 3：气象 -->
-      <div
-        class="dataBoxView"
-        style="top: 67%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }"
-      >
+      <div class="dataBoxView" style="top: 67%" :class="{ 'slide-in': dataBoxShow, 'slide-out-left': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">气象</div>
         <div class="dataCenter">
@@ -54,11 +43,8 @@
       </div>
 
       <!-- 1：水质 -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
-      >
+      <div class="dataBoxView" style="right: 20px; left: auto"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">水质</div>
         <div class="dataCenter">
@@ -66,11 +52,8 @@
         </div>
       </div>
       <!-- 2：光谱反射率 -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto; top: 37%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
-      >
+      <div class="dataBoxView" style="right: 20px; left: auto; top: 37%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">光谱反射率</div>
         <div class="dataCenter">
@@ -78,11 +61,8 @@
         </div>
       </div>
       <!-- 3：土壤 -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto; top: 67%"
-        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }"
-      >
+      <div class="dataBoxView" style="right: 20px; left: auto; top: 67%"
+        :class="{ 'slide-in': dataBoxShow, 'slide-out-right': !dataBoxShow }">
         <div class="titleIcon"></div>
         <div class="boxTitle">土壤</div>
         <div class="dataCenter">
@@ -94,38 +74,24 @@
     <!-- ====================== 新模块组（修改后：左2+右2）====================== -->
     <div v-else-if="currentModuleGroup === 'new'">
       <!-- 新左1：各月份水体（保留） -->
-      <div
-        class="dataBoxView"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-left': !newDataBoxShow,
-        }"
-      >
+      <div class="dataBoxView" :class="{
+        'slide-in': newDataBoxShow,
+        'slide-out-left': !newDataBoxShow,
+      }">
         <div class="titleIcon"></div>
         <div class="boxTitle">各月份水体</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-date-picker
-                v-model="monthlyWaterDate"
-                placeholder="选择年月日"
-                :clearable="false"
-                type="date"
-                :format="datePickerFormat.format"
-                :value-format="datePickerFormat.valueFormat"
-                @change="updateMonthlyWaterImg"
-              />
+              <el-date-picker v-model="monthlyWaterDate" placeholder="选择年月日" :clearable="false" type="date"
+                :format="datePickerFormat.format" :value-format="datePickerFormat.valueFormat"
+                @change="updateMonthlyWaterImg" />
             </div>
           </div>
           <div class="custom-border-box">
             <div class="img-container">
-              <img
-                v-if="monthlyWaterImgSrc"
-                :src="monthlyWaterImgSrc"
-                alt="各月份水体图片"
-                @error="handleImgError('monthly')"
-                @click="enlargeImg(monthlyWaterImgSrc)"
-              />
+              <img v-if="monthlyWaterImgSrc" :src="monthlyWaterImgSrc" alt="各月份水体图片" @error="handleImgError('monthly')"
+                @click="enlargeImg(monthlyWaterImgSrc)" />
               <div v-else class="img-placeholder">请选择日期加载图片</div>
             </div>
           </div>
@@ -133,60 +99,29 @@
       </div>
 
       <!-- 新左2：年间水体变化（保留原左2） -->
-      <div
-        class="dataBoxView"
-        style="top: 37%"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-left': !newDataBoxShow,
-        }"
-      >
+      <div class="dataBoxView" style="top: 37%" :class="{
+        'slide-in': newDataBoxShow,
+        'slide-out-left': !newDataBoxShow,
+      }">
         <div class="titleIcon"></div>
         <div class="boxTitle">年间水体变化</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls yearly-controls">
-              <el-date-picker
-                v-model="yearlyChangeStartYear"
-                placeholder="开始年"
-                :clearable="false"
-                type="year"
-                format="YYYY"
-                value-format="YYYY"
-                @change="handleYearChange"
-              />
+              <el-date-picker v-model="yearlyChangeStartYear" placeholder="开始年" :clearable="false" type="year"
+                format="YYYY" value-format="YYYY" @change="handleYearChange" />
               <span style="margin: 0 10px">-</span>
-              <el-date-picker
-                v-model="yearlyChangeEndYear"
-                placeholder="结束年"
-                :clearable="false"
-                type="year"
-                format="YYYY"
-                value-format="YYYY"
-                @change="handleYearChange"
-                :disabled="!yearlyChangeStartYear"
-              />
-              <el-tooltip
-                v-if="yearError"
-                content="仅支持相邻两年"
-                placement="top"
-              >
-                <i
-                  class="el-icon-warning"
-                  style="color: #ff4d4f; margin-left: 10px"
-                ></i>
+              <el-date-picker v-model="yearlyChangeEndYear" placeholder="结束年" :clearable="false" type="year"
+                format="YYYY" value-format="YYYY" @change="handleYearChange" :disabled="!yearlyChangeStartYear" />
+              <el-tooltip v-if="yearError" content="仅支持相邻两年" placement="top">
+                <i class="el-icon-warning" style="color: #ff4d4f; margin-left: 10px"></i>
               </el-tooltip>
             </div>
           </div>
           <div class="custom-border-box">
             <div class="img-container">
-              <img
-                v-if="yearlyChangeImgSrc && !yearError"
-                :src="yearlyChangeImgSrc"
-                alt="年间水体变化图片"
-                @error="handleImgError('yearly')"
-                @click="enlargeImg(yearlyChangeImgSrc)"
-              />
+              <img v-if="yearlyChangeImgSrc && !yearError" :src="yearlyChangeImgSrc" alt="年间水体变化图片"
+                @error="handleImgError('yearly')" @click="enlargeImg(yearlyChangeImgSrc)" />
               <div v-else class="img-placeholder">
                 {{ yearError ? "请选择相邻两年" : "请选择年份范围加载图片" }}
               </div>
@@ -196,24 +131,16 @@
       </div>
 
       <!-- 新右1：水体面积折线图（从原左3移动） -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-right': !newDataBoxShow,
-        }"
-      >
+      <div class="dataBoxView" style="right: 20px; left: auto" :class="{
+        'slide-in': newDataBoxShow,
+        'slide-out-right': !newDataBoxShow,
+      }">
         <div class="titleIcon"></div>
         <div class="boxTitle">水体面积折线图</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-select
-                v-model="areaChartType"
-                placeholder="选择类型"
-                @change="updateAreaChartImg"
-              >
+              <el-select v-model="areaChartType" placeholder="选择类型" @change="updateAreaChartImg">
                 <el-option label="时序" value="时序" />
                 <el-option label="月份" value="月份" />
               </el-select>
@@ -221,13 +148,8 @@
           </div>
           <div class="custom-border-box">
             <div class="img-container2">
-              <img
-                v-if="areaChartImgSrc"
-                :src="areaChartImgSrc"
-                alt="水体面积折线图"
-                @error="handleImgError('area')"
-                @click="enlargeImg(areaChartImgSrc)"
-              />
+              <img v-if="areaChartImgSrc" :src="areaChartImgSrc" alt="水体面积折线图" @error="handleImgError('area')"
+                @click="enlargeImg(areaChartImgSrc)" />
               <div v-else class="img-placeholder">请选择类型加载图片</div>
             </div>
           </div>
@@ -235,40 +157,25 @@
       </div>
 
       <!-- 新增：新右2：各月份地物（添加feature-img-container类名缩小图片） -->
-      <div
-        class="dataBoxView"
-        style="right: 20px; left: auto; top: 37%"
-        :class="{
-          'slide-in': newDataBoxShow,
-          'slide-out-right': !newDataBoxShow,
-        }"
-      >
+      <div class="dataBoxView" style="right: 20px; left: auto; top: 37%" :class="{
+        'slide-in': newDataBoxShow,
+        'slide-out-right': !newDataBoxShow,
+      }">
         <div class="titleIcon"></div>
         <div class="boxTitle">各月份地物</div>
         <div class="dataCenter">
           <div class="custom-border-box" style="margin-bottom: 10px">
             <div class="new-module-controls">
-              <el-date-picker
-                v-model="monthlyFeatureDate"
-                placeholder="选择年月日"
-                :clearable="false"
-                type="date"
-                :format="datePickerFormat.format"
-                :value-format="datePickerFormat.valueFormat"
-                @change="updateMonthlyFeatureImg"
-              />
+              <el-date-picker v-model="monthlyFeatureDate" placeholder="选择年月日" :clearable="false" type="date"
+                :format="datePickerFormat.format" :value-format="datePickerFormat.valueFormat"
+                @change="updateMonthlyFeatureImg" />
             </div>
           </div>
           <div class="custom-border-box">
             <!-- 关键：添加feature-img-container类名，用于单独控制地物图片大小 -->
             <div class="img-container feature-img-container">
-              <img
-                v-if="monthlyFeatureImgSrc"
-                :src="monthlyFeatureImgSrc"
-                alt="各月份地物图片"
-                @error="handleImgError('feature')"
-                @click="enlargeImg(monthlyFeatureImgSrc)"
-              />
+              <img v-if="monthlyFeatureImgSrc" :src="monthlyFeatureImgSrc" alt="各月份地物图片"
+                @error="handleImgError('feature')" @click="enlargeImg(monthlyFeatureImgSrc)" />
               <div v-else class="img-placeholder">请选择日期加载图片</div>
             </div>
           </div>
@@ -305,48 +212,48 @@
       </div>
     </transition>
 
-<!-- 保留原有普通监测点的单弹窗（水闸/泵站用） -->
-<transition name="fade">
-  <div v-show="clickPopupShowNormal">
-    <div class="clickModal-content normal-popup" id="clickPopupNormal">
-      <span class="close" @click="closeNormalModal">&times;</span>
-      <div class="clickPopup-title">
-        <div class="clickPopupTitleText">{{ normalPopupTitle }}</div>
+    <!-- 保留原有普通监测点的单弹窗（水闸/泵站用） -->
+    <transition name="fade">
+      <div v-show="clickPopupShowNormal">
+        <div class="clickModal-content normal-popup" id="clickPopupNormal">
+          <span class="close" @click="closeNormalModal">&times;</span>
+          <div class="clickPopup-title">
+            <div class="clickPopupTitleText">{{ normalPopupTitle }}</div>
+          </div>
+          <div id="clickPopup-content" style="padding: 10px">
+            <p id="clickPopup-p">{{ normalPopupContent }}</p>
+          </div>
+        </div>
       </div>
-      <div id="clickPopup-content" style="padding: 10px">
-        <p id="clickPopup-p">{{ normalPopupContent }}</p>
-      </div>
-    </div>
-  </div>
-</transition>
+    </transition>
 
-<!-- 新增特殊监测点的双弹窗（水体图/植被覆盖/土地覆盖用） -->
-<transition name="fade">
-  <div v-show="clickPopupShowLeft">
-    <div class="clickModal-content left-popup" id="clickPopupLeft">
-      <span class="close" @click="closeLeftModal">&times;</span>
-      <div class="clickPopup-title">
-        <div class="clickPopupTitleText">{{ leftPopupTitle }}</div>
+    <!-- 新增特殊监测点的双弹窗（水体图/植被覆盖/土地覆盖用） -->
+    <transition name="fade">
+      <div v-show="clickPopupShowLeft">
+        <div class="clickModal-content left-popup" id="clickPopupLeft">
+          <span class="close" @click="closeLeftModal">&times;</span>
+          <div class="clickPopup-title">
+            <div class="clickPopupTitleText">{{ leftPopupTitle }}</div>
+          </div>
+          <div style="padding: 10px">
+            <img :src="leftPopupImgSrc" class="popup-img-item" @click="enlargeImg(leftPopupImgSrc)" />
+          </div>
+        </div>
       </div>
-      <div style="padding: 10px">
-        <img :src="leftPopupImgSrc" class="popup-img-item" @click="enlargeImg(leftPopupImgSrc)" />
+    </transition>
+    <transition name="fade">
+      <div v-show="clickPopupShowRight">
+        <div class="clickModal-content right-popup" id="clickPopupRight">
+          <span class="close" @click="closeRightModal">&times;</span>
+          <div class="clickPopup-title">
+            <div class="clickPopupTitleText">{{ rightPopupTitle }}</div>
+          </div>
+          <div style="padding: 10px">
+            <img :src="rightPopupImgSrc" class="popup-img-item" @click="enlargeImg(rightPopupImgSrc)" />
+          </div>
+        </div>
       </div>
-    </div>
-  </div> 
-</transition>
-<transition name="fade">
-  <div v-show="clickPopupShowRight">
-    <div class="clickModal-content right-popup" id="clickPopupRight">
-      <span class="close" @click="closeRightModal">&times;</span>
-      <div class="clickPopup-title">
-        <div class="clickPopupTitleText">{{ rightPopupTitle }}</div>
-      </div>
-      <div style="padding: 10px">
-        <img :src="rightPopupImgSrc" class="popup-img-item" @click="enlargeImg(rightPopupImgSrc)" />
-      </div>
-    </div>
-  </div> 
-</transition>
+    </transition>
 
     <!-- 鼠标悬浮窗口 -->
     <!-- <transition name="fade">
@@ -362,11 +269,7 @@
       <div v-if="showEnlargeModal" class="enlarge-modal">
         <div class="modal-content">
           <span class="enlarge-close" @click="closeEnlargeModal">&times;</span>
-          <img
-            :src="enlargedImgSrc"
-            alt="Enlarged Image"
-            class="enlarged-img"
-          />
+          <img :src="enlargedImgSrc" alt="Enlarged Image" class="enlarged-img" />
         </div>
       </div>
     </transition>
@@ -392,8 +295,11 @@ import WetLandView from "./charts/WetLandView.vue"; /* 土壤 */
 import {
   selectAllSluicesByConditions,
   getFarmlandgeojson,
+  selectAllPumpingStationByConditions,
+  getProductPageData,
+  getModelClassName,
+  getFilesByConditions
 } from "@/api/getData";
-import { selectAllPumpingStationByConditions } from "@/api/getData";
 import router from "@/router";
 import { resolve } from "path";
 
@@ -405,9 +311,9 @@ const pumpDatas = ref();
 // lading
 const loadingShow = ref(true);
 const cesiumLoaded = ref(false);
-const clickPopupShowNormal = ref(false); 
+const clickPopupShowNormal = ref(false);
 const clickPopupShowLeft = ref(false);
-const clickPopupShowRight = ref(false); 
+const clickPopupShowRight = ref(false);
 const normalPopupTitle = ref("");        // 普通监测点标题
 const normalPopupContent = ref("");      // 普通监测点内容
 
@@ -502,6 +408,22 @@ const smartForestPosition = Cesium.Cartesian3.fromDegrees(
   1500
 );
 
+// 产品分类映射
+const classNameInfo = ref({
+  'plant': '地表水生态',
+  'plantChange': '地表水生态变化',
+  'land': '地表水环境',
+  'landChange': '地表水格局演变',
+  'water': '地表水资源',
+  'waterChange': '地表水资源变化',
+  'RSEI': '生态指数',
+  'RSEIChange': '生态指数变化'
+})
+
+// 产品图片缓存
+const productImageCache = ref({})
+
+
 onMounted(async () => {
   const instance = getCurrentInstance();
   if (instance) {
@@ -514,6 +436,7 @@ onMounted(async () => {
   }
 });
 onUnmounted(() => {
+  clearProductImageCache();
   if (treeLoader) {
     treeLoader.destroy();
     treeLoader = null;
@@ -1737,7 +1660,7 @@ async function boxesSlidein() {
     setTimeout(() => {
       boxes[index].classList.remove("slide-out-left");
       boxes[index].classList.add("slide-in");
-    },  i * 500);
+    }, i * 500);
   });
 
   const rightBoxes = [3, 4, 5];
@@ -1745,7 +1668,7 @@ async function boxesSlidein() {
     setTimeout(() => {
       boxes[index].classList.remove("slide-out-right");
       boxes[index].classList.add("slide-in");
-    },  i * 500);
+    }, i * 500);
   });
 }
 
@@ -1759,7 +1682,7 @@ async function boxesSlideOut() {
     setTimeout(() => {
       boxes[index].classList.remove("slide-in");
       boxes[index].classList.add("slide-out-left");
-    },  i * 500);
+    }, i * 500);
   });
 
   const rightBoxes = [3, 4, 5];
@@ -1767,7 +1690,7 @@ async function boxesSlideOut() {
     setTimeout(() => {
       boxes[index].classList.remove("slide-in");
       boxes[index].classList.add("slide-out-right");
-    },  i * 500);
+    }, i * 500);
   });
 
   const lis = document.querySelectorAll(".boxMenuView ul li");
@@ -1914,47 +1837,35 @@ async function initializeCesium() {
       startRotation();
     },
   });
-  // ========== 监测点配置数组（核心：把三个监测点的差异信息集中管理） ==========
+  // ========== 监测点配置数组 ==========
   const monitorPoints = [
     {
       id: "waterChartMonitor",
-      name: " 地表水资源",
+      name: "地表水资源",
       className: "water",
-      position: { lng: 114.358, lat: 34.805 },
-      imgSrc: "/images/水体/水资源分布产品图/2024-09.jpg",
-      imgSrc2: "/images/水体/水资源变化产品图/2023-2024.png",
+      position: { lng: 114.358, lat: 34.805 }
     },
     {
       id: "vegetationCoverMonitor",
       name: "植被覆盖度",
       className: "plant",
-      position: { lng: 114.33, lat: 34.81 },
-      imgSrc:
-        "/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240716FVC.png",
-      imgSrc2:
-        "/images/植被覆盖度/变化产品/2024-67.png",
+      position: { lng: 114.33, lat: 34.81 }
     },
     {
       id: "landCoverMonitor",
       name: "地表水环境格局",
       className: "land",
-      position: { lng: 114.365, lat: 34.79 },
-      imgSrc:
-        "/images/地物分类/4.产品数据-2020及2025年地物分布/2020.png",
-      imgSrc2: "/images/地物分类/2020-2025年地表水环境格局演变产品/增长.png",
+      position: { lng: 114.365, lat: 34.79 }
     },
     {
       id: "RSEIMonitor",
       name: "生态指数",
       className: "RSEI",
-      position: { lng: 114.3472038, lat: 34.7961106 },
-      imgSrc:
-        "/images/生态/遥感生态指数分布产品/20年4月.png",
-      imgSrc2: "/images/生态/遥感生态指数变化产品/20年4月至24年4月.png",
+      position: { lng: 114.3472038, lat: 34.7961106 }
     }
   ];
 
-  // ========== 循环创建所有监测点实体（替代原来的三段硬编码） ==========
+  // ========== 循环创建所有监测点实体 ==========
   monitorPoints.forEach((pointConfig) => {
     viewer.entities.add({
       id: pointConfig.id,
@@ -1965,7 +1876,7 @@ async function initializeCesium() {
         0
       ),
       billboard: {
-        image: marker, // 复用原有标记图片
+        image: marker,
         width: 40.85,
         height: 95.8,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
@@ -1982,7 +1893,7 @@ async function initializeCesium() {
         outlineWidth: 2.0,
         pixelOffset: new Cesium.Cartesian2(0, -100),
         showBackground: true,
-        backgroundImage: createGradientBackground(200, 50), // 复用渐变背景
+        backgroundImage: createGradientBackground(200, 50),
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         verticalOrigin: Cesium.VerticalOrigin.TOP,
@@ -1994,9 +1905,7 @@ async function initializeCesium() {
       monitoItems: {
         data: {
           className: pointConfig.className,
-          name: pointConfig.name,
-          imgSrc: pointConfig.imgSrc,
-          imgSrc2: pointConfig.imgSrc2,
+          name: pointConfig.name
         },
       },
     });
@@ -2232,56 +2141,59 @@ async function onEntityClick(movement) {
     //   },
     //   duration: 2 // 飞行时间（秒）
     // });
-    const monitorData = pickedObject.id.monitoItems.data; 
-    
-    const specialPoints = ["water", "plant", "land","RSEI"];
-    console.log("monitorData.className:",monitorData.className)
+    const monitorData = pickedObject.id.monitoItems.data;
+
+    const specialPoints = ["water", "plant", "land", "RSEI"];
+
     if (specialPoints.includes(monitorData.className)) {
-      // 关闭普通弹窗，显示双弹窗
+      // 关闭普通弹窗
       clickPopupShowNormal.value = false;
-      // 赋值双弹窗数据
+
+      // 设置弹窗标题
       leftPopupTitle.value = monitorData.name + "分布产品";
-      leftPopupImgSrc.value = monitorData.imgSrc;
-      if(monitorData.className=="land")
-      {
-        rightPopupTitle.value = monitorData.name + "演变产品";  
-      }else{
+
+      // 根据className设置右侧弹窗标题
+      if (monitorData.className === "land") {
+        rightPopupTitle.value = monitorData.name + "演变产品";
+      } else {
         rightPopupTitle.value = monitorData.name + "变化产品";
       }
-      rightPopupImgSrc.value = monitorData.imgSrc2;
-      // 显示双弹窗（缩小间距）
+
+      // 显示双弹窗（先显示，图片异步加载）
       clickPopupShowLeft.value = true;
       clickPopupShowRight.value = true;
-      // 双弹窗定位（缩小与监测点的间距）
+
+      // 双弹窗定位
       const leftModal = document.getElementById("clickPopupLeft");
       const rightModal = document.getElementById("clickPopupRight");
-if (leftModal && rightModal && windowPosition) {
-  const popupWidth = leftModal.offsetWidth; // 单个弹窗宽度
-  const gap = 20; // 弹窗与监测点的间距
-  const popupHeight = leftModal.offsetHeight; // 单个弹窗高度
-  
-  // 左弹窗：监测点左侧（x - 弹窗宽度 - 间距）
-  leftModal.style.left = (windowPosition.x - popupWidth - gap) + "px";
-  leftModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
-  leftModal.style.transform = "none"; // 清除可能的默认transform干扰
-  
-  // 右弹窗：监测点右侧（x + 间距）
-  rightModal.style.left = (windowPosition.x + gap) + "px";
-  rightModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
-  rightModal.style.transform = "none"; // 清除可能的默认transform干扰
-}
+
+      if (leftModal && rightModal && windowPosition) {
+        const popupWidth = leftModal.offsetWidth;
+        const gap = 20;
+        const popupHeight = leftModal.offsetHeight;
+
+        leftModal.style.left = (windowPosition.x - popupWidth - gap) + "px";
+        leftModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+        leftModal.style.transform = "none";
+
+        rightModal.style.left = (windowPosition.x + gap) + "px";
+        rightModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
+        rightModal.style.transform = "none";
+      }
+
+      // 异步加载产品图片
+      loadPopupImages(monitorData);
+
     } else {
-      // 普通监测点（水闸/泵站）→ 保留原有文本弹窗，不丢弃
+      // 普通监测点（水闸/泵站）逻辑保持不变
       clickPopupShowLeft.value = false;
       clickPopupShowRight.value = false;
-      // 赋值普通弹窗数据（保留原有逻辑）
       normalPopupTitle.value = monitorData.name || "监测点信息";
       normalPopupContent.value = monitorData.text || `名称：${monitorData.name}\nID：${monitorData.id}`;
-      // 显示普通弹窗（保留原有定位逻辑，可微调间距）
       clickPopupShowNormal.value = true;
       const normalModal = document.getElementById("clickPopupNormal");
       normalModal.style.left = windowPosition.x + "px";
-      normalModal.style.top = (windowPosition.y - 80) + "px"; // 缩小间距
+      normalModal.style.top = (windowPosition.y - 80) + "px";
     }
 
     await boxesSlideOut();
@@ -2293,13 +2205,147 @@ if (leftModal && rightModal && windowPosition) {
     viewer.clock.onTick.removeEventListener(rotate);
     // 解锁相机
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-    
+
     // 点击空白处关闭所有弹窗
     clickPopupShowNormal.value = false;
     clickPopupShowLeft.value = false;
     clickPopupShowRight.value = false;
   }
 }
+/**
+ * 根据监测点类型获取产品图片
+ * @param {string} className - 监测点类型 (land, landChange, water, waterChange, plant, plantChange, RSEI, RSEIChange)
+ * @returns {Promise<string>} 图片的Blob URL
+ */
+async function fetchProductImage(className) {
+  const cacheKey = className;
+
+  // 检查缓存
+  if (productImageCache.value[cacheKey]) {
+    return productImageCache.value[cacheKey];
+  }
+
+  try {
+
+    // 先尝试png类型
+    let product = null;
+
+    // 尝试png
+    const pngParams = {
+      className: className,
+      currentPage: 1,
+      pageSize: 1,
+      type: 'png'
+    };
+
+    const pngRes = await getProductPageData(pngParams);
+    const pngResult = pngRes.response?.value || pngRes;
+
+    if (pngResult.code === 'SUCCESS' && pngResult.body?.records?.length > 0) {
+      product = pngResult.body.records[0];
+    } else {
+      // 尝试jpg
+      const jpgParams = {
+        className: className,
+        currentPage: 1,
+        pageSize: 1,
+        type: 'jpg'
+      };
+
+      const jpgRes = await getProductPageData(jpgParams);
+      const jpgResult = jpgRes.response?.value || jpgRes;
+
+      if (jpgResult.code === 'SUCCESS' && jpgResult.body?.records?.length > 0) {
+        product = jpgResult.body.records[0];
+      }
+    }
+
+    if (product) {
+
+      // 获取图片文件
+      const fileRes = await getFilesByConditions({
+        ids: [product.id]
+      });
+      console.log(fileRes);
+      if(!(fileRes.response?.value || fileRes))
+      {
+        return '';
+      }
+      // 创建Blob URL
+      const blob = new Blob([fileRes.response?.value || fileRes], {
+        type: imageType === 'jpg' ? 'image/jpeg' : 'image/png'
+      });
+      const imageUrl = window.URL.createObjectURL(blob);
+
+      // 缓存结果
+      productImageCache.value[cacheKey] = imageUrl;
+
+      return imageUrl;
+
+    } else {
+      console.warn(`未找到产品数据: className=${className} (中文: ${chineseClassName})`);
+      return '';
+    }
+  } catch (error) {
+    console.error('获取产品图片失败:', error);
+    return '';
+  }
+}
+
+/**
+ * 加载监测点弹窗图片
+ */
+async function loadPopupImages(monitorData) {
+  try {
+    // 分别获取分布产品和变化产品
+    const distImgPromise = fetchProductImage(monitorData.className); // 如 'land'
+    const changeImgPromise = fetchProductImage(monitorData.className + 'Change'); // 如 'landChange'
+
+    // 等待两个请求都完成
+    const [distImg, changeImg] = await Promise.all([distImgPromise, changeImgPromise]);
+
+    // 更新弹窗图片，如果获取失败则使用回退图片
+    leftPopupImgSrc.value = distImg || getFallbackImage(monitorData.className);
+    rightPopupImgSrc.value = changeImg || getFallbackImage(monitorData.className + 'Change');
+
+    console.log(leftPopupImgSrc)
+  } catch (error) {
+    console.error('更新监测点图片失败:', error);
+    // 使用回退图片
+    leftPopupImgSrc.value = getFallbackImage(monitorData.className);
+    rightPopupImgSrc.value = getFallbackImage(monitorData.className + 'Change');
+  }
+}
+
+
+/**
+ * 获取回退图片路径（如果动态获取失败）
+ */
+function getFallbackImage(className) {
+  const fallbackMap = {
+    'water': '/images/水体/水资源分布产品图/2024-09.jpg',
+    'waterChange': '/images/水体/水资源变化产品图/2023-2024.png',
+    'plant': '/images/植被覆盖度/4.产品数据-各日期植被覆盖度/FVC结果图/分类结果/20240716FVC.png',
+    'plantChange': '/images/植被覆盖度/变化产品/2024-67.png',
+    'land': '/images/地物分类/4.产品数据-2020及2025年地物分布/2020.png',
+    'landChange': '/images/地物分类/2020-2025年地表水环境格局演变产品/增长.png',
+    'RSEI': '/images/生态/遥感生态指数分布产品/20年4月.png',
+    'RSEIChange': '/images/生态/遥感生态指数变化产品/20年4月至24年4月.png'
+  };
+  
+  return fallbackMap[className] || '';
+}
+
+// 清理产品图片缓存（在组件卸载时调用）
+function clearProductImageCache() {
+  Object.values(productImageCache.value).forEach(url => {
+    if (url && url.startsWith('blob:')) {
+      window.URL.revokeObjectURL(url);
+    }
+  });
+  productImageCache.value = {};
+}
+
 // 显示弹窗
 async function showModal() {
   clickPopupShowRight.value = true;
@@ -2326,7 +2372,7 @@ async function onMapViewChange() {
       const popupWidth = leftModal.offsetWidth;
       const gap = 50;
       const popupHeight = leftModal.offsetHeight;
-      
+
       // 左弹窗位置
       leftModal.style.left = (windowPosition.x - popupWidth - gap) + "px";
       leftModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
@@ -2334,7 +2380,7 @@ async function onMapViewChange() {
       rightModal.style.left = (windowPosition.x + gap) + "px";
       rightModal.style.top = (windowPosition.y - popupHeight / 2) + "px";
     }
-  } 
+  }
   // 3. 如果是【普通弹窗】显示，更新普通弹窗位置
   else if (clickPopupShowNormal.value && lastClickedEntityPosition && normalModal) {
     const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
@@ -2461,6 +2507,8 @@ async function rotate() {
   // 锁定相机
   viewer.camera.lookAt(position, offset);
 }
+
+
 </script>
 
 <style lang="less" scoped>
@@ -2629,8 +2677,10 @@ async function rotate() {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;  /* 全屏宽度 */
-  height: 100vh; /* 全屏高度 */
+  width: 100vw;
+  /* 全屏宽度 */
+  height: 100vh;
+  /* 全屏高度 */
   background-color: rgba(0, 0, 0, 0.7);
   z-index: 9999;
   display: flex;
@@ -2653,7 +2703,8 @@ async function rotate() {
   align-items: center;
   justify-content: center;
 }
-.enlarge-close{
+
+.enlarge-close {
   position: absolute;
   top: -80px;
   right: -10px;
@@ -2677,7 +2728,7 @@ async function rotate() {
 
 .enlarged-img {
   max-width: 100%;
-  max-height: 100%; 
+  max-height: 100%;
   object-fit: contain;
   display: block;
   margin: 0 auto;
@@ -2700,73 +2751,85 @@ async function rotate() {
 }
 
 .clickModal-content {
-  width: 500px; 
+  width: 500px;
   position: fixed;
   top: 0;
   left: 0;
-  background:rgba(17, 17, 17, 0.5);
-  padding: 5px; 
+  background: rgba(17, 17, 17, 0.5);
+  padding: 5px;
   border-radius: 8px;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
   font-family: PuHuiTi, serif;
   color: #fff;
-  z-index: 9999; /* 确保置顶 */
-}
-.left-popup {
-  width: 500px; /* 和主容器宽度一致 */
-  height: 400px; 
-  min-height: 400px;
-  margin-left: -50px;
-  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5)); /* 匹配主弹窗浅色背景 */
+  z-index: 9999;
+  /* 确保置顶 */
 }
 
-.right-popup{
-  width: 500px; /* 和主容器宽度一致 */
-  height: 400px; 
+.left-popup {
+  width: 500px;
+  /* 和主容器宽度一致 */
+  height: 400px;
+  min-height: 400px;
+  margin-left: -50px;
+  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5));
+  /* 匹配主弹窗浅色背景 */
+}
+
+.right-popup {
+  width: 500px;
+  /* 和主容器宽度一致 */
+  height: 400px;
   min-height: 400px;
   margin-left: 50px;
-  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5)); /* 匹配主弹窗浅色背景 */
+  background: linear-gradient(to bottom, rgba(24, 26, 27, 0.5), rgba(20, 24, 27, 0.5));
+  /* 匹配主弹窗浅色背景 */
 }
+
 /* 弹窗三角箭头 - 居中显示，指向监测点 */
 .clickModal-content::after {
   content: "";
   position: absolute;
   bottom: -13px;
   left: 50%;
-  transform: translateX(-50%); /* 仅箭头居中，不影响弹窗整体 */
+  transform: translateX(-50%);
+  /* 仅箭头居中，不影响弹窗整体 */
   width: 0;
   height: 0;
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
   border-top: 14px solid rgba(2, 7, 17, 0.8);
 }
+
 /* 普通弹窗样式保留 */
 .normal-popup {
-  width: 400px; /* 普通弹窗略窄 */
+  width: 400px;
+  /* 普通弹窗略窄 */
 }
+
 .popup-img-container {
   width: 100%;
   margin-bottom: 10px;
   display: none;
   display: flex;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 15px; 
+  gap: 15px;
   padding: 10px 0;
 }
 
 .popup-img-item {
-  max-width: 500px; 
-  max-height:300px; 
-  height: 400px; 
-  width: 100%; 
+  max-width: 500px;
+  max-height: 300px;
+  height: 400px;
+  width: 100%;
   cursor: zoom-in;
-  border-radius: 4px; 
-  object-fit: contain; 
+  border-radius: 4px;
+  object-fit: contain;
   margin: 5px auto;
-  display: block; 
+  display: block;
 }
+
 .clickPopup-title {
   // width: 100%;
   height: 35px;
@@ -2811,9 +2874,11 @@ async function rotate() {
 .close:hover {
   color: #7dffff;
 }
+
 .enlarge-close:hover {
   color: #7dffff;
 }
+
 /* 鼠标悬浮窗口 */
 .hoverModal-content {
   width: 300px;
@@ -3083,11 +3148,9 @@ async function rotate() {
   top: 70px;
   /* 穿透效果 */
   /* pointer-events: none; */
-  background: linear-gradient(
-    to right,
-    rgba(37, 54, 54, 0.6) 0%,
-    rgba(37, 54, 54, 0.4) 100%
-  );
+  background: linear-gradient(to right,
+      rgba(37, 54, 54, 0.6) 0%,
+      rgba(37, 54, 54, 0.4) 100%);
   user-select: none;
   border-radius: 6px 0 0 0;
 
@@ -3235,11 +3298,15 @@ async function rotate() {
 /* ====================== 响应式适配 ====================== */
 /* 笔记本屏幕适配 (最大宽度1440px) */
 @media screen and (max-width: 1440px) {
+
   /* 调整悬浮窗大小 */
   .dataBoxView {
-    width: 28% !important; /* 缩小宽度 */
-    height: calc(100% / 4) !important; /* 增加高度比例 */
-    max-height: 220px; /* 限制最大高度 */
+    width: 28% !important;
+    /* 缩小宽度 */
+    height: calc(100% / 4) !important;
+    /* 增加高度比例 */
+    max-height: 220px;
+    /* 限制最大高度 */
   }
 
   /* 调整头部 */
@@ -3391,6 +3458,7 @@ async function rotate() {
 /* ====================== 响应式适配 ====================== */
 /* 笔记本屏幕适配 (最大宽度1440px) */
 @media screen and (max-width: 1440px) {
+
   /* 调整数据菜单按钮 */
   .data-menu-btn {
     top: 24px;
@@ -3404,7 +3472,8 @@ async function rotate() {
 /* 小屏幕笔记本适配 (最大宽度1366px) */
 @media screen and (max-width: 1366px) {
   .data-menu-btn {
-    top: 26px; /* 原11px + 15px = 26px */
+    top: 26px;
+    /* 原11px + 15px = 26px */
     right: 15px;
     width: 100px;
     height: 32px;
@@ -3415,7 +3484,8 @@ async function rotate() {
 /* 超小屏幕适配 (最大宽度1280px) */
 @media screen and (max-width: 1280px) {
   .data-menu-btn {
-    top: 21px; /* 原6px + 15px = 21px */
+    top: 21px;
+    /* 原6px + 15px = 21px */
     right: 10px;
     width: 90px;
     height: 30px;
@@ -3427,6 +3497,4 @@ async function rotate() {
     margin-right: 5px;
   }
 }
-
-
 </style>
