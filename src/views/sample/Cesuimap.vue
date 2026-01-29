@@ -2741,7 +2741,7 @@ async function rotate() {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  cursor: url("../../../public/images/cesiumMap/cursor-RmLDFyYc32.png") 24 24,
+  cursor: url("../../../public/images/cesiumMap/cursor-RmLDFyYc32.png"),
     auto;
 }
 
