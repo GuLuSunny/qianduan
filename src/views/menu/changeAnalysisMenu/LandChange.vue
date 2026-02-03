@@ -1,6 +1,6 @@
 <template>
     <div>
-        <!-- 地类变化识别功能 -->
+        <!-- 植被覆盖度变化检测功能 -->
         <div class="feature-container">
             <!-- 自定义步骤条 -->
             <div class="steps-container">
@@ -11,149 +11,166 @@
                     </div>
                     <div :class="['step-item', { 'active': predictCurrent === 1 }]">
                         <div class="step-number">2</div>
-                        <div class="step-title">预测结果</div>
+                        <div class="step-title">检测结果</div>
                     </div>
                 </div>
             </div>
 
             <!-- 选择文件和参数页面 -->
             <div class="form-container" v-if="predictCurrent === 0">
-                <el-form :model="form" label-width="auto">
-                    <div class="form-horizontal-group">
-                        <div class="form-column-full">
-                            <!-- 早期文件上传 -->
-                            <el-form-item label="早期文件：" required>
-                                <div class="file-input-wrapper">
-                                    <el-input v-model="earlyFilePath" placeholder="请选择早期地类分类文件" readonly
-                                        clearable @clear="handleRemoveFile('early')"
-                                        @keydown.delete="handleKeydown($event, 'early')"
-                                        @focus="handleInputFocus('early')">
-                                        <template #append>
-                                            <el-button @click="handleEarlyBrowseClick" class="browse-button">
-                                                浏览
-                                            </el-button>
-                                        </template>
-                                    </el-input>
-                                    <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
-                                        accept=".tif,.tiff" class="file-input-hidden" />
+                <div class="form-center-wrapper">
+                    <el-form :model="form" label-width="auto" class="center-form">
+                        <div class="form-horizontal-group">
+                            <div class="form-column-full">
+                                <!-- 早期FVC文件上传 -->
+                                <el-form-item label="早期FVC文件：" required>
+                                    <div class="form-item-center-wrapper">
+                                        <div class="file-input-wrapper center-content">
+                                            <el-input v-model="earlyFilePath" placeholder="请选择早期FVC结果文件" readonly
+                                                clearable @clear="handleRemoveFile('early')"
+                                                @keydown.delete="handleKeydown($event, 'early')"
+                                                @focus="handleInputFocus('early')">
+                                                <template #append>
+                                                    <el-button @click="handleEarlyBrowseClick" class="browse-button">
+                                                        浏览
+                                                    </el-button>
+                                                </template>
+                                            </el-input>
+                                            <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
+                                                accept=".tif,.tiff" class="file-input-hidden" />
+                                        </div>
+                                        <div class="file-hint">请选择早期FVC TIFF文件</div>
+                                    </div>
+                                </el-form-item>
+
+                                <!-- 后期FVC文件上传 -->
+                                <el-form-item label="后期FVC文件：" required>
+                                    <div class="form-item-center-wrapper">
+                                        <div class="file-input-wrapper center-content">
+                                            <el-input v-model="lateFilePath" placeholder="请选择后期FVC结果文件" readonly
+                                                clearable @clear="handleRemoveFile('late')"
+                                                @keydown.delete="handleKeydown($event, 'late')"
+                                                @focus="handleInputFocus('late')">
+                                                <template #append>
+                                                    <el-button @click="handleLateBrowseClick" class="browse-button">
+                                                        浏览
+                                                    </el-button>
+                                                </template>
+                                            </el-input>
+                                            <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
+                                                accept=".tif,.tiff" class="file-input-hidden" />
+                                        </div>
+                                        <div class="file-hint">请选择后期FVC TIFF文件</div>
+                                    </div>
+                                </el-form-item>
+
+                                <!-- 显示模式选择 -->
+                                <el-form-item label="显示模式：" required>
+                                    <div class="form-item-center-wrapper">
+                                        <el-radio-group v-model="displayMode" class="radio-group">
+                                            <el-radio label="changes_only">仅显示变化区域</el-radio>
+                                            <el-radio label="all">显示全部类别</el-radio>
+                                        </el-radio-group>
+                                    </div>
+                                </el-form-item>
+
+                                <!-- 阈值配置（可选） -->
+                                <el-form-item label="阈值配置：">
+                                    <div class="form-item-center-wrapper">
+                                        <div class="thresholds-container center-content">
+                                            <div class="threshold-item">
+                                                <span class="threshold-label">显著退化阈值：</span>
+                                                <el-input-number v-model="thresholds.significant_decrease_threshold" :min="-1"
+                                                    :max="0" :step="0.05" :precision="2" size="small" />
+                                            </div>
+                                            <div class="threshold-item">
+                                                <span class="threshold-label">轻微退化阈值：</span>
+                                                <el-input-number v-model="thresholds.slight_decrease_threshold" :min="-1"
+                                                    :max="0" :step="0.05" :precision="2" size="small" />
+                                            </div>
+                                            <div class="threshold-item">
+                                                <span class="threshold-label">轻微改善阈值：</span>
+                                                <el-input-number v-model="thresholds.slight_increase_threshold" :min="0"
+                                                    :max="1" :step="0.05" :precision="2" size="small" />
+                                            </div>
+                                            <div class="threshold-item">
+                                                <span class="threshold-label">显著改善阈值：</span>
+                                                <el-input-number v-model="thresholds.significant_increase_threshold" :min="0"
+                                                    :max="1" :step="0.05" :precision="2" size="small" />
+                                            </div>
+                                        </div>
+                                        <div class="file-hint">FVC变化阈值配置（可选，使用默认值可不设置）</div>
+                                    </div>
+                                </el-form-item>
+
+                                <!-- 文件状态提示 -->
+                                <el-form-item label="文件状态">
+                                    <div class="form-item-center-wrapper">
+                                        <div class="file-status">
+                                            <div v-if="earlyFileObject" class="status-item">
+                                                <el-icon color="#67C23A">
+                                                    <Check />
+                                                </el-icon>
+                                                <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 /
+                                                    1024).toFixed(2) }} MB)</span>
+                                            </div>
+                                            <div v-else class="status-item">
+                                                <el-icon color="#F56C6C">
+                                                    <Close />
+                                                </el-icon>
+                                                <span>未选择早期文件</span>
+                                            </div>
+                                            <div v-if="lateFileObject" class="status-item">
+                                                <el-icon color="#67C23A">
+                                                    <Check />
+                                                </el-icon>
+                                                <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 /
+                                                    1024).toFixed(2) }} MB)</span>
+                                            </div>
+                                            <div v-else class="status-item">
+                                                <el-icon color="#F56C6C">
+                                                    <Close />
+                                                </el-icon>
+                                                <span>未选择后期文件</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </el-form-item>
+
+                                <!-- 输出选项 -->
+                                <el-form-item label="输出选项">
+                                    <div class="form-item-center-wrapper">
+                                        <el-checkbox-group v-model="outputOptions" class="checkbox-group">
+                                            <el-checkbox label="change_stats">变化统计</el-checkbox>
+                                            <el-checkbox label="change_image">变化预览图</el-checkbox>
+                                            <el-checkbox label="classified_tif">分类结果下载</el-checkbox>
+                                            <el-checkbox label="raw_tif">原始变化数据下载</el-checkbox>
+                                        </el-checkbox-group>
+                                    </div>
+                                </el-form-item>
+
+                                <div class="button-group">
+                                    <el-button @click="handleChangeDetection" class="submit-button" type="primary"
+                                        :loading="detectionLoading" :disabled="!earlyFileObject || !lateFileObject">
+                                        {{ detectionLoading ? '处理中...' : '开始检测' }}
+                                    </el-button>
                                 </div>
-                                <div class="file-hint">请选择早期地类分类TIFF文件</div>
-                            </el-form-item>
-
-                            <!-- 后期文件上传 -->
-                            <el-form-item label="后期文件：" required>
-                                <div class="file-input-wrapper">
-                                    <el-input v-model="lateFilePath" placeholder="请选择后期地类分类文件" readonly
-                                        clearable @clear="handleRemoveFile('late')"
-                                        @keydown.delete="handleKeydown($event, 'late')"
-                                        @focus="handleInputFocus('late')">
-                                        <template #append>
-                                            <el-button @click="handleLateBrowseClick" class="browse-button">
-                                                浏览
-                                            </el-button>
-                                        </template>
-                                    </el-input>
-                                    <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
-                                        accept=".tif,.tiff" class="file-input-hidden" />
-                                </div>
-                                <div class="file-hint">请选择后期地类分类TIFF文件</div>
-                            </el-form-item>
-
-                            <!-- 显示模式选择 -->
-                            <el-form-item label="显示模式：" required>
-                                <el-radio-group v-model="displayMode" class="radio-group">
-                                    <el-radio label="changes_only">仅显示变化区域</el-radio>
-                                    <el-radio label="all">显示全部类别</el-radio>
-                                </el-radio-group>
-                            </el-form-item>
-
-                            <!-- 配置文件上传（可选） -->
-                            <el-form-item label="配置文件：">
-                                <div class="file-input-wrapper">
-                                    <el-input v-model="configFilePath" placeholder="请选择配置文件（可选）" readonly
-                                        clearable @clear="handleRemoveFile('config')"
-                                        @keydown.delete="handleKeydown($event, 'config')"
-                                        @focus="handleInputFocus('config')">
-                                        <template #append>
-                                            <el-button @click="handleConfigBrowseClick" class="browse-button">
-                                                浏览
-                                            </el-button>
-                                        </template>
-                                    </el-input>
-                                    <input type="file" ref="configFileInput" @change="handleConfigFileSelect"
-                                        accept=".json" class="file-input-hidden" />
-                                </div>
-                                <div class="file-hint">JSON格式配置文件，定义类别和颜色（可选）</div>
-                            </el-form-item>
-
-                            <!-- 文件状态提示 -->
-                            <el-form-item label="文件状态">
-                                <div class="file-status">
-                                    <div v-if="earlyFileObject" class="status-item">
-                                        <el-icon color="#67C23A">
-                                            <Check />
-                                        </el-icon>
-                                        <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 /
-                                            1024).toFixed(2) }} MB)</span>
-                                    </div>
-                                    <div v-else class="status-item">
-                                        <el-icon color="#F56C6C">
-                                            <Close />
-                                        </el-icon>
-                                        <span>未选择早期文件</span>
-                                    </div>
-                                    <div v-if="lateFileObject" class="status-item">
-                                        <el-icon color="#67C23A">
-                                            <Check />
-                                        </el-icon>
-                                        <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 /
-                                            1024).toFixed(2) }} MB)</span>
-                                    </div>
-                                    <div v-else class="status-item">
-                                        <el-icon color="#F56C6C">
-                                            <Close />
-                                        </el-icon>
-                                        <span>未选择后期文件</span>
-                                    </div>
-                                    <div v-if="configFileObject" class="status-item">
-                                        <el-icon color="#67C23A">
-                                            <Check />
-                                        </el-icon>
-                                        <span>配置文件: {{ configFilePath }} ({{ (configFileObject.size / 1024).toFixed(2)
-                                        }} KB)</span>
-                                    </div>
-                                </div>
-                            </el-form-item>
-
-                            <!-- 预测参数选项 -->
-                            <el-form-item label="预测参数">
-                                <el-checkbox-group v-model="predictOptions" class="checkbox-group">
-                                    <el-checkbox label="change_stats">变化统计</el-checkbox>
-                                    <el-checkbox label="change_image">变化预览</el-checkbox>
-                                    <el-checkbox label="change_tif">变化结果下载</el-checkbox>
-                                </el-checkbox-group>
-                            </el-form-item>
-
-                            <div class="button-group">
-                                <el-button @click="handlePredict" class="submit-button" type="primary"
-                                    :loading="predictLoading" :disabled="!earlyFileObject || !lateFileObject">
-                                    {{ predictLoading ? '上传并预测中...' : '开始预测' }}
-                                </el-button>
                             </div>
                         </div>
-                    </div>
-                </el-form>
+                    </el-form>
+                </div>
             </div>
 
-            <!-- 预测结果页面 -->
+            <!-- 检测结果页面 -->
             <div class="result-container" v-if="predictCurrent === 1">
                 <div class="result-content">
-                    <!-- 结果内容区域 - 响应式布局 -->
+                    <!-- 结果内容区域 -->
                     <div class="result-layout">
                         <!-- 左边：变化统计 -->
                         <div class="result-panel stats-panel">
-                            <h3>变化统计</h3>
-                            <div v-if="Object.keys(changeStats).length > 0 || changeTypes.length > 0">
+                            <h3>FVC变化统计</h3>
+                            <div v-if="Object.keys(changeStats).length > 0">
+                                <!-- 修改模板中的统计项 -->
                                 <div class="stat-summary">
                                     <div class="stat-item">
                                         <span class="stat-label">总像素数：</span>
@@ -167,65 +184,87 @@
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-label">变化像素：</span>
-                                        <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                        <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
-                                            '0.00'
-                                            }}%)</span>
+                                        <div class="stat-value-container">
+                                            <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() ||
+                                                '0' }}</span>
+                                            <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
+                                                '0.00'
+                                                }}%)</span>
+                                        </div>
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-label">未变化像素：</span>
-                                        <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                        <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2) ||
-                                            '0.00'
-                                            }}%)</span>
-                                    </div>
-                                </div>
-
-                                <!-- 未变化类别统计 -->
-                                <div v-if="Object.keys(changeStats).length > 0">
-                                    <h4>未变化类别统计</h4>
-                                    <div class="scrollable-container">
-                                        <div v-for="(value, key) in changeStats" :key="key" class="change-type-item">
-                                            <div class="change-type-header">
-                                                <span class="change-from">{{ key }}</span>
-                                            </div>
-                                            <div class="change-type-details">
-                                                <span>像素数: {{ value.count?.toLocaleString() || value?.toLocaleString()
-                                                    || '0'
-                                                    }}</span>
-                                                <span v-if="value.percentage !== undefined">比例: {{
-                                                    value.percentage.toFixed(2)
-                                                    }}%</span>
-                                                <span v-else-if="totalStats.valid_pixels > 0">
-                                                    比例: {{ ((value.count || value) * 100.0 /
-                                                    totalStats.valid_pixels).toFixed(2) }}%
-                                                </span>
-                                            </div>
+                                        <div class="stat-value-container">
+                                            <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() ||
+                                                '0'
+                                                }}</span>
+                                            <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2)
+                                                || '0.00'
+                                                }}%)</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- 变化类型统计 -->
-                                <div v-if="changeTypes.length > 0">
-                                    <h4>变化类型统计</h4>
-                                    <div class="scrollable-container tall-scroll">
-                                        <div v-for="(change, index) in changeTypes" :key="index"
+                                <!-- FVC变化类别统计 -->
+                                <div v-if="changeCategories.length > 0">
+                                    <h4>FVC变化类别统计</h4>
+                                    <div class="scrollable-container">
+                                        <div v-for="(category, index) in changeCategories" :key="index"
                                             class="change-type-item">
                                             <div class="change-type-header">
-                                                <span class="change-from">{{ change.from_name }}</span>
-                                                <el-icon>
-                                                    <Right />
-                                                </el-icon>
-                                                <span class="change-to">{{ change.to_name }}</span>
+                                                <span :style="{ color: getCategoryColor(category.name) }">
+                                                    {{ category.name }}
+                                                </span>
                                             </div>
                                             <div class="change-type-details">
-                                                <span>像素数: {{ change.count?.toLocaleString() || '0' }}</span>
-                                                <span>比例: {{ change.percentage?.toFixed(2) || '0.00' }}%</span>
+                                                <span>像素数: {{ category.count?.toLocaleString() || '0' }}</span>
+                                                <span>比例: {{ category.percentage?.toFixed(2) }}%</span>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- 变化统计信息 -->
+                                <div v-if="changeStatistics.mean_change !== undefined">
+                                    <h4>变化统计信息</h4>
+                                    <div class="stat-summary">
+                                        <div class="stat-item">
+                                            <span class="stat-label">平均变化：</span>
+                                            <span class="stat-value" :class="{
+                                                'positive': changeStatistics.mean_change > 0,
+                                                'negative': changeStatistics.mean_change < 0
+                                            }">
+                                                {{ changeStatistics.mean_change?.toFixed(4) || '0.0000' }}
+                                            </span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">标准差：</span>
+                                            <span class="stat-value">{{ changeStatistics.std_change?.toFixed(4) ||
+                                                '0.0000'
+                                            }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">最小变化：</span>
+                                            <span class="stat-value">{{ changeStatistics.min_change?.toFixed(4) ||
+                                                '0.0000'
+                                            }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">最大变化：</span>
+                                            <span class="stat-value">{{ changeStatistics.max_change?.toFixed(4) ||
+                                                '0.0000'
+                                            }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 下载按钮 -->
+                                <div class="download-section" v-if="outputOptions.includes('change_stats')">
+                                    <h3>统计文件下载</h3>
+                                    <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
+                                        class="download-button">
+                                        下载统计文件 (JSON)
+                                    </el-button>
                                 </div>
                             </div>
                             <div v-else class="no-data">
@@ -234,21 +273,12 @@
                                 </el-icon>
                                 <div>暂无统计数据</div>
                             </div>
-
-                            <!-- 下载按钮 -->
-                            <div class="download-section" v-if="predictOptions.includes('change_stats')">
-                                <h3>统计文件下载</h3>
-                                <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
-                                    class="download-button">
-                                    下载统计文件 (JSON)
-                                </el-button>
-                            </div>
                         </div>
 
                         <!-- 右边：变化图像 -->
                         <div class="result-panel image-panel">
-                            <div v-if="previewData && predictOptions.includes('change_image')" class="image-container">
-                                <img :src="previewData" alt="变化结果预览" class="preview-image" />
+                            <div v-if="previewData && outputOptions.includes('change_image')" class="image-container">
+                                <img :src="previewData" alt="FVC变化预览" class="preview-image" />
                                 <div class="image-info">
                                     <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
                                         {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
@@ -267,11 +297,22 @@
                                 </el-icon>
                                 <div>暂无预览图</div>
                             </div>
-                            <div class="download-section" v-if="predictOptions.includes('change_tif')">
-                                <h3>变化地图下载</h3>
-                                <el-button @click="downloadTifFile" type="primary" plain icon="Download"
+
+                            <!-- 分类结果下载 -->
+                            <div class="download-section" v-if="outputOptions.includes('classified_tif')">
+                                <h3>分类结果下载</h3>
+                                <el-button @click="downloadClassifiedTif" type="primary" plain icon="Download"
                                     class="download-button">
-                                    下载变化地图 (TIFF)
+                                    下载分类结果 (TIFF)
+                                </el-button>
+                            </div>
+
+                            <!-- 原始变化数据下载 -->
+                            <div class="download-section" v-if="outputOptions.includes('raw_tif')">
+                                <h3>原始变化数据下载</h3>
+                                <el-button @click="downloadRawTif" type="primary" plain icon="Download"
+                                    class="download-button">
+                                    下载原始变化数据 (TIFF)
                                 </el-button>
                             </div>
                         </div>
@@ -279,11 +320,11 @@
 
                     <!-- 操作按钮 -->
                     <div class="action-buttons">
-                        <el-button @click="handlePredictPrevious" icon="Back">
+                        <el-button @click="handleDetectionPrevious" icon="Back">
                             上一步
                         </el-button>
-                        <el-button @click="handlePredictContinue" type="primary" icon="Refresh">
-                            继续预测
+                        <el-button @click="handleDetectionContinue" type="primary" icon="Refresh">
+                            继续检测
                         </el-button>
                     </div>
                 </div>
@@ -306,7 +347,7 @@
 <script setup>
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, Right, DataAnalysis } from '@element-plus/icons-vue'
+import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, DataAnalysis } from '@element-plus/icons-vue'
 import {
     ElForm,
     ElFormItem,
@@ -318,38 +359,67 @@ import {
     ElDialog,
     ElRadioGroup,
     ElRadio,
-    ElTag
+    ElTag,
+    ElInputNumber
 } from 'element-plus'
-import { getLandChangeResult } from '@/api/getData'
+import { getPlantChangeResult } from '@/api/getData'
 
 // 状态定义
 const predictCurrent = ref(0)
 const displayMode = ref('changes_only')
-const predictOptions = ref(['change_stats', 'change_image', 'change_tif'])
-const predictLoading = ref(false)
+const outputOptions = ref(['change_stats', 'change_image', 'classified_tif', 'raw_tif'])
+const detectionLoading = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
 const previewData = ref('')
 const isImageLoaded = ref(false)
 const zoomLevel = ref(1)
 
+// 阈值配置
+const thresholds = ref({
+    significant_decrease_threshold: -0.3,
+    slight_decrease_threshold: -0.1,
+    slight_increase_threshold: 0.1,
+    significant_increase_threshold: 0.3,
+    fvc_min_value: 0.0,
+    fvc_max_value: 1.0
+})
+
 // 文件上传相关状态
 const earlyFilePath = ref('')
 const lateFilePath = ref('')
-const configFilePath = ref('')
 const earlyFileObject = ref(null)
 const lateFileObject = ref(null)
-const configFileObject = ref(null)
 const earlyFileInput = ref(null)
 const lateFileInput = ref(null)
-const configFileInput = ref(null)
 const focusedInput = ref('')
 
 // 变化统计数据
 const changeStats = ref({})
 const totalStats = ref({})
-const changeTypes = ref([])
-const downloadFiles = ref({ stats_file: '', image_file: '', tif_file: '' })
+const changeCategories = ref([])
+const changeStatistics = ref({})
+const downloadFiles = ref({
+    stats_file: '',
+    image_file: '',
+    classified_tif_file: '',
+    raw_tif_file: ''
+})
+
+// 类别颜色映射
+const categoryColors = {
+    '无效区域': '#909399',
+    '显著退化': '#8B0000',
+    '轻微退化': '#D2B48C',
+    '基本不变': '#FFFF99',
+    '轻微改善': '#90EE90',
+    '显著改善': '#006400'
+}
+
+// 获取类别颜色
+const getCategoryColor = (categoryName) => {
+    return categoryColors[categoryName] || '#909399'
+}
 
 // 文件选择和验证
 const handleInputFocus = (type) => {
@@ -362,10 +432,6 @@ const handleEarlyBrowseClick = () => {
 
 const handleLateBrowseClick = () => {
     if (lateFileInput.value) lateFileInput.value.click()
-}
-
-const handleConfigBrowseClick = () => {
-    if (configFileInput.value) configFileInput.value.click()
 }
 
 const handleEarlyFileSelect = (event) => {
@@ -386,15 +452,6 @@ const handleLateFileSelect = (event) => {
     }
 }
 
-const handleConfigFileSelect = (event) => {
-    const file = event.target.files[0]
-    if (file && beforeUpload(file, 'json')) {
-        configFilePath.value = file.name
-        configFileObject.value = file
-        event.target.value = ''
-    }
-}
-
 const handleRemoveFile = (type) => {
     if (type === 'early') {
         earlyFilePath.value = ''
@@ -404,10 +461,6 @@ const handleRemoveFile = (type) => {
         lateFilePath.value = ''
         lateFileObject.value = null
         lateFileInput.value && (lateFileInput.value.value = '')
-    } else if (type === 'config') {
-        configFilePath.value = ''
-        configFileObject.value = null
-        configFileInput.value && (configFileInput.value.value = '')
     }
 }
 
@@ -428,13 +481,6 @@ function beforeUpload(file, expectedType) {
             message.error(`只能上传 ${validTypes.join(', ')} 格式的文件`)
             return false
         }
-    } else if (expectedType === 'json') {
-        const validTypes = ['.json']
-        const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
-        if (!validTypes.includes(fileExt)) {
-            message.error(`只能上传 ${validTypes.join(', ')} 格式的文件`)
-            return false
-        }
     }
 
     const isLt100M = file.size / 1024 / 1024 < 1000
@@ -445,18 +491,14 @@ function beforeUpload(file, expectedType) {
     return true
 }
 
-// 预测处理
-const handlePredict = async () => {
+// 变化检测处理
+const handleChangeDetection = async () => {
     if (!earlyFileObject.value || !lateFileObject.value) {
-        message.error('请上传早期和后期文件')
-        return
-    }
-    if (!earlyFileObject.value.size || !lateFileObject.value.size) {
-        message.error('文件内容为空，请重新选择')
+        message.error('请上传早期和后期FVC文件')
         return
     }
 
-    predictLoading.value = true
+    detectionLoading.value = true
     error.value = ''
 
     try {
@@ -465,32 +507,24 @@ const handlePredict = async () => {
         formData.append('lateFile', lateFileObject.value)
         formData.append('DISPLAY_MODE', displayMode.value)
 
-        if (configFileObject.value) {
-            formData.append('configFile', configFileObject.value)
-        }
+        // 添加阈值配置
+        formData.append('CHANGE_THRESHOLDS', JSON.stringify(thresholds.value))
 
-        predictOptions.value.forEach(option => {
+        outputOptions.value.forEach(option => {
             formData.append(option, 'True')
         })
 
-        const res = await getLandChangeResult(formData)
+        const res = await getPlantChangeResult(formData)
         const response = res?.response?.value || res?.value || res
 
         if (response?.code === 'SUCCESS') {
-            message.success('预测完成')
+            message.success('植被覆盖度变化检测完成')
             const body = response.body
 
             // 解析统计数据
             if (body.stats) {
-                // 获取未变化类别统计
-                if (body.stats.unchanged_classes) {
-                    changeStats.value = body.stats.unchanged_classes;
-                } else {
-                    changeStats.value = {};
-                }
-
                 // 获取总统计信息
-                const pixelStats = body.stats.pixel_statistics || {};
+                const pixelStats = body.stats.pixel_statistics || {}
                 totalStats.value = {
                     total_pixels: pixelStats.total_pixels || 0,
                     valid_pixels: pixelStats.valid_pixels || 0,
@@ -500,28 +534,81 @@ const handlePredict = async () => {
                         ((pixelStats.changed_pixels || 0) * 100.0 / pixelStats.valid_pixels) : 0,
                     unchanged_percentage: pixelStats.valid_pixels > 0 ?
                         ((pixelStats.unchanged_pixels || 0) * 100.0 / pixelStats.valid_pixels) : 0
-                };
+                }
 
-                // 获取变化类型统计
-                changeTypes.value = body.stats.change_types || [];
+                // 获取FVC变化类别统计
+                const classStats = body.stats.class_statistics || {}
+                const classPercentages = body.stats.class_percentages || {}
+
+                // 构建变化类别数组
+                changeCategories.value = Object.keys(classStats).map(name => {
+                    // 从class_percentages中获取百分比，如果没有则计算
+                    let percentage = 0
+                    if (classPercentages[name] && classPercentages[name].endsWith('%')) {
+                        percentage = parseFloat(classPercentages[name])
+                    } else if (totalStats.value.valid_pixels > 0) {
+                        percentage = (classStats[name] * 100.0 / totalStats.value.valid_pixels)
+                    }
+
+                    return {
+                        name,
+                        count: classStats[name],
+                        percentage: percentage
+                    }
+                }).filter(item => item.name !== '无效区域')
+
+                // 获取变化统计信息
+                changeStatistics.value = body.stats.change_statistics || {}
+
+                // 将class_stats存储在changeStats中
+                changeStats.value = classStats
+
             } else {
-                // 如果后端直接将统计信息放在顶层，使用这种方式
-                changeStats.value = body.unchanged_classes || {};
+                // 如果后端直接将统计信息放在顶层
                 totalStats.value = {
                     total_pixels: body.total_pixels || 0,
                     valid_pixels: body.valid_pixels || 0,
                     changed_pixels: body.changed_pixels || 0,
                     unchanged_pixels: body.unchanged_pixels || 0,
-                    change_percentage: body.change_percentage || 0,
-                    unchanged_percentage: body.unchanged_percentage || 0
+                    change_percentage: body.change_percentage ||
+                        (body.valid_pixels > 0 ? (body.changed_pixels * 100.0 / body.valid_pixels) : 0),
+                    unchanged_percentage: body.unchanged_percentage ||
+                        (body.valid_pixels > 0 ? (body.unchanged_pixels * 100.0 / body.valid_pixels) : 0)
                 };
-                changeTypes.value = body.change_types || [];
+
+                // 解析类别统计
+                if (body.class_statistics) {
+                    changeCategories.value = Object.entries(body.class_statistics)
+                        .filter(([name]) => name !== '无效区域')
+                        .map(([name, count]) => {
+                            let percentage = 0
+                            if (body.class_percentages && body.class_percentages[name]) {
+                                const percentStr = body.class_percentages[name]
+                                if (percentStr.endsWith('%')) {
+                                    percentage = parseFloat(percentStr)
+                                }
+                            } else if (totalStats.value.valid_pixels > 0) {
+                                percentage = (count * 100.0 / totalStats.value.valid_pixels)
+                            }
+
+                            return {
+                                name,
+                                count,
+                                percentage: percentage
+                            }
+                        })
+
+                    changeStats.value = body.class_statistics
+                }
+
+                changeStatistics.value = body.change_statistics || {}
             }
 
             downloadFiles.value = {
                 stats_file: body.stats_file?.replace(/\\/g, '/') || '',
                 image_file: body.image_file?.replace(/\\/g, '/') || '',
-                tif_file: body.tif_file?.replace(/\\/g, '/') || ''
+                classified_tif_file: body.classified_tif_file?.replace(/\\/g, '/') || '',
+                raw_tif_file: body.raw_tif_file?.replace(/\\/g, '/') || ''
             };
 
             if (body.image_file) {
@@ -529,16 +616,16 @@ const handlePredict = async () => {
             }
             predictCurrent.value = 1
         } else {
-            const msg = response?.msg || '预测失败'
+            const msg = response?.msg || '检测失败'
             error.value = msg
             message.error(msg)
         }
     } catch (err) {
-        console.error('预测失败:', err)
-        error.value = '预测失败: ' + err.message
-        message.error('预测失败: ' + err.message)
+        console.error('检测失败:', err)
+        error.value = '检测失败: ' + err.message
+        message.error('检测失败: ' + err.message)
     } finally {
-        predictLoading.value = false
+        detectionLoading.value = false
     }
 }
 
@@ -613,15 +700,23 @@ const downloadStatsFile = async () => {
         message.error('没有可下载的统计文件')
         return
     }
-    await downloadFile(downloadFiles.value.stats_file, 'land_change_stats.json')
+    await downloadFile(downloadFiles.value.stats_file, 'plant_change_stats.json')
 }
 
-const downloadTifFile = async () => {
-    if (!downloadFiles.value.tif_file) {
-        message.error('没有可下载的变化地图')
+const downloadClassifiedTif = async () => {
+    if (!downloadFiles.value.classified_tif_file) {
+        message.error('没有可下载的分类结果')
         return
     }
-    await downloadFile(downloadFiles.value.tif_file, 'land_change_map.tif')
+    await downloadFile(downloadFiles.value.classified_tif_file, 'plant_change_classified.tif')
+}
+
+const downloadRawTif = async () => {
+    if (!downloadFiles.value.raw_tif_file) {
+        message.error('没有可下载的原始变化数据')
+        return
+    }
+    await downloadFile(downloadFiles.value.raw_tif_file, 'plant_change_raw.tif')
 }
 
 const downloadFile = async (filePath, defaultName) => {
@@ -657,26 +752,39 @@ const downloadFile = async (filePath, defaultName) => {
     }
 }
 
-const handlePredictPrevious = () => {
+const handleDetectionPrevious = () => {
     if (predictCurrent.value > 0) predictCurrent.value -= 1
 }
 
-const handlePredictContinue = () => {
+const handleDetectionContinue = () => {
     predictCurrent.value = 0
     earlyFilePath.value = ''
     lateFilePath.value = ''
-    configFilePath.value = ''
     earlyFileObject.value = null
     lateFileObject.value = null
-    configFileObject.value = null
     changeStats.value = {}
     totalStats.value = {}
-    changeTypes.value = []
-    downloadFiles.value = { stats_file: '', image_file: '', tif_file: '' }
+    changeCategories.value = []
+    changeStatistics.value = {}
+    downloadFiles.value = {
+        stats_file: '',
+        image_file: '',
+        classified_tif_file: '',
+        raw_tif_file: ''
+    }
     previewData.value = ''
     isImageLoaded.value = false
     zoomLevel.value = 1
     displayMode.value = 'changes_only'
+    // 重置阈值为默认值
+    thresholds.value = {
+        significant_decrease_threshold: -0.3,
+        slight_decrease_threshold: -0.1,
+        slight_increase_threshold: 0.1,
+        significant_increase_threshold: 0.3,
+        fvc_min_value: 0.0,
+        fvc_max_value: 1.0
+    }
 }
 
 const openImageDialog = () => {
@@ -787,6 +895,19 @@ const applyZoom = () => {
     font-weight: 500;
 }
 
+/* 表单居中包装器 */
+.form-center-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* 修改表单容器，确保内部内容也能居中 */
+.center-form {
+    width: 100%;
+    max-width: 800px; /* 控制表单最大宽度，使内容更紧凑 */
+}
+
 /* 表单容器 */
 .form-container {
     width: 100%;
@@ -795,13 +916,21 @@ const applyZoom = () => {
     box-sizing: border-box;
 }
 
+/* 表单项目居中包装器 */
+.form-item-center-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
 /* 文件输入样式 */
 .file-input-wrapper {
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
-    max-width: 500px;
+    max-width: 600px; /* 增加最大宽度，使输入框更宽 */
 }
 
 .file-input-hidden {
@@ -823,20 +952,48 @@ const applyZoom = () => {
     font-size: 12px;
     color: #909399;
     margin-top: 4px;
+    text-align: center;
+}
+
+/* 阈值配置 */
+.thresholds-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px; /* 增加最大宽度 */
+}
+
+.threshold-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.threshold-label {
+    min-width: 140px;
+    font-size: 14px;
 }
 
 /* 单选按钮组 */
 .radio-group {
     display: flex;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 20px;
+    width: 100%;
+    max-width: 600px;
 }
 
 /* 复选框组 */
 .checkbox-group {
     display: flex;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 15px;
+    width: 100%;
+    max-width: 600px;
 }
 
 /* 文件状态 */
@@ -844,6 +1001,8 @@ const applyZoom = () => {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
+    max-width: 600px;
 }
 
 .status-item {
@@ -873,6 +1032,22 @@ const applyZoom = () => {
 
 .submit-button:hover {
     background-color: #40a9ff;
+}
+
+/* 调整表单标签 */
+:deep(.el-form-item__label) {
+    text-align: center;
+    width: 100%;
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* 调整表单内容 */
+:deep(.el-form-item__content) {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 /* 结果容器 */
@@ -931,6 +1106,7 @@ const applyZoom = () => {
     margin-bottom: 8px;
     padding: 8px 0;
     border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
 }
 
 .stat-item:last-child {
@@ -941,17 +1117,33 @@ const applyZoom = () => {
 .stat-label {
     color: #606266;
     font-weight: bold;
+    min-width: 100px;
 }
 
 .stat-value {
     color: #303133;
     font-weight: bold;
+    margin-right: 4px;
+}
+
+.stat-value.positive {
+    color: #67c23a;
+}
+
+.stat-value.negative {
+    color: #f56c6c;
 }
 
 .stat-percent {
     color: #409eff;
     font-size: 12px;
-    margin-left: 5px;
+    margin-left: 2px;
+}
+
+.stat-value-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* 变化类型 */
@@ -974,17 +1166,8 @@ const applyZoom = () => {
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
+    font-weight: bold;
     flex-wrap: wrap;
-}
-
-.change-from {
-    color: #f56c6c;
-    font-weight: bold;
-}
-
-.change-to {
-    color: #67c23a;
-    font-weight: bold;
 }
 
 .change-type-details {
@@ -998,14 +1181,9 @@ const applyZoom = () => {
 
 /* 滚动容器 */
 .scrollable-container {
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
     margin-bottom: 20px;
-}
-
-.tall-scroll {
-    max-height: 300px;
-    margin-top: 10px;
 }
 
 /* 图片容器 */
@@ -1121,7 +1299,15 @@ const applyZoom = () => {
         max-width: 90%;
     }
     
-    .file-input-wrapper {
+    .center-form {
+        max-width: 100%;
+    }
+    
+    .file-input-wrapper,
+    .thresholds-container,
+    .radio-group,
+    .checkbox-group,
+    .file-status {
         max-width: 100%;
     }
     
@@ -1166,31 +1352,41 @@ const applyZoom = () => {
         margin: 15px 0;
     }
     
-    :deep(.el-form-item__label) {
-        font-size: 14px;
-        margin-bottom: 5px;
-        display: block;
-        width: 100%;
-    }
-    
-    :deep(.el-form-item__content) {
-        width: 100%;
-    }
-    
     .radio-group {
         flex-direction: column;
-        gap: 10px;
+        align-items: center;
     }
     
     .checkbox-group {
         flex-direction: column;
-        gap: 10px;
+        align-items: center;
+    }
+    
+    .threshold-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .threshold-label {
+        min-width: unset;
+        width: 100%;
     }
     
     .stat-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
+    }
+    
+    .stat-label {
+        min-width: unset;
+    }
+    
+    .stat-value-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
     }
     
     .change-type-details {
@@ -1269,6 +1465,10 @@ const applyZoom = () => {
 @media (min-width: 1920px) {
     .feature-container {
         max-width: 1400px;
+    }
+    
+    .center-form {
+        max-width: 900px;
     }
     
     .result-layout {

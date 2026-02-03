@@ -18,7 +18,7 @@
 
       <!-- 选择文件和参数页面 -->
       <div class="form-container" v-if="predictCurrent === 0">
-        <el-form :model="form" label-width="auto">
+        <el-form :model="form" label-width="auto" class="center-form">
           <div class="form-horizontal-group">
             <div class="form-column-full">
               <!-- 早期文件上传 -->
@@ -32,6 +32,7 @@
                     @clear="handleRemoveFile('early')"
                     @keydown.delete="handleKeydown($event, 'early')"
                     @focus="handleInputFocus('early')"
+                  
                   >
                     <template #append>
                       <el-button @click="handleEarlyBrowseClick" class="browse-button">
@@ -49,9 +50,10 @@
                 </div>
               </el-form-item>
 
+
               <!-- 后期文件上传 -->
-              <el-form-item label="后期文件：" required>
-                <div class="file-input-wrapper">
+              <el-form-item label="后期文件：" required class="center-form">
+                <div class="file-input-wrapper center-content">
                   <el-input
                     v-model="lateFilePath"
                     placeholder="请选择后期文件"
@@ -60,6 +62,7 @@
                     @clear="handleRemoveFile('late')"
                     @keydown.delete="handleKeydown($event, 'late')"
                     @focus="handleInputFocus('late')"
+                 
                   >
                     <template #append>
                       <el-button @click="handleLateBrowseClick" class="browse-button">
@@ -77,7 +80,7 @@
                 </div>
               </el-form-item>
 
-              <!-- 文件状态提示 -->
+              <!-- 文件状态提示  -->
               <el-form-item label="文件状态">
                 <div class="file-status">
                   <div v-if="earlyFileObject" class="status-item">
@@ -97,17 +100,18 @@
                     <span>未选择后期文件</span>
                   </div>
                 </div>
-              </el-form-item>
-              
+              </el-form-item>              
               <el-form-item label="水体标签值：" prop="waterTagValue">
-                <el-input-number
-                  v-model="form.waterTagValue"
-                  :min="0"
-                  :max="255"
-                  step="1"
-                  placeholder="请输入水体标签值（0-255）"
-                  class="water-tag-input"
-                />
+                <div class="center-content">
+                  <el-input-number
+                    v-model="form.waterTagValue"
+                    :min="0"
+                    :max="255"
+                    step="1"
+                    placeholder="请输入水体标签值（0-255）"
+                    class="water-tag-input"
+                  />
+                </div>
                 <div class="input-hint">
                   注：代表水体的像素值，通常为0-255之间的整数
                 </div>
@@ -115,11 +119,13 @@
               
               <!-- 预测参数选项 -->
               <el-form-item label="预测参数">
-                <el-checkbox-group v-model="predictOptions" class="checkbox-group">
-                  <el-checkbox label="change_stats">变化统计</el-checkbox>
-                  <el-checkbox label="change_image">变化预览</el-checkbox>
-                  <el-checkbox label="change_tif">变化结果下载</el-checkbox>
-                </el-checkbox-group>
+                <div class="center-content">
+                  <el-checkbox-group v-model="predictOptions" class="checkbox-group">
+                    <el-checkbox label="change_stats">变化统计</el-checkbox>
+                    <el-checkbox label="change_image">变化预览</el-checkbox>
+                    <el-checkbox label="change_tif">变化结果下载</el-checkbox>
+                  </el-checkbox-group>
+                </div>
               </el-form-item>
 
               <div class="button-group">
@@ -221,6 +227,7 @@ import {
   ElCheckbox,
   ElCheckboxGroup,
   ElDialog
+  
 } from 'element-plus'
 import { getWaterChangeResult } from '@/api/getData'
 
@@ -232,14 +239,12 @@ const error = ref('')
 const imageDialogVisible = ref(false)
 const previewData = ref('')
 const isImageLoaded = ref(false)
-const zoomLevel = ref(1) // 缩放级别，初始为1（100%）
-
+const zoomLevel = ref(1)
 
 // 新增：水体标签值状态
 const form = ref({
-  waterTagValue: 1 // 默认值，可根据需要调整
+  waterTagValue: 1
 })
-
 
 // 文件上传相关状态
 const earlyFilePath = ref('')
@@ -382,7 +387,6 @@ const handlePredict = async () => {
     predictLoading.value = false
   }
 }
-
 
 const loadPreviewImage = async (imagePath) => {
   if (!imagePath) {
@@ -638,6 +642,62 @@ const applyZoom = () => {
   box-sizing: border-box;
 }
 
+/* 居中对齐相关样式 */
+.center-form {
+  display: flex;
+  justify-content: center;
+}
+
+.center-form-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.center-form-item :deep(.el-form-item__label) {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #606266;
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.center-input {
+  max-width: 400px; /* 控制输入框的最大宽度 */
+  width: 100%;
+}
+
+.center-water-input {
+  max-width: 200px;
+  width: 100%;
+}
+
+.center-hint {
+  text-align: center;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.center-checkbox-group {
+  justify-content: center;
+}
+
+.status-form-item {
+  margin-top: -10px; /* 减小与上方输入框的间距 */
+  margin-bottom: 20px; /* 增加与下方项目的间距 */
+}
+
+.center-status-item {
+  justify-content: center;
+  text-align: center;
+}
+
 /* 文件输入样式 */
 .file-input-wrapper {
   display: flex;
@@ -645,6 +705,7 @@ const applyZoom = () => {
   gap: 10px;
   width: 100%;
   max-width: 500px;
+  margin: 0 auto;
 }
 
 .file-input-hidden {
@@ -666,6 +727,7 @@ const applyZoom = () => {
 .file-status {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
@@ -674,6 +736,11 @@ const applyZoom = () => {
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  padding: 5px 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  min-width: 300px;
+  justify-content: center;
 }
 
 /* 水体标签值输入 */
@@ -981,6 +1048,24 @@ const applyZoom = () => {
   .water-tag-input {
     max-width: 100%;
   }
+  
+  .center-form-item :deep(.el-form-item__label) {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .center-input {
+    max-width: 100%;
+  }
+  
+  .center-water-input {
+    max-width: 100%;
+  }
+  
+  .status-item {
+    min-width: 250px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1020,6 +1105,16 @@ const applyZoom = () => {
   
   .full-image-container {
     height: 40vh;
+  }
+  
+  .status-item {
+    min-width: 200px;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .center-form-item :deep(.el-form-item__label) {
+    font-size: 13px;
   }
 }
 
