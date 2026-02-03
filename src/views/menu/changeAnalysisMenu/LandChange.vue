@@ -18,45 +18,43 @@
 
             <!-- 选择文件和参数页面 -->
             <div class="form-container" v-if="predictCurrent === 0">
-                <el-form :model="form" label-width="140px">
+                <el-form :model="form" label-width="auto">
                     <div class="form-horizontal-group">
                         <div class="form-column-full">
                             <!-- 早期文件上传 -->
                             <el-form-item label="早期文件：" required>
-                                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
+                                <div class="file-input-wrapper">
                                     <el-input v-model="earlyFilePath" placeholder="请选择早期地类分类文件" readonly
-                                        style="width: 100%;" clearable @clear="handleRemoveFile('early')"
+                                        clearable @clear="handleRemoveFile('early')"
                                         @keydown.delete="handleKeydown($event, 'early')"
                                         @focus="handleInputFocus('early')">
                                         <template #append>
-                                            <el-button @click="handleEarlyBrowseClick"
-                                                style="background-color: #409eff; color: white; border: none;">
+                                            <el-button @click="handleEarlyBrowseClick" class="browse-button">
                                                 浏览
                                             </el-button>
                                         </template>
                                     </el-input>
                                     <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
-                                        accept=".tif,.tiff" style="display: none;" />
+                                        accept=".tif,.tiff" class="file-input-hidden" />
                                 </div>
                                 <div class="file-hint">请选择早期地类分类TIFF文件</div>
                             </el-form-item>
 
                             <!-- 后期文件上传 -->
                             <el-form-item label="后期文件：" required>
-                                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
+                                <div class="file-input-wrapper">
                                     <el-input v-model="lateFilePath" placeholder="请选择后期地类分类文件" readonly
-                                        style="width: 100%;" clearable @clear="handleRemoveFile('late')"
+                                        clearable @clear="handleRemoveFile('late')"
                                         @keydown.delete="handleKeydown($event, 'late')"
                                         @focus="handleInputFocus('late')">
                                         <template #append>
-                                            <el-button @click="handleLateBrowseClick"
-                                                style="background-color: #409eff; color: white; border: none;">
+                                            <el-button @click="handleLateBrowseClick" class="browse-button">
                                                 浏览
                                             </el-button>
                                         </template>
                                     </el-input>
                                     <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
-                                        accept=".tif,.tiff" style="display: none;" />
+                                        accept=".tif,.tiff" class="file-input-hidden" />
                                 </div>
                                 <div class="file-hint">请选择后期地类分类TIFF文件</div>
                             </el-form-item>
@@ -71,20 +69,19 @@
 
                             <!-- 配置文件上传（可选） -->
                             <el-form-item label="配置文件：">
-                                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
+                                <div class="file-input-wrapper">
                                     <el-input v-model="configFilePath" placeholder="请选择配置文件（可选）" readonly
-                                        style="width: 100%;" clearable @clear="handleRemoveFile('config')"
+                                        clearable @clear="handleRemoveFile('config')"
                                         @keydown.delete="handleKeydown($event, 'config')"
                                         @focus="handleInputFocus('config')">
                                         <template #append>
-                                            <el-button @click="handleConfigBrowseClick"
-                                                style="background-color: #409eff; color: white; border: none;">
+                                            <el-button @click="handleConfigBrowseClick" class="browse-button">
                                                 浏览
                                             </el-button>
                                         </template>
                                     </el-input>
                                     <input type="file" ref="configFileInput" @change="handleConfigFileSelect"
-                                        accept=".json" style="display: none;" />
+                                        accept=".json" class="file-input-hidden" />
                                 </div>
                                 <div class="file-hint">JSON格式配置文件，定义类别和颜色（可选）</div>
                             </el-form-item>
@@ -130,7 +127,7 @@
 
                             <!-- 预测参数选项 -->
                             <el-form-item label="预测参数">
-                                <el-checkbox-group v-model="predictOptions">
+                                <el-checkbox-group v-model="predictOptions" class="checkbox-group">
                                     <el-checkbox label="change_stats">变化统计</el-checkbox>
                                     <el-checkbox label="change_image">变化预览</el-checkbox>
                                     <el-checkbox label="change_tif">变化结果下载</el-checkbox>
@@ -151,12 +148,11 @@
             <!-- 预测结果页面 -->
             <div class="result-container" v-if="predictCurrent === 1">
                 <div class="result-content">
-                    <!-- 结果内容区域 - 真正的左右布局 -->
-                    <div style="display: flex; gap: 30px; align-items: flex-start;">
+                    <!-- 结果内容区域 - 响应式布局 -->
+                    <div class="result-layout">
                         <!-- 左边：变化统计 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px;">
-                            <h3 style="margin: 0 0 20px 0; color: #303133;">变化统计</h3>
+                        <div class="result-panel stats-panel">
+                            <h3>变化统计</h3>
                             <div v-if="Object.keys(changeStats).length > 0 || changeTypes.length > 0">
                                 <div class="stat-summary">
                                     <div class="stat-item">
@@ -189,8 +185,8 @@
 
                                 <!-- 未变化类别统计 -->
                                 <div v-if="Object.keys(changeStats).length > 0">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">未变化类别统计</h4>
-                                    <div style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
+                                    <h4>未变化类别统计</h4>
+                                    <div class="scrollable-container">
                                         <div v-for="(value, key) in changeStats" :key="key" class="change-type-item">
                                             <div class="change-type-header">
                                                 <span class="change-from">{{ key }}</span>
@@ -213,8 +209,8 @@
 
                                 <!-- 变化类型统计 -->
                                 <div v-if="changeTypes.length > 0">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">变化类型统计</h4>
-                                    <div style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                                    <h4>变化类型统计</h4>
+                                    <div class="scrollable-container tall-scroll">
                                         <div v-for="(change, index) in changeTypes" :key="index"
                                             class="change-type-item">
                                             <div class="change-type-header">
@@ -232,52 +228,49 @@
                                     </div>
                                 </div>
                             </div>
-                            <div v-else style="color: #909399; text-align: center; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
+                            <div v-else class="no-data">
+                                <el-icon>
                                     <DataAnalysis />
                                 </el-icon>
                                 <div>暂无统计数据</div>
                             </div>
 
-                            <!-- 下载按钮保持不变 -->
-                            <div style="margin-top: 25px;" v-if="predictOptions.includes('change_stats')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">统计文件下载</h3>
+                            <!-- 下载按钮 -->
+                            <div class="download-section" v-if="predictOptions.includes('change_stats')">
+                                <h3>统计文件下载</h3>
                                 <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
-                                    style="width: 100%;">
+                                    class="download-button">
                                     下载统计文件 (JSON)
                                 </el-button>
                             </div>
                         </div>
 
                         <!-- 右边：变化图像 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px; text-align: center;">
-                            <div v-if="previewData && predictOptions.includes('change_image')">
-                                <img :src="previewData" alt="变化结果预览"
-                                    style="max-width: 100%; max-height: 400px; border-radius: 8px;" />
-                                <div class="image-info" v-if="displayMode">
+                        <div class="result-panel image-panel">
+                            <div v-if="previewData && predictOptions.includes('change_image')" class="image-container">
+                                <img :src="previewData" alt="变化结果预览" class="preview-image" />
+                                <div class="image-info">
                                     <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
                                         {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
                                     </el-tag>
                                 </div>
-                                <el-button @click="openImageDialog" type="primary" plain
-                                    style="margin-top: 15px; width: 100%;">
+                                <el-button @click="openImageDialog" type="primary" plain class="view-image-button">
                                     <el-icon>
                                         <ZoomIn />
                                     </el-icon>
                                     查看大图
                                 </el-button>
                             </div>
-                            <div v-else style="color: #909399; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
+                            <div v-else class="no-data">
+                                <el-icon>
                                     <Picture />
                                 </el-icon>
                                 <div>暂无预览图</div>
                             </div>
-                            <div style="margin-top: 25px;" v-if="predictOptions.includes('change_tif')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">变化地图下载</h3>
+                            <div class="download-section" v-if="predictOptions.includes('change_tif')">
+                                <h3>变化地图下载</h3>
                                 <el-button @click="downloadTifFile" type="primary" plain icon="Download"
-                                    style="width: 100%;">
+                                    class="download-button">
                                     下载变化地图 (TIFF)
                                 </el-button>
                             </div>
@@ -285,7 +278,7 @@
                     </div>
 
                     <!-- 操作按钮 -->
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
+                    <div class="action-buttons">
                         <el-button @click="handlePredictPrevious" icon="Back">
                             上一步
                         </el-button>
@@ -311,7 +304,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, Right, DataAnalysis } from '@element-plus/icons-vue'
 import {
@@ -717,129 +710,27 @@ const applyZoom = () => {
 </script>
 
 <style scoped>
-/* 复用 WaterChange.vue 的样式，添加一些新样式 */
-.file-hint {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
-}
-
-.radio-group {
-    display: flex;
-    gap: 20px;
-}
-
-.stat-summary {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e4e7ed;
-    margin-bottom: 20px;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.stat-label {
-    color: #606266;
-    font-weight: bold;
-}
-
-.stat-value {
-    color: #303133;
-    font-weight: bold;
-}
-
-.stat-percent {
-    color: #409eff;
-    font-size: 12px;
-    margin-left: 5px;
-}
-
-.change-type-item {
-    background: white;
-    padding: 12px 15px;
-    border-radius: 6px;
-    border: 1px solid #e4e7ed;
-    margin-bottom: 10px;
-    transition: all 0.3s;
-}
-
-.change-type-item:hover {
-    border-color: #409eff;
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
-}
-
-.change-type-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.change-from {
-    color: #f56c6c;
-    font-weight: bold;
-}
-
-.change-to {
-    color: #67c23a;
-    font-weight: bold;
-}
-
-.change-type-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #909399;
-}
-
-.image-info {
-    margin-top: 10px;
-}
-
-/* 复用原有样式 */
-.file-status {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
-    margin-left: 0px;
-}
-
-.status-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-}
-
+/* 基础样式 */
 .feature-container {
     margin: 0 auto;
     max-width: 1200px;
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
 }
 
+/* 步骤条样式 */
 .steps-container {
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 30px auto;
-    width: 80%;
+    width: 100%;
 }
 
 .custom-steps {
     display: flex;
-    width: 70%;
+    width: 100%;
     max-width: 600px;
     justify-content: space-between;
 }
@@ -896,18 +787,78 @@ const applyZoom = () => {
     font-weight: 500;
 }
 
+/* 表单容器 */
 .form-container {
-    margin: 50px;
     width: 100%;
-    margin-left: 280px;
+    margin: 30px 0;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
+/* 文件输入样式 */
+.file-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.browse-button {
+    background-color: #409eff;
+    color: white;
+    border: none;
+    min-width: 60px;
+}
+
+.browse-button:hover {
+    background-color: #79bbff;
+}
+
+.file-hint {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+}
+
+/* 单选按钮组 */
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* 复选框组 */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* 文件状态 */
+.file-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+/* 按钮组 */
 .button-group {
     display: flex;
     justify-content: center;
     margin-top: 30px;
-    margin-right: 550px;
-    gap: 20px;
+    width: 100%;
 }
 
 .submit-button {
@@ -916,15 +867,20 @@ const applyZoom = () => {
     color: white;
     border-radius: 4px;
     font-weight: 500;
+    width: 100%;
+    max-width: 200px;
 }
 
 .submit-button:hover {
     background-color: #40a9ff;
 }
 
+/* 结果容器 */
 .result-container {
     margin: 20px auto;
-    max-width: 1200px;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .result-content {
@@ -933,6 +889,188 @@ const applyZoom = () => {
     align-items: center;
 }
 
+/* 结果布局 */
+.result-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.result-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 300px;
+}
+
+.stats-panel {
+    flex: 1.5;
+}
+
+.image-panel {
+    flex: 1.5;
+    text-align: center;
+}
+
+/* 统计样式 */
+.stat-summary {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.stat-label {
+    color: #606266;
+    font-weight: bold;
+}
+
+.stat-value {
+    color: #303133;
+    font-weight: bold;
+}
+
+.stat-percent {
+    color: #409eff;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* 变化类型 */
+.change-type-item {
+    background: white;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border: 1px solid #e4e7ed;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.change-type-item:hover {
+    border-color: #409eff;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+}
+
+.change-type-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.change-from {
+    color: #f56c6c;
+    font-weight: bold;
+}
+
+.change-to {
+    color: #67c23a;
+    font-weight: bold;
+}
+
+.change-type-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #909399;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 滚动容器 */
+.scrollable-container {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.tall-scroll {
+    max-height: 300px;
+    margin-top: 10px;
+}
+
+/* 图片容器 */
+.image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.image-info {
+    margin-top: 10px;
+}
+
+.view-image-button,
+.download-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* 无数据状态 */
+.no-data {
+    color: #909399;
+    text-align: center;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.no-data .el-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+/* 下载区域 */
+.download-section {
+    margin-top: 25px;
+}
+
+.download-section h3 {
+    margin: 0 0 15px 0;
+    color: #303133;
+    text-align: center;
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* 大图预览 */
 .full-image-container {
     width: 100%;
     height: 70vh;
@@ -958,17 +1096,211 @@ const applyZoom = () => {
     gap: 5px;
 }
 
+/* 响应式断点 */
+@media (max-width: 1200px) {
+    .feature-container {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+    
+    .result-layout {
+        gap: 15px;
+    }
+    
+    .result-panel {
+        min-width: 280px;
+    }
+}
+
 @media (max-width: 992px) {
     .form-container {
-        width: 95%;
+        margin: 20px 0;
     }
-
+    
     .custom-steps {
         max-width: 90%;
     }
+    
+    .file-input-wrapper {
+        max-width: 100%;
+    }
+    
+    .result-layout {
+        flex-direction: column;
+    }
+    
+    .result-panel {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .full-image-container {
+        height: 60vh;
+    }
+}
 
+@media (max-width: 768px) {
+    .feature-container {
+        padding: 0 15px;
+    }
+    
+    .steps-container {
+        margin: 20px auto;
+    }
+    
+    .step-number {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .step-title {
+        font-size: 13px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 17.5px;
+    }
+    
+    .form-container {
+        margin: 15px 0;
+    }
+    
+    :deep(.el-form-item__label) {
+        font-size: 14px;
+        margin-bottom: 5px;
+        display: block;
+        width: 100%;
+    }
+    
+    :deep(.el-form-item__content) {
+        width: 100%;
+    }
+    
+    .radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .checkbox-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .change-type-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-buttons .el-button {
+        width: 100%;
+    }
+    
     .full-image-container {
         height: 50vh;
+    }
+    
+    .button-group {
+        margin-top: 20px;
+    }
+    
+    .submit-button {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .feature-container {
+        padding: 0 10px;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .step-title {
+        font-size: 12px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 15px;
+    }
+    
+    .result-panel {
+        padding: 15px;
+    }
+    
+    .stat-summary {
+        padding: 12px;
+    }
+    
+    .change-type-item {
+        padding: 10px 12px;
+    }
+    
+    .no-data {
+        padding: 30px 20px;
+    }
+    
+    .no-data .el-icon {
+        font-size: 36px;
+    }
+    
+    .full-image-container {
+        height: 40vh;
+    }
+}
+
+/* 高分辨率适配 */
+@media (min-width: 1920px) {
+    .feature-container {
+        max-width: 1400px;
+    }
+    
+    .result-layout {
+        gap: 30px;
+    }
+    
+    .result-panel {
+        padding: 30px;
+    }
+    
+    .preview-image {
+        max-height: 500px;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .browse-button,
+    .submit-button,
+    .view-image-button,
+    .download-button,
+    .action-buttons .el-button {
+        min-height: 44px;
+    }
+    
+    .step-number {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 22px;
     }
 }
 </style>

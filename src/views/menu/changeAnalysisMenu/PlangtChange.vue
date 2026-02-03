@@ -18,45 +18,43 @@
 
             <!-- 选择文件和参数页面 -->
             <div class="form-container" v-if="predictCurrent === 0">
-                <el-form :model="form" label-width="140px">
+                <el-form :model="form" label-width="auto">
                     <div class="form-horizontal-group">
                         <div class="form-column-full">
                             <!-- 早期FVC文件上传 -->
                             <el-form-item label="早期FVC文件：" required>
-                                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
+                                <div class="file-input-wrapper">
                                     <el-input v-model="earlyFilePath" placeholder="请选择早期FVC结果文件" readonly
-                                        style="width: 100%;" clearable @clear="handleRemoveFile('early')"
+                                        clearable @clear="handleRemoveFile('early')"
                                         @keydown.delete="handleKeydown($event, 'early')"
                                         @focus="handleInputFocus('early')">
                                         <template #append>
-                                            <el-button @click="handleEarlyBrowseClick"
-                                                style="background-color: #409eff; color: white; border: none;">
+                                            <el-button @click="handleEarlyBrowseClick" class="browse-button">
                                                 浏览
                                             </el-button>
                                         </template>
                                     </el-input>
                                     <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
-                                        accept=".tif,.tiff" style="display: none;" />
+                                        accept=".tif,.tiff" class="file-input-hidden" />
                                 </div>
                                 <div class="file-hint">请选择早期FVC TIFF文件</div>
                             </el-form-item>
 
                             <!-- 后期FVC文件上传 -->
                             <el-form-item label="后期FVC文件：" required>
-                                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
+                                <div class="file-input-wrapper">
                                     <el-input v-model="lateFilePath" placeholder="请选择后期FVC结果文件" readonly
-                                        style="width: 100%;" clearable @clear="handleRemoveFile('late')"
+                                        clearable @clear="handleRemoveFile('late')"
                                         @keydown.delete="handleKeydown($event, 'late')"
                                         @focus="handleInputFocus('late')">
                                         <template #append>
-                                            <el-button @click="handleLateBrowseClick"
-                                                style="background-color: #409eff; color: white; border: none;">
+                                            <el-button @click="handleLateBrowseClick" class="browse-button">
                                                 浏览
                                             </el-button>
                                         </template>
                                     </el-input>
                                     <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
-                                        accept=".tif,.tiff" style="display: none;" />
+                                        accept=".tif,.tiff" class="file-input-hidden" />
                                 </div>
                                 <div class="file-hint">请选择后期FVC TIFF文件</div>
                             </el-form-item>
@@ -71,24 +69,24 @@
 
                             <!-- 阈值配置（可选） -->
                             <el-form-item label="阈值配置：">
-                                <div style="display: flex; flex-direction: column; gap: 10px; width: 400px;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="min-width: 160px;">显著退化阈值：</span>
+                                <div class="thresholds-container">
+                                    <div class="threshold-item">
+                                        <span class="threshold-label">显著退化阈值：</span>
                                         <el-input-number v-model="thresholds.significant_decrease_threshold" :min="-1"
                                             :max="0" :step="0.05" :precision="2" size="small" />
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="min-width: 160px;">轻微退化阈值：</span>
+                                    <div class="threshold-item">
+                                        <span class="threshold-label">轻微退化阈值：</span>
                                         <el-input-number v-model="thresholds.slight_decrease_threshold" :min="-1"
                                             :max="0" :step="0.05" :precision="2" size="small" />
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="min-width: 160px;">轻微改善阈值：</span>
+                                    <div class="threshold-item">
+                                        <span class="threshold-label">轻微改善阈值：</span>
                                         <el-input-number v-model="thresholds.slight_increase_threshold" :min="0"
                                             :max="1" :step="0.05" :precision="2" size="small" />
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="min-width: 160px;">显著改善阈值：</span>
+                                    <div class="threshold-item">
+                                        <span class="threshold-label">显著改善阈值：</span>
                                         <el-input-number v-model="thresholds.significant_increase_threshold" :min="0"
                                             :max="1" :step="0.05" :precision="2" size="small" />
                                     </div>
@@ -130,7 +128,7 @@
 
                             <!-- 输出选项 -->
                             <el-form-item label="输出选项">
-                                <el-checkbox-group v-model="outputOptions">
+                                <el-checkbox-group v-model="outputOptions" class="checkbox-group">
                                     <el-checkbox label="change_stats">变化统计</el-checkbox>
                                     <el-checkbox label="change_image">变化预览图</el-checkbox>
                                     <el-checkbox label="classified_tif">分类结果下载</el-checkbox>
@@ -153,11 +151,10 @@
             <div class="result-container" v-if="predictCurrent === 1">
                 <div class="result-content">
                     <!-- 结果内容区域 -->
-                    <div style="display: flex; gap: 30px; align-items: flex-start;">
+                    <div class="result-layout">
                         <!-- 左边：变化统计 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px;">
-                            <h3 style="margin: 0 0 20px 0; color: #303133;">FVC变化统计</h3>
+                        <div class="result-panel stats-panel">
+                            <h3>FVC变化统计</h3>
                             <div v-if="Object.keys(changeStats).length > 0">
                                 <!-- 修改模板中的统计项 -->
                                 <div class="stat-summary">
@@ -196,8 +193,8 @@
 
                                 <!-- FVC变化类别统计 -->
                                 <div v-if="changeCategories.length > 0">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">FVC变化类别统计</h4>
-                                    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+                                    <h4>FVC变化类别统计</h4>
+                                    <div class="scrollable-container">
                                         <div v-for="(category, index) in changeCategories" :key="index"
                                             class="change-type-item">
                                             <div class="change-type-header">
@@ -215,7 +212,7 @@
 
                                 <!-- 变化统计信息 -->
                                 <div v-if="changeStatistics.mean_change !== undefined">
-                                    <h4 style="margin: 20px 0 10px 0; color: #606266;">变化统计信息</h4>
+                                    <h4>变化统计信息</h4>
                                     <div class="stat-summary">
                                         <div class="stat-item">
                                             <span class="stat-label">平均变化：</span>
@@ -248,16 +245,16 @@
                                 </div>
 
                                 <!-- 下载按钮 -->
-                                <div style="margin-top: 25px;" v-if="outputOptions.includes('change_stats')">
-                                    <h3 style="margin: 0 0 15px 0; color: #303133;">统计文件下载</h3>
+                                <div class="download-section" v-if="outputOptions.includes('change_stats')">
+                                    <h3>统计文件下载</h3>
                                     <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
-                                        style="width: 100%;">
+                                        class="download-button">
                                         下载统计文件 (JSON)
                                     </el-button>
                                 </div>
                             </div>
-                            <div v-else style="color: #909399; text-align: center; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
+                            <div v-else class="no-data">
+                                <el-icon>
                                     <DataAnalysis />
                                 </el-icon>
                                 <div>暂无统计数据</div>
@@ -265,45 +262,42 @@
                         </div>
 
                         <!-- 右边：变化图像 -->
-                        <div
-                            style="flex: 1.5; background: #f8f9fa; padding: 25px; border-radius: 10px; min-width: 300px; text-align: center;">
-                            <div v-if="previewData && outputOptions.includes('change_image')">
-                                <img :src="previewData" alt="FVC变化预览"
-                                    style="max-width: 100%; max-height: 400px; border-radius: 8px;" />
-                                <div class="image-info" v-if="displayMode">
+                        <div class="result-panel image-panel">
+                            <div v-if="previewData && outputOptions.includes('change_image')" class="image-container">
+                                <img :src="previewData" alt="FVC变化预览" class="preview-image" />
+                                <div class="image-info">
                                     <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
                                         {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
                                     </el-tag>
                                 </div>
-                                <el-button @click="openImageDialog" type="primary" plain
-                                    style="margin-top: 15px; width: 100%;">
+                                <el-button @click="openImageDialog" type="primary" plain class="view-image-button">
                                     <el-icon>
                                         <ZoomIn />
                                     </el-icon>
                                     查看大图
                                 </el-button>
                             </div>
-                            <div v-else style="color: #909399; padding: 40px;">
-                                <el-icon style="font-size: 48px; margin-bottom: 10px;">
+                            <div v-else class="no-data">
+                                <el-icon>
                                     <Picture />
                                 </el-icon>
                                 <div>暂无预览图</div>
                             </div>
 
                             <!-- 分类结果下载 -->
-                            <div style="margin-top: 25px;" v-if="outputOptions.includes('classified_tif')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">分类结果下载</h3>
+                            <div class="download-section" v-if="outputOptions.includes('classified_tif')">
+                                <h3>分类结果下载</h3>
                                 <el-button @click="downloadClassifiedTif" type="primary" plain icon="Download"
-                                    style="width: 100%; margin-bottom: 10px;">
+                                    class="download-button">
                                     下载分类结果 (TIFF)
                                 </el-button>
                             </div>
 
                             <!-- 原始变化数据下载 -->
-                            <div style="margin-top: 15px;" v-if="outputOptions.includes('raw_tif')">
-                                <h3 style="margin: 0 0 15px 0; color: #303133;">原始变化数据下载</h3>
+                            <div class="download-section" v-if="outputOptions.includes('raw_tif')">
+                                <h3>原始变化数据下载</h3>
                                 <el-button @click="downloadRawTif" type="primary" plain icon="Download"
-                                    style="width: 100%;">
+                                    class="download-button">
                                     下载原始变化数据 (TIFF)
                                 </el-button>
                             </div>
@@ -311,7 +305,7 @@
                     </div>
 
                     <!-- 操作按钮 -->
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
+                    <div class="action-buttons">
                         <el-button @click="handleDetectionPrevious" icon="Back">
                             上一步
                         </el-button>
@@ -337,9 +331,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, Right, DataAnalysis } from '@element-plus/icons-vue'
+import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close, DataAnalysis } from '@element-plus/icons-vue'
 import {
     ElForm,
     ElFormItem,
@@ -483,7 +477,7 @@ function beforeUpload(file, expectedType) {
     return true
 }
 
-//变化检测处理
+// 变化检测处理
 const handleChangeDetection = async () => {
     if (!earlyFileObject.value || !lateFileObject.value) {
         message.error('请上传早期和后期FVC文件')
@@ -528,7 +522,7 @@ const handleChangeDetection = async () => {
                         ((pixelStats.unchanged_pixels || 0) * 100.0 / pixelStats.valid_pixels) : 0
                 }
 
-                // 获取FVC变化类别统计 - 修正这里
+                // 获取FVC变化类别统计
                 const classStats = body.stats.class_statistics || {}
                 const classPercentages = body.stats.class_percentages || {}
 
@@ -547,12 +541,12 @@ const handleChangeDetection = async () => {
                         count: classStats[name],
                         percentage: percentage
                     }
-                }).filter(item => item.name !== '无效区域')  // 过滤掉无效区域
+                }).filter(item => item.name !== '无效区域')
 
                 // 获取变化统计信息
                 changeStatistics.value = body.stats.change_statistics || {}
 
-                // 将class_stats存储在changeStats中（如果需要）
+                // 将class_stats存储在changeStats中
                 changeStats.value = classStats
 
             } else {
@@ -568,9 +562,8 @@ const handleChangeDetection = async () => {
                         (body.valid_pixels > 0 ? (body.unchanged_pixels * 100.0 / body.valid_pixels) : 0)
                 };
 
-                // 解析类别统计 - 修正这里
+                // 解析类别统计
                 if (body.class_statistics) {
-                    // 构建变化类别数组
                     changeCategories.value = Object.entries(body.class_statistics)
                         .filter(([name]) => name !== '无效区域')
                         .map(([name, count]) => {
@@ -591,7 +584,6 @@ const handleChangeDetection = async () => {
                             }
                         })
 
-                    // 存储在changeStats中
                     changeStats.value = body.class_statistics
                 }
 
@@ -812,128 +804,27 @@ const applyZoom = () => {
 </script>
 
 <style scoped>
-/* 复用LandChange.vue的样式，添加一些新样式 */
-.file-hint {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
-}
-
-.radio-group {
-    display: flex;
-    gap: 20px;
-}
-
-.stat-summary {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e4e7ed;
-    margin-bottom: 20px;
-}
-/* 修改统计项样式 */
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.stat-label {
-    color: #606266;
-    font-weight: bold;
-    min-width: 100px; /* 给标签固定宽度，保持对齐 */
-}
-
-.stat-value {
-    color: #303133;
-    font-weight: bold;
-    margin-right: 4px; /* 增加数值和百分比之间的间距 */
-}
-.stat-value.positive {
-    color: #67c23a;
-}
-
-.stat-value.negative {
-    color: #f56c6c;
-}
-
-.stat-percent {
-    color: #409eff;
-    font-size: 12px;
-    margin-left: 2px; /* 减少左边距，让百分比更靠近数值 */
-}
-.change-type-item {
-    background: white;
-    padding: 12px 15px;
-    border-radius: 6px;
-    border: 1px solid #e4e7ed;
-    margin-bottom: 10px;
-    transition: all 0.3s;
-}
-
-.change-type-item:hover {
-    border-color: #409eff;
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
-}
-
-.change-type-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.change-type-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #909399;
-}
-
-.image-info {
-    margin-top: 10px;
-}
-
-/* 复用原有样式 */
-.file-status {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
-    margin-left: 0px;
-}
-
-.status-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-}
-
+/* 基础样式 */
 .feature-container {
     margin: 0 auto;
     max-width: 1200px;
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
 }
 
+/* 步骤条样式 */
 .steps-container {
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 30px auto;
-    width: 80%;
+    width: 100%;
 }
 
 .custom-steps {
     display: flex;
-    width: 70%;
+    width: 100%;
     max-width: 600px;
     justify-content: space-between;
 }
@@ -990,18 +881,99 @@ const applyZoom = () => {
     font-weight: 500;
 }
 
+/* 表单容器 */
 .form-container {
-    margin: 50px;
     width: 100%;
-    margin-left: 280px;
+    margin: 30px 0;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
+/* 文件输入样式 */
+.file-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.browse-button {
+    background-color: #409eff;
+    color: white;
+    border: none;
+    min-width: 60px;
+}
+
+.browse-button:hover {
+    background-color: #79bbff;
+}
+
+.file-hint {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+}
+
+/* 阈值配置 */
+.thresholds-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.threshold-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.threshold-label {
+    min-width: 140px;
+    font-size: 14px;
+}
+
+/* 单选按钮组 */
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* 复选框组 */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* 文件状态 */
+.file-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+/* 按钮组 */
 .button-group {
     display: flex;
     justify-content: center;
     margin-top: 30px;
-    margin-right: 550px;
-    gap: 20px;
+    width: 100%;
 }
 
 .submit-button {
@@ -1010,15 +982,20 @@ const applyZoom = () => {
     color: white;
     border-radius: 4px;
     font-weight: 500;
+    width: 100%;
+    max-width: 200px;
 }
 
 .submit-button:hover {
     background-color: #40a9ff;
 }
 
+/* 结果容器 */
 .result-container {
     margin: 20px auto;
-    max-width: 1200px;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .result-content {
@@ -1027,6 +1004,191 @@ const applyZoom = () => {
     align-items: center;
 }
 
+/* 结果布局 */
+.result-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.result-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 300px;
+}
+
+.stats-panel {
+    flex: 1.5;
+}
+
+.image-panel {
+    flex: 1.5;
+    text-align: center;
+}
+
+/* 统计样式 */
+.stat-summary {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.stat-label {
+    color: #606266;
+    font-weight: bold;
+    min-width: 100px;
+}
+
+.stat-value {
+    color: #303133;
+    font-weight: bold;
+    margin-right: 4px;
+}
+
+.stat-value.positive {
+    color: #67c23a;
+}
+
+.stat-value.negative {
+    color: #f56c6c;
+}
+
+.stat-percent {
+    color: #409eff;
+    font-size: 12px;
+    margin-left: 2px;
+}
+
+.stat-value-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 变化类型 */
+.change-type-item {
+    background: white;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border: 1px solid #e4e7ed;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.change-type-item:hover {
+    border-color: #409eff;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+}
+
+.change-type-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    flex-wrap: wrap;
+}
+
+.change-type-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #909399;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 滚动容器 */
+.scrollable-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+/* 图片容器 */
+.image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.image-info {
+    margin-top: 10px;
+}
+
+.view-image-button,
+.download-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* 无数据状态 */
+.no-data {
+    color: #909399;
+    text-align: center;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.no-data .el-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+/* 下载区域 */
+.download-section {
+    margin-top: 25px;
+}
+
+.download-section h3 {
+    margin: 0 0 15px 0;
+    color: #303133;
+    text-align: center;
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* 大图预览 */
 .full-image-container {
     width: 100%;
     height: 70vh;
@@ -1052,17 +1214,233 @@ const applyZoom = () => {
     gap: 5px;
 }
 
+/* 响应式断点 */
+@media (max-width: 1200px) {
+    .feature-container {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+    
+    .result-layout {
+        gap: 15px;
+    }
+    
+    .result-panel {
+        min-width: 280px;
+    }
+}
+
 @media (max-width: 992px) {
     .form-container {
-        width: 95%;
+        margin: 20px 0;
     }
-
+    
     .custom-steps {
         max-width: 90%;
     }
+    
+    .file-input-wrapper,
+    .thresholds-container {
+        max-width: 100%;
+    }
+    
+    .result-layout {
+        flex-direction: column;
+    }
+    
+    .result-panel {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .full-image-container {
+        height: 60vh;
+    }
+}
 
+@media (max-width: 768px) {
+    .feature-container {
+        padding: 0 15px;
+    }
+    
+    .steps-container {
+        margin: 20px auto;
+    }
+    
+    .step-number {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .step-title {
+        font-size: 13px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 17.5px;
+    }
+    
+    .form-container {
+        margin: 15px 0;
+    }
+    
+    :deep(.el-form-item__label) {
+        font-size: 14px;
+        margin-bottom: 5px;
+        display: block;
+        width: 100%;
+    }
+    
+    :deep(.el-form-item__content) {
+        width: 100%;
+    }
+    
+    .threshold-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .threshold-label {
+        min-width: unset;
+        width: 100%;
+    }
+    
+    .radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .checkbox-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .stat-label {
+        min-width: unset;
+    }
+    
+    .stat-value-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .change-type-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-buttons .el-button {
+        width: 100%;
+    }
+    
     .full-image-container {
         height: 50vh;
+    }
+    
+    .button-group {
+        margin-top: 20px;
+    }
+    
+    .submit-button {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .feature-container {
+        padding: 0 10px;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .step-title {
+        font-size: 12px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 15px;
+    }
+    
+    .result-panel {
+        padding: 15px;
+    }
+    
+    .stat-summary {
+        padding: 12px;
+    }
+    
+    .change-type-item {
+        padding: 10px 12px;
+    }
+    
+    .no-data {
+        padding: 30px 20px;
+    }
+    
+    .no-data .el-icon {
+        font-size: 36px;
+    }
+    
+    .full-image-container {
+        height: 40vh;
+    }
+}
+
+/* 高分辨率适配 */
+@media (min-width: 1920px) {
+    .feature-container {
+        max-width: 1400px;
+    }
+    
+    .result-layout {
+        gap: 30px;
+    }
+    
+    .result-panel {
+        padding: 30px;
+    }
+    
+    .preview-image {
+        max-height: 500px;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .browse-button,
+    .submit-button,
+    .view-image-button,
+    .download-button,
+    .action-buttons .el-button {
+        min-height: 44px;
+    }
+    
+    .step-number {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .step-item:not(:last-child):after {
+        top: 22px;
     }
 }
 </style>
