@@ -6,8 +6,8 @@
       v-model:activeKey="activeTab"
       @change="handleTabChange"
     >
-      <a-tab-pane key="1" tab="角色管理" />
-      <a-tab-pane key="2" tab="权限管理" />
+      <a-tab-pane key="1" tab="文件管理" />
+      <a-tab-pane key="2" tab="任务管理" />
       <a-tab-pane key="3" tab="设备管理" />
     </a-tabs>
 
