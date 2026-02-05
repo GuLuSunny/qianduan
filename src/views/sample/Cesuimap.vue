@@ -1,6 +1,7 @@
 <template>
   <div class="CesiumapView">
     <!-- 顶部标题 -->
+
     <transition name="fade">
       <div class="headView">
         <!-- <div class="headTime">2025-4-16 16:52:36</div> -->
@@ -8,7 +9,11 @@
         <!-- <div class="headWeather">开封 34℃ 浮尘</div> -->
       </div>
     </transition>
-
+     <!-- 新增：行政区图层切换开关 -->
+    <div class="admin-layer-btn" @click="toggleAdminLayer">
+      <i class="el-icon-map-location"></i>
+      <span>{{ showAdminLayer ? "关闭行政区" : "行政区图层" }}</span>
+    </div>
     <!-- 新增：数据菜单按钮（在标题下方右侧） -->
     <div class="data-menu-btn" @click="goToModelView">
       <i class="el-icon-menu"></i>
@@ -407,7 +412,62 @@ const smartForestPosition = Cesium.Cartesian3.fromDegrees(
   34.81422,
   1500
 );
+// 行政区状态变量
+const showAdminLayer = ref(false);
+let adminLayerImageryProvider = null;
 
+// 行政区图层切换方法
+function toggleAdminLayer() {
+  if (!showAdminLayer.value) {
+    // 开启行政区图层
+    addAdminLayer();
+  } else {
+    // 关闭行政区图层
+    removeAdminLayer();
+  }
+  showAdminLayer.value = !showAdminLayer.value;
+}
+
+// 添加行政区图层
+function addAdminLayer() {
+  if (adminLayerImageryProvider) {
+    viewer.imageryLayers.remove(adminLayerImageryProvider);
+    adminLayerImageryProvider = null;
+  }
+    try {
+      adminLayerImageryProvider = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 18,
+        minimumLevel: 3,
+      });
+      
+      viewer.imageryLayers.addImageryProvider(adminLayerImageryProvider);
+      console.log("行政区图层（Esri地图）加载成功");
+    } catch (esriError) {
+      console.error("加载Esri地图也失败:", esriError);
+      alert("行政区图层加载失败，请检查网络连接");
+    }
+}
+function removeAdminLayer() {
+  if (adminLayerImageryProvider) {
+    // 从viewer的imageryLayers中移除这个图层
+    const layers = viewer.imageryLayers;
+    const layerToRemove = layers._layers.find(layer => 
+      layer.imageryProvider === adminLayerImageryProvider
+    );
+    
+    if (layerToRemove) {
+      layers.remove(layerToRemove);
+      console.log("行政区图层已移除");
+    } else {
+      console.warn("未找到要移除的行政区图层");
+    }
+    
+    adminLayerImageryProvider = null;
+  } else {
+    console.log("行政区图层未加载，无需移除");
+  }
+}
 // 产品分类映射
 const classNameInfo = ref({
   'plant': '地表水生态',
@@ -441,6 +501,7 @@ onUnmounted(() => {
     treeLoader.destroy();
     treeLoader = null;
   }
+  removeAdminLayer();
 });
 
 function goToModelView() {
@@ -2510,7 +2571,6 @@ async function rotate() {
 
 
 </script>
-
 <style lang="less" scoped>
 /* ====================== 新模块样式 ====================== */
 /* 自定义边框盒，替代data-view */
@@ -3455,14 +3515,61 @@ async function rotate() {
   }
 }
 
+/* 行政区图层按钮样式 */
+.admin-layer-btn {
+  position: fixed;
+  top: 6px; 
+  right: 150px; /* 在数据菜单按钮左侧 */
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 24px;
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: 4px;
+  color: #ff6b6b;
+  font-family: PuHuiTi, serif;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  pointer-events: all;
+
+  i {
+    margin-right: 0px;
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(255, 107, 107, 0.3);
+    border-color: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 /* ====================== 响应式适配 ====================== */
 /* 笔记本屏幕适配 (最大宽度1440px) */
 @media screen and (max-width: 1440px) {
-
   /* 调整数据菜单按钮 */
   .data-menu-btn {
     top: 24px;
-    right: 20px;
+    right: 140px;
+    width: 110px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  /* 调整行政区图层按钮 */
+  .admin-layer-btn {
+    top: 24px;
+    right: 260px;
     width: 110px;
     height: 34px;
     font-size: 13px;
@@ -3473,8 +3580,15 @@ async function rotate() {
 @media screen and (max-width: 1366px) {
   .data-menu-btn {
     top: 26px;
-    /* 原11px + 15px = 26px */
-    right: 15px;
+    right: 130px;
+    width: 100px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .admin-layer-btn {
+    top: 26px;
+    right: 240px;
     width: 100px;
     height: 32px;
     font-size: 12px;
@@ -3485,14 +3599,26 @@ async function rotate() {
 @media screen and (max-width: 1280px) {
   .data-menu-btn {
     top: 21px;
-    /* 原6px + 15px = 21px */
-    right: 10px;
+    right: 110px;
     width: 90px;
     height: 30px;
     font-size: 11px;
   }
 
   .data-menu-btn i {
+    font-size: 14px;
+    margin-right: 5px;
+  }
+
+  .admin-layer-btn {
+    top: 21px;
+    right: 210px;
+    width: 90px;
+    height: 30px;
+    font-size: 11px;
+  }
+
+  .admin-layer-btn i {
     font-size: 14px;
     margin-right: 5px;
   }
