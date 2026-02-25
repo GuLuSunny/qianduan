@@ -760,6 +760,13 @@ export function PlantGetData (data: any) {
     data: data
   })
 }
+// 👇 注册已完成的物种列表接口
+export function getPlantDistinctSpecies (data: any) {
+  return useAxiosApi('/api/monitoring/plantGetDistinctSpecies', {
+    method: 'POST',
+    data: data
+  })
+}
 /**
  * 土壤检测
  * @returns UseAxiosReturn
