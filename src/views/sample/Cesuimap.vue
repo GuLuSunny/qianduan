@@ -187,7 +187,7 @@
         </div>
       </div>
     </div>
-    <!-- 底部功能按钮
+    <!-- 底部功能按钮 -->
     <div class="boxMenuView">
       <ul>
         <li @click="moduleswitch">
@@ -200,9 +200,15 @@
                 </li>
         <li @click="FarmLandChange">智能农田</li>
         <li @click="goToModelView">数据菜单</li>
+        <li @click="toggleFloodHeatmap">
+          {{ floodEnabled ? "关闭模拟" : "洪水模拟" }}
+        </li>
         <li @click="initializeterrain">地形加载</li>
       </ul>
-    </div> -->
+
+    </div>
+    <!-- 【新增】heatmap.js 需要的隐藏容器（必须存在且有宽高） -->
+    <div id="heatmap" ref="heatmapContainer" v-show="false"></div>
 
     <!-- 地图 -->
     <div id="cesiumContainer"></div>
@@ -307,6 +313,55 @@ import {
 } from "@/api/getData";
 import router from "@/router";
 import { resolve } from "path";
+//新增：热力图
+import h337 from "heatmap.js";
+
+// 新增:洪水热力图模拟状态
+const floodEnabled = ref(false);
+const heatmapContainer = ref(null);
+
+let heatmapInstance = null;
+let floodEntity = null;
+let floodBorderEntity = null;
+
+let floodTimer = null;
+let floodFrameIndex = 0;
+
+// Cesium 有时对“同一 canvas 对象内容变化”不刷新：用双缓冲 canvas 交替返回更稳
+let bufferCanvasA = null;
+let bufferCanvasB = null;
+let useCanvasA = true;
+
+// heatmap 像素尺寸（要与 CSS 的 #heatmap 宽高一致）
+const HEATMAP_W = 500;
+const HEATMAP_H = 500;
+
+// 每隔多少米设一个点（控制点密度/性能）
+const FLOOD_POINT_SPACING_M = 1000;
+
+// 动画参数
+const FLOOD_FRAME_MS = 120;
+const FLOOD_TOTAL_FRAMES = 240;
+const FLOOD_MAX_DEPTH = 100;
+
+// 洪水贴图覆盖矩形：
+// 实际布点会“只在水面多边形内部”，但 Cesium 贴图需要一个矩形区域（用水面总 bbox）
+const floodBounds = ref({
+  lonMin: 114.260,
+  latMin: 34.780,
+  lonMax: 114.295,
+  latMax: 34.805,
+});
+
+//【新增】缓存水面多边形（经纬度）用于“只在水面内布点” 
+const waterPolygonsDeg = ref([]);
+// [{ outer:[{lon,lat},...], holes:[[...],[...]] }, ...]
+const waterBoundsDeg = ref(null);
+// {lonMin,latMin,lonMax,latMax}
+
+// 预生成网格点（lon/lat + 相位）
+let floodGridPoints = [];
+
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
 // 红色公司   http://mars3d.cn/project/vue/img/marker/mark-red.png
@@ -502,6 +557,7 @@ onUnmounted(() => {
     treeLoader = null;
   }
   removeAdminLayer();
+  stopFloodHeatmap();
 });
 
 function goToModelView() {
@@ -702,6 +758,265 @@ watch(monthlyWaterDate, updateMonthlyWaterImg);
 watch(areaChartType, updateAreaChartImg);
 watch(monthlyFeatureDate, updateMonthlyFeatureImg); // 新增地物监听
 
+
+// 新增：洪水模拟：几何判断/布点/贴图
+// 米→经纬度步长（近似，足够用于布点）
+function metersToDegStep(latDeg, meters) {
+  const dLat = meters / 111320;
+  const dLon = meters / (111320 * Math.cos((latDeg * Math.PI) / 180));
+  return { dLat, dLon };
+}
+
+// 点在环内（射线法）
+function pointInRing(lon, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i].lon, yi = ring[i].lat;
+    const xj = ring[j].lon, yj = ring[j].lat;
+
+    const intersect =
+      (yi > lat) !== (yj > lat) &&
+      lon < ((xj - xi) * (lat - yi)) / (yj - yi + 0.0) + xi;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// 点在多边形内：在外环内 且 不在任何 hole 内
+function pointInPolygonWithHoles(lon, lat, poly) {
+  if (!pointInRing(lon, lat, poly.outer)) return false;
+  if (poly.holes?.length) {
+    for (const hole of poly.holes) {
+      if (hole?.length && pointInRing(lon, lat, hole)) return false;
+    }
+  }
+  return true;
+}
+
+// 只在水面多边形内部生成网格点
+function buildFloodGridPoints() {
+  const polys = waterPolygonsDeg.value;
+  const pts = [];
+
+  // 如果水面还没加载出多边形，退化为 floodBounds 矩形布点
+  if (!polys || polys.length === 0) {
+    const b = floodBounds.value;
+    const latMid = (b.latMin + b.latMax) / 2;
+    const { dLat, dLon } = metersToDegStep(latMid, FLOOD_POINT_SPACING_M);
+
+    for (let lat = b.latMin; lat <= b.latMax; lat += dLat) {
+      for (let lon = b.lonMin; lon <= b.lonMax; lon += dLon) {
+        pts.push({ lon, lat, phase: Math.random() * Math.PI * 2 });
+      }
+    }
+    floodGridPoints = pts;
+    return;
+  }
+
+  // 有水面多边形：按每个 poly 的 bbox 产候选点 + 点在多边形内判断
+  for (const poly of polys) {
+    if (!poly?.outer?.length) continue;
+
+    let lonMin = Infinity, latMin = Infinity, lonMax = -Infinity, latMax = -Infinity;
+    for (const p of poly.outer) {
+      lonMin = Math.min(lonMin, p.lon);
+      latMin = Math.min(latMin, p.lat);
+      lonMax = Math.max(lonMax, p.lon);
+      latMax = Math.max(latMax, p.lat);
+    }
+    if (!isFinite(lonMin)) continue;
+
+    const latMid = (latMin + latMax) / 2;
+    const { dLat, dLon } = metersToDegStep(latMid, FLOOD_POINT_SPACING_M);
+
+    for (let lat = latMin; lat <= latMax; lat += dLat) {
+      for (let lon = lonMin; lon <= lonMax; lon += dLon) {
+        if (pointInPolygonWithHoles(lon, lat, poly)) {
+          pts.push({ lon, lat, phase: Math.random() * Math.PI * 2 });
+        }
+      }
+    }
+  }
+
+  floodGridPoints = pts;
+
+  // 同步 floodBounds 为水面总 bbox（用于 Cesium Rectangle 覆盖范围）
+  if (waterBoundsDeg.value) {
+    floodBounds.value = { ...waterBoundsDeg.value };
+  }
+}
+
+// 经纬度→热力图像素（方法：线性归一化）
+function lonLatToHeatXY(lon, lat) {
+  const b = floodBounds.value;
+  const x = Math.floor(((lon - b.lonMin) / (b.lonMax - b.lonMin)) * HEATMAP_W);
+  const y = Math.floor(((b.latMax - lat) / (b.latMax - b.latMin)) * HEATMAP_H);
+  return { x, y };
+}
+
+// 给每个点一个水深值（有真实数据时，只替换这个函数即可）
+function calcDepthAtPoint(p, tSec) {
+  const b = floodBounds.value;
+  const u = (p.lon - b.lonMin) / (b.lonMax - b.lonMin); // 0~1
+  const v = (p.lat - b.latMin) / (b.latMax - b.latMin); // 0~1
+
+  // 前沿从西→东推进（循环）
+  const front = (tSec / 18) % 1;
+  const behind = front - u;
+
+  const base = Math.max(0, Math.min(1, behind * 2.2)) * FLOOD_MAX_DEPTH;
+  const wave = 0.18 * FLOOD_MAX_DEPTH * Math.sin(2 * Math.PI * (tSec * 0.25 + v) + p.phase);
+
+  return Math.max(0, Math.min(FLOOD_MAX_DEPTH, base + wave));
+}
+
+// 生成某一帧热力图 canvas（双缓冲交替返回）
+function getFloodCanvasForFrame(frameIdx) {
+  if (!heatmapContainer.value) return null;
+
+  const tSec = (frameIdx * FLOOD_FRAME_MS) / 1000;
+
+  const points = [];
+  let localMax = 1;
+
+  for (const p of floodGridPoints) {
+    const value = Math.floor(calcDepthAtPoint(p, tSec));
+    localMax = Math.max(localMax, value);
+    const { x, y } = lonLatToHeatXY(p.lon, p.lat);
+    points.push({ x, y, value });
+  }
+
+  if (!heatmapInstance) {
+    heatmapInstance = h337.create({
+      container: heatmapContainer.value,
+      radius: 18,
+      blur: 0.85,
+    });
+  }
+
+  heatmapInstance.setData({
+    max: localMax,
+    min: 0,
+    data: points,
+  });
+
+  const src = heatmapContainer.value.querySelector(".heatmap-canvas");
+  if (!src) return null;
+
+  if (!bufferCanvasA) {
+    bufferCanvasA = document.createElement("canvas");
+    bufferCanvasA.width = src.width;
+    bufferCanvasA.height = src.height;
+  }
+  if (!bufferCanvasB) {
+    bufferCanvasB = document.createElement("canvas");
+    bufferCanvasB.width = src.width;
+    bufferCanvasB.height = src.height;
+  }
+
+  const dst = useCanvasA ? bufferCanvasA : bufferCanvasB;
+  useCanvasA = !useCanvasA;
+
+  if (dst.width !== src.width) dst.width = src.width;
+  if (dst.height !== src.height) dst.height = src.height;
+
+  const ctx = dst.getContext("2d");
+  ctx.clearRect(0, 0, dst.width, dst.height);
+  ctx.drawImage(src, 0, 0);
+
+  return dst;
+}
+
+function startFloodHeatmap() {
+  if (!viewer) return;
+
+  // 1) 确保 heatmap 容器尺寸正确
+  if (heatmapContainer.value) {
+    heatmapContainer.value.style.width = `${HEATMAP_W}px`;
+    heatmapContainer.value.style.height = `${HEATMAP_H}px`;
+  }
+
+  // 2) 只在水面多边形内部布点
+  buildFloodGridPoints();
+
+  // 3) 动态材质（CallbackProperty + ImageMaterialProperty）
+  const dynamicImage = new Cesium.CallbackProperty(() => {
+    return getFloodCanvasForFrame(floodFrameIndex);
+  }, false);
+
+  const b = floodBounds.value;
+
+  // 清旧防重复
+  if (floodEntity) viewer.entities.remove(floodEntity);
+  if (floodBorderEntity) viewer.entities.remove(floodBorderEntity);
+
+  floodEntity = viewer.entities.add({
+    name: "flood-heatmap",
+    rectangle: {
+      coordinates: Cesium.Rectangle.fromDegrees(b.lonMin, b.latMin, b.lonMax, b.latMax),
+      material: new Cesium.ImageMaterialProperty({
+        image: dynamicImage,
+        transparent: true,
+      }),
+      outline: true,
+      outlineColor: Cesium.Color.RED.withAlpha(0.6),
+    },
+  });
+
+  // 可选：画边框方便校准（不影响功能）
+  const borderHeights = [
+    b.lonMin, b.latMin, 1200,
+    b.lonMax, b.latMin, 1200,
+    b.lonMax, b.latMax, 1200,
+    b.lonMin, b.latMax, 1200,
+    b.lonMin, b.latMin, 1200,
+  ];
+  floodBorderEntity = viewer.entities.add({
+    name: "flood-heatmap-border",
+    polyline: {
+      positions: Cesium.Cartesian3.fromDegreesArrayHeights(borderHeights),
+      width: 2,
+      material: Cesium.Color.RED,
+      clampToGround: false,
+    },
+  });
+
+  // 4) 帧动画推进
+  if (floodTimer) window.clearInterval(floodTimer);
+  floodTimer = window.setInterval(() => {
+    floodFrameIndex = (floodFrameIndex + 1) % FLOOD_TOTAL_FRAMES;
+    viewer.scene?.requestRender?.();
+  }, FLOOD_FRAME_MS);
+
+  floodEnabled.value = true;
+}
+
+function stopFloodHeatmap() {
+  floodEnabled.value = false;
+
+  if (floodTimer) {
+    window.clearInterval(floodTimer);
+    floodTimer = null;
+  }
+  floodFrameIndex = 0;
+
+  if (viewer && floodEntity) {
+    viewer.entities.remove(floodEntity);
+    floodEntity = null;
+  }
+  if (viewer && floodBorderEntity) {
+    viewer.entities.remove(floodBorderEntity);
+    floodBorderEntity = null;
+  }
+}
+
+function toggleFloodHeatmap() {
+  if (!viewer) return;
+  if (!floodEnabled.value) startFloodHeatmap();
+  else stopFloodHeatmap();
+}
+
 function toggleWaterFeatures() {
   if (loadedWater.value === false) {
     // 加载水体
@@ -854,6 +1169,7 @@ function selectAllPumpDatas() {
 
 // 清除所有水闸和泵站模型
 function clearSluiceAndPumpModels() {
+  stopFloodHeatmap();
   // 清除水闸模型
   sluiceEntities.value.forEach((entity) => {
     viewer.entities.remove(entity);
@@ -2026,7 +2342,27 @@ async function initializeWater() {
     let instances = [];
     let entitys = ds.entities.values;
 
+    //【新增】提取水面多边形（经纬度）及总 bbox，只在水面内布点
+    const polys = [];
+    let lonMin = Infinity, latMin = Infinity, lonMax = -Infinity, latMax = -Infinity;
+
+    const cartesianToLonLat = (p) => {
+      const c = Cesium.Cartographic.fromCartesian(p);
+      const lon = Cesium.Math.toDegrees(c.longitude);
+      const lat = Cesium.Math.toDegrees(c.latitude);
+      return { lon, lat };
+    };
+
+    const updateBounds = ({ lon, lat }) => {
+      lonMin = Math.min(lonMin, lon);
+      latMin = Math.min(latMin, lat);
+      lonMax = Math.max(lonMax, lon);
+      latMax = Math.max(latMax, lat);
+    };
+    // 【新增】结束
+
     entitys.forEach((e) => {
+      // 原来的 polygon primitive 几何构建
       let geometry = new Cesium.GeometryInstance({
         geometry: new Cesium.PolygonGeometry({
           polygonHierarchy: new Cesium.PolygonHierarchy(
@@ -2045,10 +2381,32 @@ async function initializeWater() {
         // }
       });
       instances.push(geometry);
-      viewer.flyTo(ds);
+      // 【新增】提取该面对应的外环 + holes（如果有）
+      const h = e.polygon.hierarchy.getValue(Cesium.JulianDate.now());
+      if (h?.positions?.length) {
+        const outer = h.positions.map(cartesianToLonLat);
+        outer.forEach(updateBounds);
+
+        const holes = (h.holes || [])
+          .map((hole) => (hole?.positions?.length ? hole.positions.map(cartesianToLonLat) : null))
+          .filter(Boolean);
+
+        holes.forEach((ring) => ring.forEach(updateBounds));
+        polys.push({ outer, holes });
+      }
     });
 
-    // 添加 GroundPrimitive 并设置其属性
+    //【新增】写入全局缓存（洪水布点会使用）
+    waterPolygonsDeg.value = polys;
+    if (isFinite(lonMin)) {
+      waterBoundsDeg.value = { lonMin, latMin, lonMax, latMax };
+      // 让洪水贴图覆盖范围跟水面 bbox 对齐（可选但推荐）
+      floodBounds.value = { lonMin, latMin, lonMax, latMax };
+    }
+    // 【新增】结束
+    viewer.flyTo(ds);
+
+    // 水面材质
     let primitive = new Cesium.GroundPrimitive({
       geometryInstances: instances, // 合并几何实例
       appearance: new Cesium.EllipsoidSurfaceAppearance({
@@ -2572,6 +2930,36 @@ async function rotate() {
 
 </script>
 <style lang="less" scoped>
+/* 【新增】heatmap 容器必须有宽高（与 HEATMAP_W/HEATMAP_H 一致） */
+#heatmap {
+  width: 500px;
+  height: 500px;
+}
+
+/* 【新增】洪水按钮样式（位置你可按需调） */
+.flood-heatmap-btn {
+  position: absolute;
+  top: 90px;     /* 放在 data-menu-btn 下方即可 */
+  right: 30px;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  user-select: none;
+}
+
+.flood-heatmap-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
 /* ====================== 新模块样式 ====================== */
 /* 自定义边框盒，替代data-view */
 .custom-border-box {
