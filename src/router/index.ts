@@ -8,6 +8,7 @@ import UserManagement from '@/views/menu/userManagementMenu/UserManagement.vue';
 import DataDownload from '../views/menu/dataDownloadMenu/DataDownload.vue';
 import BigscreenHomeSample from '../views/sample/BigscreenHomeSample.vue';
 import Cesuimap from '../views/sample/Cesuimap.vue';
+import Profile from '@/views/user/profile.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -59,6 +60,14 @@ const routes: Array<RouteRecordRaw> = [
     path: '/Cesuimap',
     name: 'Cesuimap',
     component: Cesuimap
+  },
+  {
+    path: '/user/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: {
+      title: '个人信息修改' 
+    }
   }
 ];
 
