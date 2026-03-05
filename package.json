@@ -32,6 +32,7 @@
     "fs-extra": "^11.3.0",
     "gifsicle": "^7.0.1",
     "graceful-fs": "^4.2.11",
+    "heatmap.js": "^2.0.5",
     "https-browserify": "^1.0.0",
     "jszip": "^3.10.1",
     "less": "^4.2.2",
@@ -50,6 +51,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
+    "@types/webpack-env": "^1.18.8",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "@vue/cli-plugin-babel": "~5.0.0",
