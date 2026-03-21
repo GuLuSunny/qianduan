@@ -2,211 +2,273 @@
   <div>
     <!-- 水体变化识别功能 -->
     <div class="feature-container">
-      <!-- 自定义步骤条 -->
-      <div class="steps-container">
+      <!-- 自定义步骤条 - 添加动画 -->
+      <div class="steps-container animate__animated animate__fadeInDown">
         <div class="custom-steps">
           <div :class="['step-item', { 'active': predictCurrent === 0 }]">
-            <div class="step-number">1</div>
+            <div 
+              class="step-number animate__animated" 
+              :class="{'animate__pulse animate__infinite': predictCurrent === 0}"
+            >
+              1
+            </div>
             <div class="step-title">选择文件和参数</div>
           </div>
           <div :class="['step-item', { 'active': predictCurrent === 1 }]">
-            <div class="step-number">2</div>
+            <div 
+              class="step-number animate__animated" 
+              :class="{'animate__pulse animate__infinite': predictCurrent === 1}"
+            >
+              2
+            </div>
             <div class="step-title">预测结果</div>
           </div>
         </div>
       </div>
 
-      <!-- 选择文件和参数页面 -->
-      <div class="form-container" v-if="predictCurrent === 0">
-        <el-form :model="form" label-width="auto" class="center-form">
-          <div class="form-horizontal-group">
-            <div class="form-column-full">
-              <!-- 早期文件上传 -->
-              <el-form-item label="早期文件：" required>
-                <div class="file-input-wrapper">
-                  <el-input
-                    v-model="earlyFilePath"
-                    placeholder="请选择早期文件"
-                    readonly
-                    clearable
-                    @clear="handleRemoveFile('early')"
-                    @keydown.delete="handleKeydown($event, 'early')"
-                    @focus="handleInputFocus('early')"
-                  
-                  >
-                    <template #append>
-                      <el-button @click="handleEarlyBrowseClick" class="browse-button">
-                        浏览
-                      </el-button>
-                    </template>
-                  </el-input>
-                  <input
-                    type="file"
-                    ref="earlyFileInput"
-                    @change="handleEarlyFileSelect"
-                    accept=".tif,.zip,.rar"
-                    class="file-input-hidden"
-                  />
-                </div>
-              </el-form-item>
+      <!-- 选择文件和参数页面 - 添加切换动画 -->
+      <transition 
+        enter-active-class="animate__animated animate__fadeInRight" 
+        leave-active-class="animate__animated animate__fadeOutLeft"
+        mode="out-in"
+      >
+        <!-- 用一个 div 包裹两个页面，通过 v-if/v-else 控制显示哪一个 -->
+        <div :key="predictCurrent">
+          <!-- 表单页面 -->
+          <div class="form-container" v-if="predictCurrent === 0">
+            <el-form :model="form" label-width="auto" class="center-form">
+              <div class="form-horizontal-group">
+                <div class="form-column-full">
+                  <!-- 早期文件上传 - 添加动画 -->
+                  <el-form-item label="早期文件：" required>
+                    <div class="file-input-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.1s'}">
+                      <el-input
+                        v-model="earlyFilePath"
+                        placeholder="请选择早期文件"
+                        readonly
+                        clearable
+                        @clear="handleRemoveFile('early')"
+                        @keydown.delete="handleKeydown($event, 'early')"
+                        @focus="handleInputFocus('early')"
+                      >
+                        <template #append>
+                          <el-button @click="handleEarlyBrowseClick" class="browse-button">
+                            浏览
+                          </el-button>
+                        </template>
+                      </el-input>
+                      <input
+                        type="file"
+                        ref="earlyFileInput"
+                        @change="handleEarlyFileSelect"
+                        accept=".tif,.zip,.rar"
+                        class="file-input-hidden"
+                      />
+                    </div>
+                  </el-form-item>
 
+                  <!-- 后期文件上传 - 添加动画 -->
+                  <el-form-item label="后期文件：" required class="center-form">
+                    <div class="file-input-wrapper center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.2s'}">
+                      <el-input
+                        v-model="lateFilePath"
+                        placeholder="请选择后期文件"
+                        readonly
+                        clearable
+                        @clear="handleRemoveFile('late')"
+                        @keydown.delete="handleKeydown($event, 'late')"
+                        @focus="handleInputFocus('late')"
+                      >
+                        <template #append>
+                          <el-button @click="handleLateBrowseClick" class="browse-button">
+                            浏览
+                          </el-button>
+                        </template>
+                      </el-input>
+                      <input
+                        type="file"
+                        ref="lateFileInput"
+                        @change="handleLateFileSelect"
+                        accept=".tif,.zip,.rar"
+                        class="file-input-hidden"
+                      />
+                    </div>
+                  </el-form-item>
 
-              <!-- 后期文件上传 -->
-              <el-form-item label="后期文件：" required class="center-form">
-                <div class="file-input-wrapper center-content">
-                  <el-input
-                    v-model="lateFilePath"
-                    placeholder="请选择后期文件"
-                    readonly
-                    clearable
-                    @clear="handleRemoveFile('late')"
-                    @keydown.delete="handleKeydown($event, 'late')"
-                    @focus="handleInputFocus('late')"
-                 
-                  >
-                    <template #append>
-                      <el-button @click="handleLateBrowseClick" class="browse-button">
-                        浏览
-                      </el-button>
-                    </template>
-                  </el-input>
-                  <input
-                    type="file"
-                    ref="lateFileInput"
-                    @change="handleLateFileSelect"
-                    accept=".tif,.zip,.rar"
-                    class="file-input-hidden"
-                  />
-                </div>
-              </el-form-item>
+                  <!-- 文件状态提示 - 添加动画 -->
+                  <el-form-item label="文件状态">
+                    <div class="file-status animate__animated animate__fadeInUp" :style="{animationDelay: '0.3s'}">
+                      <div v-if="earlyFileObject" class="status-item success">
+                        <el-icon color="#67C23A"><Check /></el-icon>
+                        <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                      </div>
+                      <div v-else class="status-item error">
+                        <el-icon color="#F56C6C"><Close /></el-icon>
+                        <span>未选择早期文件</span>
+                      </div>
+                      <div v-if="lateFileObject" class="status-item success">
+                        <el-icon color="#67C23A"><Check /></el-icon>
+                        <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                      </div>
+                      <div v-else class="status-item error">
+                        <el-icon color="#F56C6C"><Close /></el-icon>
+                        <span>未选择后期文件</span>
+                      </div>
+                    </div>
+                  </el-form-item>
 
-              <!-- 文件状态提示  -->
-              <el-form-item label="文件状态">
-                <div class="file-status">
-                  <div v-if="earlyFileObject" class="status-item">
-                    <el-icon color="#67C23A"><Check /></el-icon>
-                    <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                  <!-- 水体标签值 - 添加动画 -->
+                  <el-form-item label="水体标签值：" prop="waterTagValue">
+                    <div class="center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.4s'}">
+                      <el-input-number
+                        v-model="form.waterTagValue"
+                        :min="0"
+                        :max="255"
+                        step="1"
+                        placeholder="请输入水体标签值（0-255）"
+                        class="water-tag-input"
+                      />
+                    </div>
+                    <div class="input-hint animate__animated animate__fadeIn" :style="{animationDelay: '0.5s'}">
+                      注：代表水体的像素值，通常为0-255之间的整数
+                    </div>
+                  </el-form-item>
+
+                  <!-- 预测参数选项 - 添加动画 -->
+                  <el-form-item label="预测参数">
+                    <div class="center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
+                      <el-checkbox-group v-model="predictOptions" class="checkbox-group">
+                        <el-checkbox label="change_stats" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">变化统计</el-checkbox>
+                        <el-checkbox label="change_image" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">变化预览</el-checkbox>
+                        <el-checkbox label="change_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.75s'}">变化结果下载</el-checkbox>
+                      </el-checkbox-group>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 按钮组 - 添加动画 -->
+                  <div class="button-group animate__animated animate__fadeInUp" :style="{animationDelay: '0.8s'}">
+                    <el-button
+                      @click="handlePredict"
+                      class="submit-button"
+                      type="primary"
+                      :loading="predictLoading"
+                      :disabled="!earlyFileObject || !lateFileObject"
+                      :class="{'animate__animated animate__pulse animate__infinite': earlyFileObject && lateFileObject && !predictLoading}"
+                    >
+                      {{ predictLoading ? '上传并预测中...' : '开始预测' }}
+                    </el-button>
                   </div>
-                  <div v-else class="status-item">
-                    <el-icon color="#F56C6C"><Close /></el-icon>
-                    <span>未选择早期文件</span>
-                  </div>
-                  <div v-if="lateFileObject" class="status-item">
-                    <el-icon color="#67C23A"><Check /></el-icon>
-                    <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
-                  </div>
-                  <div v-else class="status-item">
-                    <el-icon color="#F56C6C"><Close /></el-icon>
-                    <span>未选择后期文件</span>
-                  </div>
-                </div>
-              </el-form-item>              
-              <el-form-item label="水体标签值：" prop="waterTagValue">
-                <div class="center-content">
-                  <el-input-number
-                    v-model="form.waterTagValue"
-                    :min="0"
-                    :max="255"
-                    step="1"
-                    placeholder="请输入水体标签值（0-255）"
-                    class="water-tag-input"
-                  />
-                </div>
-                <div class="input-hint">
-                  注：代表水体的像素值，通常为0-255之间的整数
-                </div>
-              </el-form-item>
-              
-              <!-- 预测参数选项 -->
-              <el-form-item label="预测参数">
-                <div class="center-content">
-                  <el-checkbox-group v-model="predictOptions" class="checkbox-group">
-                    <el-checkbox label="change_stats">变化统计</el-checkbox>
-                    <el-checkbox label="change_image">变化预览</el-checkbox>
-                    <el-checkbox label="change_tif">变化结果下载</el-checkbox>
-                  </el-checkbox-group>
-                </div>
-              </el-form-item>
-
-              <div class="button-group">
-                <el-button
-                  @click="handlePredict"
-                  class="submit-button"
-                  type="primary"
-                  :loading="predictLoading"
-                  :disabled="!earlyFileObject || !lateFileObject"
-                >
-                  {{ predictLoading ? '上传并预测中...' : '开始预测' }}
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </el-form>
-      </div>
-
-      <!-- 预测结果页面 -->
-      <div class="result-container" v-if="predictCurrent === 1">
-        <div class="result-content">
-          <!-- 结果内容区域 - 真正的左右布局 -->
-          <div class="result-layout">
-            <!-- 左边：变化统计 -->
-            <div class="result-panel stats-panel">
-              <h3>变化统计</h3>
-              <div class="stats-grid">
-                <div v-for="(value, key) in changeStats" :key="key" class="stat-card">
-                  <span class="stat-label">{{ key }}：</span>
-                  <span class="stat-value">面积: {{ value.area }} ㎡, 比例: {{ (value.ratio * 100).toFixed(2) }}%</span>
                 </div>
               </div>
-              <div class="download-section" v-if="predictOptions.includes('change_stats')">
-                <h3>统计文件下载</h3>
-                <el-button @click="downloadStatsFile" type="primary" plain icon="Download" class="download-button">
-                  下载统计文件
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 右边：变化图像 -->
-            <div class="result-panel image-panel">
-              <div v-if="previewData && predictOptions.includes('change_image')" class="image-container">
-                <img :src="previewData" alt="变化结果预览" class="preview-image" />
-                <el-button @click="openImageDialog" type="primary" plain class="view-image-button">
-                  <el-icon><ZoomIn /></el-icon>
-                  查看大图
-                </el-button>
-              </div>
-              <div v-else class="no-data">
-                <el-icon><Picture /></el-icon>
-                <div>暂无预览图</div>
-              </div>
-              <div class="download-section" v-if="predictOptions.includes('change_tif')">
-                <h3>变化地图下载</h3>
-                <el-button @click="downloadTifFile" type="primary" plain icon="Download" class="download-button">
-                  下载变化地图
-                </el-button>
-              </div>
-            </div>
+            </el-form>
           </div>
 
-          <!-- 操作按钮 -->
-          <div class="action-buttons">
-            <el-button @click="handlePredictPrevious" icon="Back">
-              上一步
-            </el-button>
-            <el-button @click="handlePredictContinue" type="primary" icon="Refresh">
-              继续预测
-            </el-button>
+          <!-- 预测结果页面 - 添加切换动画 -->
+          <div class="result-container" v-else-if="predictCurrent === 1">
+            <div class="result-content">
+              <!-- 结果内容区域 - 真正的左右布局 -->
+              <div class="result-layout">
+                <!-- 左边：变化统计 - 添加动画 -->
+                <div class="result-panel stats-panel animate__animated animate__fadeInLeft" :style="{animationDelay: '0.1s'}">
+                  <h3 class="animate__animated animate__fadeIn">变化统计</h3>
+                  <div class="stats-grid">
+                    <div 
+                      v-for="(value, key, index) in changeStats" 
+                      :key="key" 
+                      class="stat-card animate__animated animate__fadeInUp"
+                      :style="{animationDelay: `${0.2 + index * 0.1}s`}"
+                    >
+                      <span class="stat-label">{{ key }}：</span>
+                      <span class="stat-value">面积: {{ value.area }} ㎡, 比例: {{ (value.ratio * 100).toFixed(2) }}%</span>
+                    </div>
+                  </div>
+                  <div class="download-section" v-if="predictOptions.includes('change_stats')">
+                    <h3 class="animate__animated animate__fadeIn">统计文件下载</h3>
+                    <el-button 
+                      @click="downloadStatsFile" 
+                      type="primary" 
+                      plain 
+                      icon="Download" 
+                      class="download-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.5s'}"
+                    >
+                      下载统计文件
+                    </el-button>
+                  </div>
+                </div>
+
+                <!-- 右边：变化图像 - 添加动画 -->
+                <div class="result-panel image-panel animate__animated animate__fadeInRight" :style="{animationDelay: '0.2s'}">
+                  <div v-if="previewData && predictOptions.includes('change_image')" class="image-container">
+                    <img 
+                      :src="previewData" 
+                      alt="变化结果预览" 
+                      class="preview-image animate__animated animate__fadeIn"
+                      @load="onImagePreviewLoad"
+                    />
+                    <el-button 
+                      @click="openImageDialog" 
+                      type="primary" 
+                      plain 
+                      class="view-image-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.3s'}"
+                    >
+                      <el-icon><ZoomIn /></el-icon>
+                      查看大图
+                    </el-button>
+                  </div>
+                  <div v-else class="no-data animate__animated animate__fadeIn">
+                    <el-icon><Picture /></el-icon>
+                    <div>暂无预览图</div>
+                  </div>
+                  <div class="download-section" v-if="predictOptions.includes('change_tif')">
+                    <h3 class="animate__animated animate__fadeIn">变化地图下载</h3>
+                    <el-button 
+                      @click="downloadTifFile" 
+                      type="primary" 
+                      plain 
+                      icon="Download" 
+                      class="download-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.4s'}"
+                    >
+                      下载变化地图
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 操作按钮 - 添加动画 -->
+              <div class="action-buttons animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
+                <el-button @click="handlePredictPrevious" icon="Back" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">
+                  上一步
+                </el-button>
+                <el-button @click="handlePredictContinue" type="primary" icon="Refresh" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">
+                  继续预测
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
 
-      <!-- 大图预览对话框 -->
-      <el-dialog v-model="imageDialogVisible" title="预览大图" width="90%" :destroy-on-close="true">
+      <!-- 大图预览对话框 - 添加动画 -->
+      <el-dialog 
+        v-model="imageDialogVisible" 
+        title="预览大图" 
+        width="90%" 
+        :destroy-on-close="true"
+        :modal-append-to-body="false"
+      >
         <div class="full-image-container">
-          <img :src="previewData" alt="完整预览" class="full-size-image" @load="onImageLoad" />
-          <div v-if="isImageLoaded" class="zoom-controls">
-            <el-button @click="zoomIn" icon="ZoomIn" circle size="small" />
-            <el-button @click="zoomOut" icon="ZoomOut" circle size="small" />
+          <img 
+            :src="previewData" 
+            alt="完整预览" 
+            class="full-size-image animate__animated animate__fadeIn" 
+            @load="onImageLoad" 
+          />
+          <div v-if="isImageLoaded" class="zoom-controls animate__animated animate__fadeInUp">
+            <el-button @click="zoomIn" icon="ZoomIn" circle size="small" class="animate__animated animate__pulse animate__infinite" />
+            <el-button @click="zoomOut" icon="ZoomOut" circle size="small" class="animate__animated animate__pulse animate__infinite" />
           </div>
         </div>
       </el-dialog>
@@ -456,6 +518,18 @@ const loadPreviewImage = async (imagePath) => {
   }
 }
 
+// 图片预览加载完成后的动画
+const onImagePreviewLoad = () => {
+  // 图片加载完成后添加一个轻微的脉冲效果
+  const img = document.querySelector('.preview-image')
+  if (img) {
+    img.classList.add('animate__pulse')
+    setTimeout(() => {
+      img.classList.remove('animate__pulse')
+    }, 1000)
+  }
+}
+
 const downloadStatsFile = async () => {
   if (!downloadFiles.value.stats_file) {
     message.error('没有可下载的统计文件')
@@ -557,6 +631,9 @@ const applyZoom = () => {
 </script>
 
 <style scoped>
+/* 导入animate.css - 确保在使用前已安装 */
+@import 'animate.css';
+
 /* 基础样式 */
 .feature-container {
   margin: 0 auto;
@@ -615,12 +692,14 @@ const applyZoom = () => {
   z-index: 1;
   border: 2px solid #e0e0e0;
   color: #999;
+  transition: all 0.3s ease;
 }
 
 .step-title {
   font-size: 14px;
   color: #999;
   text-align: center;
+  transition: all 0.3s ease;
 }
 
 .step-item.active .step-number {
@@ -669,7 +748,7 @@ const applyZoom = () => {
 }
 
 .center-input {
-  max-width: 400px; /* 控制输入框的最大宽度 */
+  max-width: 400px;
   width: 100%;
 }
 
@@ -689,8 +768,8 @@ const applyZoom = () => {
 }
 
 .status-form-item {
-  margin-top: -10px; /* 减小与上方输入框的间距 */
-  margin-bottom: 20px; /* 增加与下方项目的间距 */
+  margin-top: -10px;
+  margin-bottom: 20px;
 }
 
 .center-status-item {
@@ -717,10 +796,12 @@ const applyZoom = () => {
   color: white;
   border: none;
   min-width: 60px;
+  transition: all 0.3s ease;
 }
 
 .browse-button:hover {
   background-color: #79bbff;
+  transform: scale(1.05);
 }
 
 /* 文件状态 */
@@ -741,6 +822,20 @@ const applyZoom = () => {
   border-radius: 4px;
   min-width: 300px;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.status-item.success {
+  border-left: 3px solid #67C23A;
+}
+
+.status-item.error {
+  border-left: 3px solid #F56C6C;
+}
+
+.status-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* 水体标签值输入 */
@@ -762,6 +857,15 @@ const applyZoom = () => {
   gap: 15px;
 }
 
+.checkbox-group .el-checkbox {
+  transition: all 0.3s ease;
+}
+
+.checkbox-group .el-checkbox:hover {
+  transform: scale(1.05);
+  color: #409eff;
+}
+
 /* 按钮组 */
 .button-group {
   display: flex;
@@ -778,10 +882,17 @@ const applyZoom = () => {
   font-weight: 500;
   width: 100%;
   max-width: 200px;
+  transition: all 0.3s ease;
 }
 
 .submit-button:hover {
   background-color: #40a9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+}
+
+.submit-button:active {
+  transform: translateY(0);
 }
 
 /* 结果容器 */
@@ -813,6 +924,11 @@ const applyZoom = () => {
   border-radius: 10px;
   flex: 1;
   min-width: 300px;
+  transition: all 0.3s ease;
+}
+
+.result-panel:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .stats-panel {
@@ -838,6 +954,13 @@ const applyZoom = () => {
   border-radius: 8px;
   border: 1px solid #e4e7ed;
   gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #1890ff;
 }
 
 .stat-label {
@@ -862,12 +985,26 @@ const applyZoom = () => {
   max-height: 400px;
   border-radius: 8px;
   object-fit: contain;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.preview-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
 .view-image-button,
 .download-button {
   width: 100%;
   margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.view-image-button:hover,
+.download-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64,158,255,0.3);
 }
 
 /* 无数据状态 */
@@ -879,11 +1016,23 @@ const applyZoom = () => {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.no-data:hover {
+  transform: scale(1.02);
+  color: #606266;
 }
 
 .no-data .el-icon {
   font-size: 48px;
   margin-bottom: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 /* 下载区域 */
@@ -905,6 +1054,16 @@ const applyZoom = () => {
   margin-top: 30px;
   width: 100%;
   flex-wrap: wrap;
+}
+
+.action-buttons .el-button {
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.action-buttons .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 /* 大图预览 */
@@ -931,6 +1090,15 @@ const applyZoom = () => {
   right: 10px;
   display: flex;
   gap: 5px;
+}
+
+.zoom-controls .el-button {
+  transition: all 0.3s ease;
+}
+
+.zoom-controls .el-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* 响应式断点 */

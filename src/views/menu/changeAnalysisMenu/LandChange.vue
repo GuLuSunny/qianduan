@@ -2,343 +2,369 @@
     <div class="feature-container">
         <!-- 植被覆盖度变化检测功能 -->
         <div class="feature-wrapper">
-            <!-- 自定义步骤条 -->
-            <div class="steps-container">
+            <!-- 自定义步骤条 - 添加动画 -->
+            <div class="steps-container animate__animated animate__fadeInDown">
                 <div class="custom-steps">
                     <div :class="['step-item', { 'active': predictCurrent === 0 }]">
-                        <div class="step-number">1</div>
+                        <div 
+                            class="step-number animate__animated" 
+                            :class="{'animate__pulse animate__infinite': predictCurrent === 0}"
+                        >
+                            1
+                        </div>
                         <div class="step-title">选择文件和参数</div>
                     </div>
                     <div :class="['step-item', { 'active': predictCurrent === 1 }]">
-                        <div class="step-number">2</div>
+                        <div 
+                            class="step-number animate__animated" 
+                            :class="{'animate__pulse animate__infinite': predictCurrent === 1}"
+                        >
+                            2
+                        </div>
                         <div class="step-title">检测结果</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 选择文件和参数页面 -->
-            <div class="form-container" v-if="predictCurrent === 0">
-                <div class="form-center-wrapper">
-                    <el-form :model="form" label-width="auto" class="center-form">
-                        <div class="form-horizontal-group">
-                            <div class="form-column-full">
-                                <!-- 早期FVC文件上传 -->
-                                <el-form-item label="早期FVC文件：" required>
-                                    <div class="form-item-center-wrapper">
-                                        <div class="file-input-wrapper center-content">
-                                            <el-input v-model="earlyFilePath" placeholder="请选择早期FVC结果文件" readonly
-                                                clearable @clear="handleRemoveFile('early')"
-                                                @keydown.delete="handleKeydown($event, 'early')"
-                                                @focus="handleInputFocus('early')">
-                                                <template #append>
-                                                    <el-button @click="handleEarlyBrowseClick" class="browse-button">
-                                                        浏览
-                                                    </el-button>
-                                                </template>
-                                            </el-input>
-                                            <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
-                                                accept=".tif,.tiff" class="file-input-hidden" />
+            <!-- 选择文件和参数页面 - 添加切换动画 -->
+            <transition 
+                enter-active-class="animate__animated animate__fadeInRight" 
+                leave-active-class="animate__animated animate__fadeOutLeft"
+                mode="out-in"
+            >
+                <!-- 用一个 div 包裹两个页面，通过 v-if/v-else 控制显示哪一个 -->
+                <div :key="predictCurrent">
+                    <!-- 表单页面 -->
+                    <div class="form-container" v-if="predictCurrent === 0">
+                        <div class="form-center-wrapper">
+                            <el-form :model="form" label-width="auto" class="center-form">
+                                <div class="form-horizontal-group">
+                                    <div class="form-column-full">
+                                        <!-- 早期FVC文件上传 - 添加动画 -->
+                                        <el-form-item label="早期FVC文件：" required>
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.1s'}">
+                                                <div class="file-input-wrapper center-content">
+                                                    <el-input v-model="earlyFilePath" placeholder="请选择早期FVC结果文件" readonly
+                                                        clearable @clear="handleRemoveFile('early')"
+                                                        @keydown.delete="handleKeydown($event, 'early')"
+                                                        @focus="handleInputFocus('early')">
+                                                        <template #append>
+                                                            <el-button @click="handleEarlyBrowseClick" class="browse-button">
+                                                                浏览
+                                                            </el-button>
+                                                        </template>
+                                                    </el-input>
+                                                    <input type="file" ref="earlyFileInput" @change="handleEarlyFileSelect"
+                                                        accept=".tif,.tiff" class="file-input-hidden" />
+                                                </div>
+                                                <div class="file-hint">请选择早期FVC TIFF文件</div>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 后期FVC文件上传 - 添加动画 -->
+                                        <el-form-item label="后期FVC文件：" required>
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.2s'}">
+                                                <div class="file-input-wrapper center-content">
+                                                    <el-input v-model="lateFilePath" placeholder="请选择后期FVC结果文件" readonly
+                                                        clearable @clear="handleRemoveFile('late')"
+                                                        @keydown.delete="handleKeydown($event, 'late')"
+                                                        @focus="handleInputFocus('late')">
+                                                        <template #append>
+                                                            <el-button @click="handleLateBrowseClick" class="browse-button">
+                                                                浏览
+                                                            </el-button>
+                                                        </template>
+                                                    </el-input>
+                                                    <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
+                                                        accept=".tif,.tiff" class="file-input-hidden" />
+                                                </div>
+                                                <div class="file-hint">请选择后期FVC TIFF文件</div>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 显示模式选择 - 添加动画 -->
+                                        <el-form-item label="显示模式：" required>
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.3s'}">
+                                                <el-radio-group v-model="displayMode" class="radio-group">
+                                                    <el-radio label="changes_only" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.35s'}">仅显示变化区域</el-radio>
+                                                    <el-radio label="all" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.4s'}">显示全部类别</el-radio>
+                                                </el-radio-group>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 阈值配置（可选）- 添加动画 -->
+                                        <el-form-item label="阈值配置：">
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.5s'}">
+                                                <div class="thresholds-container center-content">
+                                                    <div class="threshold-item">
+                                                        <span class="threshold-label">显著退化阈值：</span>
+                                                        <el-input-number v-model="thresholds.significant_decrease_threshold" :min="-1"
+                                                            :max="0" :step="0.05" :precision="2" size="small" />
+                                                    </div>
+                                                    <div class="threshold-item">
+                                                        <span class="threshold-label">轻微退化阈值：</span>
+                                                        <el-input-number v-model="thresholds.slight_decrease_threshold" :min="-1"
+                                                            :max="0" :step="0.05" :precision="2" size="small" />
+                                                    </div>
+                                                    <div class="threshold-item">
+                                                        <span class="threshold-label">轻微改善阈值：</span>
+                                                        <el-input-number v-model="thresholds.slight_increase_threshold" :min="0"
+                                                            :max="1" :step="0.05" :precision="2" size="small" />
+                                                    </div>
+                                                    <div class="threshold-item">
+                                                        <span class="threshold-label">显著改善阈值：</span>
+                                                        <el-input-number v-model="thresholds.significant_increase_threshold" :min="0"
+                                                            :max="1" :step="0.05" :precision="2" size="small" />
+                                                    </div>
+                                                </div>
+                                                <div class="file-hint">FVC变化阈值配置（可选，使用默认值可不设置）</div>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 文件状态提示 - 添加动画 -->
+                                        <el-form-item label="文件状态">
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
+                                                <div class="file-status">
+                                                    <div v-if="earlyFileObject" class="status-item success">
+                                                        <el-icon color="#67C23A">
+                                                            <Check />
+                                                        </el-icon>
+                                                        <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 /
+                                                            1024).toFixed(2) }} MB)</span>
+                                                    </div>
+                                                    <div v-else class="status-item error">
+                                                        <el-icon color="#F56C6C">
+                                                            <Close />
+                                                        </el-icon>
+                                                        <span>未选择早期文件</span>
+                                                    </div>
+                                                    <div v-if="lateFileObject" class="status-item success">
+                                                        <el-icon color="#67C23A">
+                                                            <Check />
+                                                        </el-icon>
+                                                        <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 /
+                                                            1024).toFixed(2) }} MB)</span>
+                                                    </div>
+                                                    <div v-else class="status-item error">
+                                                        <el-icon color="#F56C6C">
+                                                            <Close />
+                                                        </el-icon>
+                                                        <span>未选择后期文件</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 输出选项 - 添加动画 -->
+                                        <el-form-item label="输出选项">
+                                            <div class="form-item-center-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.7s'}">
+                                                <el-checkbox-group v-model="outputOptions" class="checkbox-group">
+                                                    <el-checkbox label="change_stats" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.75s'}">变化统计</el-checkbox>
+                                                    <el-checkbox label="change_image" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.8s'}">变化预览图</el-checkbox>
+                                                    <el-checkbox label="classified_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.85s'}">分类结果下载</el-checkbox>
+                                                    <el-checkbox label="raw_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.9s'}">原始变化数据下载</el-checkbox>
+                                                </el-checkbox-group>
+                                            </div>
+                                        </el-form-item>
+
+                                        <!-- 按钮组 - 添加动画 -->
+                                        <div class="button-group animate__animated animate__fadeInUp" :style="{animationDelay: '0.95s'}">
+                                            <el-button @click="handleChangeDetection" class="submit-button" type="primary"
+                                                :loading="detectionLoading" :disabled="!earlyFileObject || !lateFileObject"
+                                                :class="{'animate__animated animate__pulse animate__infinite': earlyFileObject && lateFileObject && !detectionLoading}">
+                                                {{ detectionLoading ? '处理中...' : '开始检测' }}
+                                            </el-button>
                                         </div>
-                                        <div class="file-hint">请选择早期FVC TIFF文件</div>
                                     </div>
-                                </el-form-item>
-
-                                <!-- 后期FVC文件上传 -->
-                                <el-form-item label="后期FVC文件：" required>
-                                    <div class="form-item-center-wrapper">
-                                        <div class="file-input-wrapper center-content">
-                                            <el-input v-model="lateFilePath" placeholder="请选择后期FVC结果文件" readonly
-                                                clearable @clear="handleRemoveFile('late')"
-                                                @keydown.delete="handleKeydown($event, 'late')"
-                                                @focus="handleInputFocus('late')">
-                                                <template #append>
-                                                    <el-button @click="handleLateBrowseClick" class="browse-button">
-                                                        浏览
-                                                    </el-button>
-                                                </template>
-                                            </el-input>
-                                            <input type="file" ref="lateFileInput" @change="handleLateFileSelect"
-                                                accept=".tif,.tiff" class="file-input-hidden" />
-                                        </div>
-                                        <div class="file-hint">请选择后期FVC TIFF文件</div>
-                                    </div>
-                                </el-form-item>
-
-                                <!-- 显示模式选择 -->
-                                <el-form-item label="显示模式：" required>
-                                    <div class="form-item-center-wrapper">
-                                        <el-radio-group v-model="displayMode" class="radio-group">
-                                            <el-radio label="changes_only">仅显示变化区域</el-radio>
-                                            <el-radio label="all">显示全部类别</el-radio>
-                                        </el-radio-group>
-                                    </div>
-                                </el-form-item>
-
-                                <!-- 阈值配置（可选） -->
-                                <el-form-item label="阈值配置：">
-                                    <div class="form-item-center-wrapper">
-                                        <div class="thresholds-container center-content">
-                                            <div class="threshold-item">
-                                                <span class="threshold-label">显著退化阈值：</span>
-                                                <el-input-number v-model="thresholds.significant_decrease_threshold" :min="-1"
-                                                    :max="0" :step="0.05" :precision="2" size="small" />
-                                            </div>
-                                            <div class="threshold-item">
-                                                <span class="threshold-label">轻微退化阈值：</span>
-                                                <el-input-number v-model="thresholds.slight_decrease_threshold" :min="-1"
-                                                    :max="0" :step="0.05" :precision="2" size="small" />
-                                            </div>
-                                            <div class="threshold-item">
-                                                <span class="threshold-label">轻微改善阈值：</span>
-                                                <el-input-number v-model="thresholds.slight_increase_threshold" :min="0"
-                                                    :max="1" :step="0.05" :precision="2" size="small" />
-                                            </div>
-                                            <div class="threshold-item">
-                                                <span class="threshold-label">显著改善阈值：</span>
-                                                <el-input-number v-model="thresholds.significant_increase_threshold" :min="0"
-                                                    :max="1" :step="0.05" :precision="2" size="small" />
-                                            </div>
-                                        </div>
-                                        <div class="file-hint">FVC变化阈值配置（可选，使用默认值可不设置）</div>
-                                    </div>
-                                </el-form-item>
-
-                                <!-- 文件状态提示 - 保持原始样式但紧凑布局 -->
-                                <el-form-item label="文件状态">
-                                    <div class="form-item-center-wrapper">
-                                        <div class="file-status">
-                                            <div v-if="earlyFileObject" class="status-item">
-                                                <el-icon color="#67C23A">
-                                                    <Check />
-                                                </el-icon>
-                                                <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 /
-                                                    1024).toFixed(2) }} MB)</span>
-                                            </div>
-                                            <div v-else class="status-item">
-                                                <el-icon color="#F56C6C">
-                                                    <Close />
-                                                </el-icon>
-                                                <span>未选择早期文件</span>
-                                            </div>
-                                            <div v-if="lateFileObject" class="status-item">
-                                                <el-icon color="#67C23A">
-                                                    <Check />
-                                                </el-icon>
-                                                <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 /
-                                                    1024).toFixed(2) }} MB)</span>
-                                            </div>
-                                            <div v-else class="status-item">
-                                                <el-icon color="#F56C6C">
-                                                    <Close />
-                                                </el-icon>
-                                                <span>未选择后期文件</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </el-form-item>
-
-                                <!-- 输出选项 -->
-                                <el-form-item label="输出选项">
-                                    <div class="form-item-center-wrapper">
-                                        <el-checkbox-group v-model="outputOptions" class="checkbox-group">
-                                            <el-checkbox label="change_stats">变化统计</el-checkbox>
-                                            <el-checkbox label="change_image">变化预览图</el-checkbox>
-                                            <el-checkbox label="classified_tif">分类结果下载</el-checkbox>
-                                            <el-checkbox label="raw_tif">原始变化数据下载</el-checkbox>
-                                        </el-checkbox-group>
-                                    </div>
-                                </el-form-item>
-
-                                <div class="button-group">
-                                    <el-button @click="handleChangeDetection" class="submit-button" type="primary"
-                                        :loading="detectionLoading" :disabled="!earlyFileObject || !lateFileObject">
-                                        {{ detectionLoading ? '处理中...' : '开始检测' }}
-                                    </el-button>
                                 </div>
-                            </div>
+                            </el-form>
                         </div>
-                    </el-form>
-                </div>
-            </div>
+                    </div>
 
-            <!-- 检测结果页面 -->
-            <div class="result-container" v-if="predictCurrent === 1">
-                <div class="result-content">
-                    <!-- 结果内容区域 - 使用flex布局限制高度 -->
-                    <div class="result-layout">
-                        <!-- 左边：变化统计 - 限制高度并滚动 -->
-                        <div class="result-panel stats-panel scrollable-panel">
-                            <h3>FVC变化统计</h3>
-                            <div v-if="Object.keys(changeStats).length > 0" class="stats-content">
-                                <!-- 修改模板中的统计项 -->
-                                <div class="stat-summary">
-                                    <div class="stat-item">
-                                        <span class="stat-label">总像素数：</span>
-                                        <span class="stat-value">{{ totalStats.total_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">有效像素：</span>
-                                        <span class="stat-value">{{ totalStats.valid_pixels?.toLocaleString() || '0'
-                                            }}</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">变化像素：</span>
-                                        <div class="stat-value-container">
-                                            <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() ||
-                                                '0' }}</span>
-                                            <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
-                                                '0.00'
-                                                }}%)</span>
-                                        </div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">未变化像素：</span>
-                                        <div class="stat-value-container">
-                                            <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() ||
-                                                '0'
-                                                }}</span>
-                                            <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2)
-                                                || '0.00'
-                                                }}%)</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- FVC变化类别统计 - 可滚动 -->
-                                <div v-if="changeCategories.length > 0" class="categories-section">
-                                    <h4>FVC变化类别统计</h4>
-                                    <div class="categories-scroll">
-                                        <div v-for="(category, index) in changeCategories" :key="index"
-                                            class="change-type-item">
-                                            <div class="change-type-header">
-                                                <span :style="{ color: getCategoryColor(category.name) }">
-                                                    {{ category.name }}
-                                                </span>
+                    <!-- 检测结果页面 - 添加动画 -->
+                    <div class="result-container" v-else-if="predictCurrent === 1">
+                        <div class="result-content">
+                            <!-- 结果内容区域 - 使用flex布局限制高度 -->
+                            <div class="result-layout">
+                                <!-- 左边：变化统计 - 添加动画 -->
+                                <div class="result-panel stats-panel scrollable-panel animate__animated animate__fadeInLeft" :style="{animationDelay: '0.1s'}">
+                                    <h3 class="animate__animated animate__fadeIn">FVC变化统计</h3>
+                                    <div v-if="Object.keys(changeStats).length > 0" class="stats-content">
+                                        <!-- 修改模板中的统计项 - 添加动画 -->
+                                        <div class="stat-summary animate__animated animate__fadeIn" :style="{animationDelay: '0.15s'}">
+                                            <div class="stat-item">
+                                                <span class="stat-label">总像素数：</span>
+                                                <span class="stat-value">{{ totalStats.total_pixels?.toLocaleString() || '0'
+                                                    }}</span>
                                             </div>
-                                            <div class="change-type-details">
-                                                <span>像素数: {{ category.count?.toLocaleString() || '0' }}</span>
-                                                <span>比例: {{ category.percentage?.toFixed(2) }}%</span>
+                                            <div class="stat-item">
+                                                <span class="stat-label">有效像素：</span>
+                                                <span class="stat-value">{{ totalStats.valid_pixels?.toLocaleString() || '0'
+                                                    }}</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-label">变化像素：</span>
+                                                <div class="stat-value-container">
+                                                    <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() ||
+                                                        '0' }}</span>
+                                                    <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
+                                                        '0.00'
+                                                        }}%)</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-label">未变化像素：</span>
+                                                <div class="stat-value-container">
+                                                    <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() ||
+                                                        '0'
+                                                        }}</span>
+                                                    <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2)
+                                                        || '0.00'
+                                                        }}%)</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <!-- 变化统计信息 -->
-                                <div v-if="changeStatistics.mean_change !== undefined" class="stats-section">
-                                    <h4>变化统计信息</h4>
-                                    <div class="stat-summary">
-                                        <div class="stat-item">
-                                            <span class="stat-label">平均变化：</span>
-                                            <span class="stat-value" :class="{
-                                                'positive': changeStatistics.mean_change > 0,
-                                                'negative': changeStatistics.mean_change < 0
-                                            }">
-                                                {{ changeStatistics.mean_change?.toFixed(4) || '0.0000' }}
-                                            </span>
+                                        <!-- FVC变化类别统计 - 添加动画 -->
+                                        <div v-if="changeCategories.length > 0" class="categories-section">
+                                            <h4 class="animate__animated animate__fadeIn" :style="{animationDelay: '0.2s'}">FVC变化类别统计</h4>
+                                            <div class="categories-scroll">
+                                                <div v-for="(category, index) in changeCategories" :key="index"
+                                                    class="change-type-item animate__animated animate__fadeInUp"
+                                                    :style="{animationDelay: `${0.25 + index * 0.05}s`}">
+                                                    <div class="change-type-header">
+                                                        <span :style="{ color: getCategoryColor(category.name) }">
+                                                            {{ category.name }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="change-type-details">
+                                                        <span>像素数: {{ category.count?.toLocaleString() || '0' }}</span>
+                                                        <span>比例: {{ category.percentage?.toFixed(2) }}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">标准差：</span>
-                                            <span class="stat-value">{{ changeStatistics.std_change?.toFixed(4) ||
-                                                '0.0000'
-                                            }}</span>
+
+                                        <!-- 变化统计信息 - 添加动画 -->
+                                        <div v-if="changeStatistics.mean_change !== undefined" class="stats-section">
+                                            <h4 class="animate__animated animate__fadeIn" :style="{animationDelay: '0.3s'}">变化统计信息</h4>
+                                            <div class="stat-summary animate__animated animate__fadeIn" :style="{animationDelay: '0.35s'}">
+                                                <div class="stat-item">
+                                                    <span class="stat-label">平均变化：</span>
+                                                    <span class="stat-value" :class="{
+                                                        'positive': changeStatistics.mean_change > 0,
+                                                        'negative': changeStatistics.mean_change < 0
+                                                    }">
+                                                        {{ changeStatistics.mean_change?.toFixed(4) || '0.0000' }}
+                                                    </span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">标准差：</span>
+                                                    <span class="stat-value">{{ changeStatistics.std_change?.toFixed(4) ||
+                                                        '0.0000'
+                                                    }}</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">最小变化：</span>
+                                                    <span class="stat-value">{{ changeStatistics.min_change?.toFixed(4) ||
+                                                        '0.0000'
+                                                    }}</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">最大变化：</span>
+                                                    <span class="stat-value">{{ changeStatistics.max_change?.toFixed(4) ||
+                                                        '0.0000'
+                                                    }}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">最小变化：</span>
-                                            <span class="stat-value">{{ changeStatistics.min_change?.toFixed(4) ||
-                                                '0.0000'
-                                            }}</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">最大变化：</span>
-                                            <span class="stat-value">{{ changeStatistics.max_change?.toFixed(4) ||
-                                                '0.0000'
-                                            }}</span>
+
+                                        <!-- 下载按钮 - 添加动画 -->
+                                        <div class="download-section" v-if="outputOptions.includes('change_stats')">
+                                            <h3 class="animate__animated animate__fadeIn" :style="{animationDelay: '0.4s'}">统计文件下载</h3>
+                                            <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
+                                                class="download-button animate__animated animate__fadeInUp" :style="{animationDelay: '0.45s'}">
+                                                下载统计文件 (JSON)
+                                            </el-button>
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- 下载按钮 -->
-                                <div class="download-section" v-if="outputOptions.includes('change_stats')">
-                                    <h3>统计文件下载</h3>
-                                    <el-button @click="downloadStatsFile" type="primary" plain icon="Download"
-                                        class="download-button">
-                                        下载统计文件 (JSON)
-                                    </el-button>
-                                </div>
-                            </div>
-                            <div v-else class="no-data">
-                                <el-icon>
-                                    <DataAnalysis />
-                                </el-icon>
-                                <div>暂无统计数据</div>
-                            </div>
-                        </div>
-
-                        <!-- 右边：变化图像 - 限制高度 -->
-                        <div class="result-panel image-panel">
-                            <div class="image-content">
-                                <div v-if="previewData && outputOptions.includes('change_image')" class="image-container">
-                                    <img :src="previewData" alt="FVC变化预览" class="preview-image" />
-                                    <div class="image-info">
-                                        <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
-                                            {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
-                                        </el-tag>
-                                    </div>
-                                    <el-button @click="openImageDialog" type="primary" plain class="view-image-button">
+                                    <div v-else class="no-data animate__animated animate__fadeIn">
                                         <el-icon>
-                                            <ZoomIn />
+                                            <DataAnalysis />
                                         </el-icon>
-                                        查看大图
-                                    </el-button>
-                                </div>
-                                <div v-else class="no-data">
-                                    <el-icon>
-                                        <Picture />
-                                    </el-icon>
-                                    <div>暂无预览图</div>
+                                        <div>暂无统计数据</div>
+                                    </div>
                                 </div>
 
-                                <!-- 分类结果下载 -->
-                                <div class="download-section" v-if="outputOptions.includes('classified_tif')">
-                                    <h3>分类结果下载</h3>
-                                    <el-button @click="downloadClassifiedTif" type="primary" plain icon="Download"
-                                        class="download-button">
-                                        下载分类结果 (TIFF)
-                                    </el-button>
-                                </div>
+                                <!-- 右边：变化图像 - 添加动画 -->
+                                <div class="result-panel image-panel animate__animated animate__fadeInRight" :style="{animationDelay: '0.2s'}">
+                                    <div class="image-content">
+                                        <div v-if="previewData && outputOptions.includes('change_image')" class="image-container">
+                                            <img :src="previewData" alt="FVC变化预览" class="preview-image animate__animated animate__fadeIn"
+                                                @load="onImagePreviewLoad" />
+                                            <div class="image-info animate__animated animate__fadeIn" :style="{animationDelay: '0.25s'}">
+                                                <el-tag size="small" :type="displayMode === 'all' ? 'success' : 'warning'">
+                                                    {{ displayMode === 'all' ? '全类别显示' : '仅变化区域' }}
+                                                </el-tag>
+                                            </div>
+                                            <el-button @click="openImageDialog" type="primary" plain class="view-image-button animate__animated animate__fadeInUp" :style="{animationDelay: '0.3s'}">
+                                                <el-icon>
+                                                    <ZoomIn />
+                                                </el-icon>
+                                                查看大图
+                                            </el-button>
+                                        </div>
+                                        <div v-else class="no-data animate__animated animate__fadeIn">
+                                            <el-icon>
+                                                <Picture />
+                                            </el-icon>
+                                            <div>暂无预览图</div>
+                                        </div>
 
-                                <!-- 原始变化数据下载 -->
-                                <div class="download-section" v-if="outputOptions.includes('raw_tif')">
-                                    <h3>原始变化数据下载</h3>
-                                    <el-button @click="downloadRawTif" type="primary" plain icon="Download"
-                                        class="download-button">
-                                        下载原始变化数据 (TIFF)
-                                    </el-button>
+                                        <!-- 分类结果下载 - 添加动画 -->
+                                        <div class="download-section" v-if="outputOptions.includes('classified_tif')">
+                                            <h3 class="animate__animated animate__fadeIn" :style="{animationDelay: '0.35s'}">分类结果下载</h3>
+                                            <el-button @click="downloadClassifiedTif" type="primary" plain icon="Download"
+                                                class="download-button animate__animated animate__fadeInUp" :style="{animationDelay: '0.4s'}">
+                                                下载分类结果 (TIFF)
+                                            </el-button>
+                                        </div>
+
+                                        <!-- 原始变化数据下载 - 添加动画 -->
+                                        <div class="download-section" v-if="outputOptions.includes('raw_tif')">
+                                            <h3 class="animate__animated animate__fadeIn" :style="{animationDelay: '0.45s'}">原始变化数据下载</h3>
+                                            <el-button @click="downloadRawTif" type="primary" plain icon="Download"
+                                                class="download-button animate__animated animate__fadeInUp" :style="{animationDelay: '0.5s'}">
+                                                下载原始变化数据 (TIFF)
+                                            </el-button>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <!-- 操作按钮 - 添加动画 -->
+                            <div class="action-buttons animate__animated animate__fadeInUp" :style="{animationDelay: '0.55s'}">
+                                <el-button @click="handleDetectionPrevious" icon="Back" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.6s'}">
+                                    上一步
+                                </el-button>
+                                <el-button @click="handleDetectionContinue" type="primary" icon="Refresh" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">
+                                    继续检测
+                                </el-button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- 操作按钮 -->
-                    <div class="action-buttons">
-                        <el-button @click="handleDetectionPrevious" icon="Back">
-                            上一步
-                        </el-button>
-                        <el-button @click="handleDetectionContinue" type="primary" icon="Refresh">
-                            继续检测
-                        </el-button>
-                    </div>
                 </div>
-            </div>
+            </transition>
 
-            <!-- 大图预览对话框 -->
-            <el-dialog v-model="imageDialogVisible" title="预览大图" width="90%" :destroy-on-close="true">
+            <!-- 大图预览对话框 - 添加动画 -->
+            <el-dialog v-model="imageDialogVisible" title="预览大图" width="90%" :destroy-on-close="true"
+                :modal-append-to-body="false">
                 <div class="full-image-container">
-                    <img :src="previewData" alt="完整预览" class="full-size-image" @load="onImageLoad" />
-                    <div v-if="isImageLoaded" class="zoom-controls">
-                        <el-button @click="zoomIn" icon="ZoomIn" circle size="small" />
-                        <el-button @click="zoomOut" icon="ZoomOut" circle size="small" />
+                    <img :src="previewData" alt="完整预览" class="full-size-image animate__animated animate__fadeIn" 
+                        @load="onImageLoad" />
+                    <div v-if="isImageLoaded" class="zoom-controls animate__animated animate__fadeInUp">
+                        <el-button @click="zoomIn" icon="ZoomIn" circle size="small" class="animate__animated animate__pulse animate__infinite" />
+                        <el-button @click="zoomOut" icon="ZoomOut" circle size="small" class="animate__animated animate__pulse animate__infinite" />
                     </div>
                 </div>
             </el-dialog>
@@ -491,6 +517,17 @@ function beforeUpload(file, expectedType) {
         return false
     }
     return true
+}
+
+// 图片预览加载完成后的动画
+const onImagePreviewLoad = () => {
+    const img = document.querySelector('.preview-image')
+    if (img) {
+        img.classList.add('animate__pulse')
+        setTimeout(() => {
+            img.classList.remove('animate__pulse')
+        }, 1000)
+    }
 }
 
 // 变化检测处理
@@ -820,6 +857,9 @@ const applyZoom = () => {
 </script>
 
 <style scoped>
+/* 导入animate.css - 确保在使用前已安装 */
+@import 'animate.css';
+
 /* 基础样式 - 使用vh单位限制高度 */
 .feature-container {
     height: 100%;
@@ -885,12 +925,14 @@ const applyZoom = () => {
     z-index: 1;
     border: 2px solid #e0e0e0;
     color: #999;
+    transition: all 0.3s ease;
 }
 
 .step-title {
     font-size: 14px;
     color: #999;
     text-align: center;
+    transition: all 0.3s ease;
 }
 
 .step-item.active .step-number {
@@ -950,10 +992,12 @@ const applyZoom = () => {
     color: white;
     border: none;
     min-width: 60px;
+    transition: all 0.3s ease;
 }
 
 .browse-button:hover {
     background-color: #79bbff;
+    transform: scale(1.05);
 }
 
 .file-hint {
@@ -1005,6 +1049,12 @@ const applyZoom = () => {
     margin-right: 0;
     height: 32px;
     line-height: 32px;
+    transition: all 0.3s ease;
+}
+
+:deep(.el-radio:hover) {
+    transform: scale(1.05);
+    color: #409eff;
 }
 
 :deep(.el-radio__label) {
@@ -1024,6 +1074,12 @@ const applyZoom = () => {
     height: 32px;
     line-height: 32px;
     margin-right: 0;
+    transition: all 0.3s ease;
+}
+
+:deep(.el-checkbox:hover) {
+    transform: scale(1.05);
+    color: #409eff;
 }
 
 :deep(.el-checkbox__label) {
@@ -1044,6 +1100,23 @@ const applyZoom = () => {
     align-items: center;
     gap: 8px;
     font-size: 14px;
+    padding: 5px 10px;
+    background: #f5f7fa;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.status-item.success {
+    border-left: 3px solid #67C23A;
+}
+
+.status-item.error {
+    border-left: 3px solid #F56C6C;
+}
+
+.status-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* 按钮组 */
@@ -1059,6 +1132,16 @@ const applyZoom = () => {
     font-size: 14px;
     width: 100%;
     max-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+}
+
+.submit-button:active {
+    transform: translateY(0);
 }
 
 /* 结果容器 */
@@ -1091,6 +1174,11 @@ const applyZoom = () => {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    transition: all 0.3s ease;
+}
+
+.result-panel:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .stats-panel {
@@ -1127,6 +1215,12 @@ const applyZoom = () => {
     border: 1px solid #e4e7ed;
     margin-bottom: 15px;
     flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.stat-summary:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-color: #1890ff;
 }
 
 .stat-item {
@@ -1203,6 +1297,17 @@ const applyZoom = () => {
     border-radius: 6px;
     border: 1px solid #e4e7ed;
     margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.change-type-item:last-child {
+    margin-bottom: 0;
+}
+
+.change-type-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #1890ff;
 }
 
 .change-type-header {
@@ -1236,6 +1341,13 @@ const applyZoom = () => {
     border-radius: 8px;
     object-fit: contain;
     flex-shrink: 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.preview-image:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
 .image-info {
@@ -1249,6 +1361,13 @@ const applyZoom = () => {
     margin-top: 8px;
     height: 36px;
     font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.view-image-button:hover,
+.download-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64,158,255,0.3);
 }
 
 /* 下载区域 */
@@ -1275,10 +1394,22 @@ const applyZoom = () => {
     gap: 10px;
     height: 100%;
     justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.no-data:hover {
+    transform: scale(1.02);
+    color: #606266;
 }
 
 .no-data .el-icon {
     font-size: 48px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
 /* 操作按钮 - 保持原始大小 */
@@ -1294,6 +1425,12 @@ const applyZoom = () => {
     height: 36px;
     padding: 0 20px;
     font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.action-buttons .el-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 /* 大图预览 */
@@ -1311,6 +1448,7 @@ const applyZoom = () => {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    transition: transform 0.2s;
 }
 
 .zoom-controls {
@@ -1319,6 +1457,15 @@ const applyZoom = () => {
     right: 10px;
     display: flex;
     gap: 5px;
+}
+
+.zoom-controls .el-button {
+    transition: all 0.3s ease;
+}
+
+.zoom-controls .el-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* 响应式调整 */
