@@ -97,6 +97,7 @@ import Birdsdata from './menu/DataBirds/Birdsdata.vue'
 import PhysicochemicalPanel from './menu/PhysicochemicalData/PhysicochemicalPanel.vue'
 import RunoffQuery from './menu/runoff/RunoffQuery.vue'
 import configManagement from './menu/configManagementMenu/ConfigManagement.vue'
+import modelManagement from './menu/modelManagementMenu/modelManagement.vue'
 import RemoteSensingQuery from './menu/remoteSensingMenu/RemoteSensingQuery.vue'
 import GeographicIdentificationUpload from './menu/geographicIdentificationMenu/GeographicIdentificationUpload.vue'
 import LandIdentification from './menu/geographicIdentificationMenu/LandIdentification.vue'
@@ -120,13 +121,6 @@ const menus_pre = [
     title: '地表水资源遥感产品生产',
     icon: MenuFoldOutlined,
     items: [
-      // {
-      //   key:'17',
-      //   title: '文件上传',
-      //   component: GeographicIdentificationUpload,
-      //   breadcrumb: ['水生态要素提取','文件提交'] ,
-      //   pressionKey: 'menu_subE_a'
-      // },
       {
         key: '19',
         title: '水资源分布产品生产',
@@ -151,16 +145,16 @@ const menus_pre = [
     items: [
       {
         key: '18',
-        title: '水生态格局分布产品生产',
+        title: '水环境格局分布产品生产',
         component: LandIdentification,
-        breadcrumb: ['地表水环境遥感产品生产', '水生态格局分布产品生产'],
+        breadcrumb: ['地表水环境遥感产品生产', '水环境格局分布产品生产'],
         pressionKey: 'menu_subE_b'
       },
       {
         key: '24',
-        title: '水生态格局演变产品生产',
+        title: '水环境格局演变产品生产',
         component: LandChange,
-        breadcrumb: ['地表水环境遥感产品生产', '水生态格局演变产品生产'],
+        breadcrumb: ['地表水环境遥感产品生产', '水环境格局演变产品生产'],
         pressionKey: 'menu_subE_b'
       }
     ]
@@ -173,16 +167,16 @@ const menus_pre = [
     items: [
       {
         key: '20',
-        title: '植被覆盖度产品生产',
+        title: '植被覆盖度分布产品生产',
         component: PlantCoverIdentification,
-        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度产品生产'],
+        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度分布产品生产'],
         pressionKey: 'menu_subE_d'
       },
       {
         key: '25',
-        title: '区域水生态状况产品生产',
+        title: '植被覆盖度变化产品生产',
         component: PlangtChange,
-        breadcrumb: ['地表水生态遥感产品生产', '区域水生态状况产品生产'],
+        breadcrumb: ['地表水生态遥感产品生产', '植被覆盖度变化产品生产'],
         pressionKey: 'menu_subE_d'
       }
     ]
@@ -208,20 +202,13 @@ const menus_pre = [
     title: '地表水文数据查询',
     icon: FormOutlined,
     items: [
-      // {
-      //   key: '5',
-      //   title: '气象',
-      //   component: atmosphereQuery,
-      //   breadcrumb: ['数据查询', '气象'],
-      //   pressionKey: 'menu_subB_a'
-      // },
-      // {
-      //   key: '6',
-      //   title: '水鸟',
-      //   component: Birdsdata,
-      //   breadcrumb: ['数据查询', '水鸟'],
-      //   pressionKey: 'menu_subB_b'
-      // },
+      {
+        key: '5',
+        title: '气象',
+        component: atmosphereQuery,
+        breadcrumb: ['地表水文数据查询', '气象'],
+        pressionKey: 'menu_subB_a'
+      },
       {
         key: '7',
         title: '水质',
@@ -257,37 +244,8 @@ const menus_pre = [
         breadcrumb: ['地表水文数据查询', '土壤'],
         pressionKey: 'menu_subB_g'
       }
-      // {
-      //   key: '16',
-      //   title: '遥感',
-      //   component: RemoteSensingQuery,
-      //   breadcrumb: ['数据查询', '遥感'],
-      //   pressionKey: 'menu_subB_h'
-      // }
     ]
   },
-  // {
-  //   key: 'sub3',
-  //   pressionKey: 'menu_subC',
-  //   title: '数据共享',
-  //   icon: InsertRowAboveOutlined,
-  //   items: [
-  //     {
-  //       key: '12',
-  //       title: '数据管理',
-  //       component: dataUploadMenu,
-  //       breadcrumb: ['数据共享', '数据管理'],
-  //       pressionKey: 'menu_subC_a'
-  //     },
-  //     {
-  //       key: "13",
-  //       title: "数据申请",
-  //       component: dataDownloadMenu,
-  //       breadcrumb: ["数据共享", "数据申请"],
-  //     }, 
-  //   ]
-  // },
-  
   {
     key: 'sub5',
     pressionKey: 'menu_subA',
@@ -296,9 +254,9 @@ const menus_pre = [
     items: [
       {
         key: '1',
-        title: '径流与水位',
+        title: '径流、水位与气象',
         component: AutoDetect,
-        breadcrumb: ['地表水文数据上传', '径流与水位'],
+        breadcrumb: ['地表水文数据上传', '径流、水位与气象'],
         pressionKey: 'menu_subA_a'
       },
       {
@@ -315,14 +273,6 @@ const menus_pre = [
         breadcrumb: ['地表水文数据上传', '光谱与水质'],
         pressionKey: 'menu_subA_c'
       }
-      // ,
-      // {
-      //   key: '4',
-      //   title: '研究数据',
-      //   component: researchData,
-      //   breadcrumb: ['地表水文数据上传', '研究数据'],
-      //   pressionKey: 'menu_subA_d'
-      // }
     ]
   },
   {
@@ -351,6 +301,13 @@ const menus_pre = [
         component: ShpFileUpload,
         breadcrumb: ['系统管理', 'SHP文件上传'],
         pressionKey: 'menu_subF_a'
+      },
+      {
+        key: '26',
+        title: '智能遥感数据管理',
+        component: modelManagement,
+        breadcrumb: ['系统管理', '水资源数据管理'],
+        pressionKey: 'menu_subD_a'
       }
     ]
   }
@@ -448,7 +405,6 @@ function getMenuItemByKey(key) {
 }
 </script>
 
-
 <style scoped>
 /* 移除之前的固定宽度设置，让侧边栏可折叠 */
 
@@ -519,13 +475,10 @@ function getMenuItemByKey(key) {
   border-radius: 4px;
 }
 
-/* 三级菜单文字样式 */
+/* 三级菜单文字样式 - 修改为块级元素并居中 */
 .submenu-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  display: block !important;
+  width: 100% !important;
   font-size: 13px;
   text-align: center;
   padding: 0 8px;
@@ -572,16 +525,34 @@ function getMenuItemByKey(key) {
 
 :deep(.ant-menu-inline-collapsed .ant-menu-submenu-title) {
   padding: 0 !important;
-  margin: 4px 8px !important;
+  margin: 4px 4px !important;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 折叠状态下调整菜单标题包装器 */
+:deep(.ant-menu-inline-collapsed .menu-title-wrapper) {
+  justify-content: center !important;
+  margin: 0 !important;
 }
 
 /* 折叠状态下图标的调整 */
 :deep(.ant-menu-inline-collapsed .anticon) {
   margin-right: 0 !important;
   font-size: 16px;
+}
+
+/* 折叠状态下菜单图标样式 */
+:deep(.ant-menu-inline-collapsed .menu-icon) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-content: center;
+}
+
+/* 折叠状态下隐藏菜单文字 */
+:deep(.ant-menu-inline-collapsed .menu-text) {
+  display: none;
 }
 
 .head {
@@ -605,5 +576,12 @@ function getMenuItemByKey(key) {
     height: 100vh;
     z-index: 100;
   }
+}
+
+/* 调整侧边栏内容区域高度，避免被 trigger 遮挡 */
+:deep(.ant-layout-sider-children) {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

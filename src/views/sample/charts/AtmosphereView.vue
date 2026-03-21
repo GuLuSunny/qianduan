@@ -8,15 +8,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">风速(m/s)</div>
-          <div class="compact-value">{{ atmosphereData.windSpeed}}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.windSpeed) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">雨量(mm)</div>
-          <div class="compact-value">{{ atmosphereData.rainfall }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.rainfall) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">大气温度(℃)</div>
-          <div class="compact-value">{{ atmosphereData.atmosphereTemperature }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.atmosphereTemperature) }}</div>
         </div>
       </div>
 
@@ -24,15 +24,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">相对湿度(%)</div>
-          <div class="compact-value">{{ atmosphereData.relativeHumidity }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.relativeHumidity) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">数字气压(hPa)</div>
-          <div class="compact-value">{{ atmosphereData.digitalPressure }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.digitalPressure) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">aqi指数</div>
-          <div class="compact-value">{{ atmosphereData.aqiIndex }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.aqiIndex) }}</div>
         </div>
       </div>
 
@@ -40,15 +40,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">风向(°)</div>
-          <div class="compact-value">{{ atmosphereData.windDirection }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.windDirection) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">首要污染物</div>
-          <div class="compact-value">{{ atmosphereData.primaryPollutant }}</div>
+          <div class="compact-value">{{ atmosphereData.primaryPollutant || '--' }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">空气质量等级</div>
-          <div class="compact-value">{{ atmosphereData.airQualityLevel }}</div>
+          <div class="compact-value">{{ atmosphereData.airQualityLevel || '--' }}</div>
         </div>
       </div>
 
@@ -56,15 +56,15 @@
       <div class="compact-row">
         <div class="compact-item">
           <div class="compact-label">PM2.5(ug/m3)</div>
-          <div class="compact-value">{{ atmosphereData.pm25 }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.pm25) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">臭氧(μg/m3)</div>
-          <div class="compact-value">{{ atmosphereData.ozone }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.ozone) }}</div>
         </div>
         <div class="compact-item">
           <div class="compact-label">PM10(ug/m3)</div>
-          <div class="compact-value">{{ atmosphereData.pm10 }}</div>
+          <div class="compact-value">{{ formatNumber(atmosphereData.pm10) }}</div>
         </div>
       </div>
     </div>
@@ -73,7 +73,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import data from '@/../public/json/fullscreenSampleJson/atmosphere.json'
+import { findAtmosphere, getTimesByType, queryDeviceByMultiWord } from '@/api/getData'
+import { ElMessage, ElLoading } from 'element-plus'
 
 // 创建一个响应式变量来存储气象数据
 const atmosphereData = ref({
@@ -91,27 +92,232 @@ const atmosphereData = ref({
   ozone: '---'
 })
 
+const dateSelected = ref('')
+const deviceOptions = ref([]) // 设备列表
+const selectedDeviceId = ref(null) // 选择的设备ID
+const deviceName = ref('') // 设备名称
+
+// 加载配置
+const loadingoptions = {
+  target: '.layoutLoading',
+  background: 'rgba(0, 0, 0, 0.7)',
+  text: '数据加载中...'
+}
+
 // 页面标题，显示当前日期 + 场所名称
 const title = computed(() => {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day} 龙亭公园气象数据`
+  if (dateSelected.value && deviceName.value) {
+    // 格式化日期为YYYY-MM-DD
+    const date = new Date(dateSelected.value)
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day} ${deviceName.value}气象数据`
+  } else {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day} 气象数据`
+  }
 })
 
 function formatNumber(number) {
-  if (!isNaN(number) && number !== '') {
-    const numberValue = Number(number)
+  // 处理空值、null、undefined或空字符串
+  if (number === null || number === undefined || number === '' || number === 'NaN') {
+    return '---'
+  }
+  
+  // 处理"缺测"值
+  if (number === '缺测') {
+    return '缺测'
+  }
+  
+  // 如果是字符串，尝试转换为数字
+  const numberValue = Number(number)
+  
+  // 检查是否为有效数字
+  if (!isNaN(numberValue)) {
     return numberValue.toFixed(2)
   } else {
     return '---'
   }
 }
 
+// 获取设备列表
+function fetchDeviceOptions () {
+  // 观测设备种类分类；03：气象站
+  return queryDeviceByMultiWord({ type: '03' })
+    .then((res) => {
+      const result = res.response.value
+      if (result.code === 'SUCCESS') {
+        deviceOptions.value = result.body
+        if (result.body.length > 0) {
+          // 查找设备ID为24的设备，如果不存在则使用第一个设备
+          const device24 = result.body.find(device => device.id === 24)
+          selectedDeviceId.value = device24 ? 24 : result.body[0].id
+          deviceName.value = device24 ? device24.deviceName : result.body[0].deviceName
+        }
+      } else {
+        ElMessage({
+          showClose: true,
+          message: result.msg,
+          center: true,
+          type: 'error'
+        })
+      }
+    })
+    .catch((error) => {
+      ElMessage({
+        showClose: true,
+        message: '获取设备数据失败，请稍后再试',
+        center: true,
+        type: 'error'
+      })
+    })
+}
+
+const showDateArr = ref([])
+
+// 获取可用日期
+function handleVisibleChange(visibility, type, searchTimeType) {
+  if (visibility) {
+    // 开启时
+    getTimesByType({
+      type: type,
+      searchTimeType: searchTimeType
+    })
+      .then((res) => {
+        const result = res.response.value
+        if (result.code === 'SUCCESS') {
+          const type = result.body.type
+          const date = result.body.date
+          showDateArr.value = date
+          if (date && date.length > 0) {
+            // 获取最新一天的数据
+            const latestDate = date.sort((a, b) => b.localeCompare(a))[0]
+            dateSelected.value = latestDate
+            getAtmosphereData()
+          } else {
+            ElMessage({
+              showClose: true,
+              message: '暂无可用数据',
+              center: true,
+              type: 'warning'
+            })
+          }
+        } else {
+          // 处理失败的响应
+          ElMessage({
+            showClose: true,
+            message: result.msg,
+            center: true,
+            type: 'error'
+          })
+        }
+      })
+      .catch((error) => {
+        ElMessage({
+          showClose: true,
+          message: '获取日期数据失败，请稍后再试',
+          center: true,
+          type: 'error'
+        })
+      })
+  }
+}
+
+// 获取气象数据
+function getAtmosphereData() {
+  if (!dateSelected.value || !selectedDeviceId.value) return
+  
+  const loadingInstance = ElLoading.service(loadingoptions)
+  
+  // 获取指定月份的气象数据
+  findAtmosphere({ 
+    time: dateSelected.value, 
+    device: selectedDeviceId.value
+  })
+    .then((res) => {
+      loadingInstance.close()
+      const result = res.response.value
+      if (result.code === 'SUCCESS') {
+        if (result.body.length === 0) {
+          ElMessage({
+            showClose: true,
+            message: `日期 ${dateSelected.value} 暂无数据`,
+            center: true,
+            type: 'warning'
+          })
+          // 重置为默认值
+          resetAtmosphereData()
+        } else {
+          // 取最后一天的数据（假设数据按日期排序）
+          const latestData = result.body[result.body.length - 1]
+          if (latestData && latestData.atmosphere) {
+            // 映射字段
+            atmosphereData.value = {
+              windSpeed: latestData.atmosphere.windSpeed || '---',
+              rainfall: latestData.atmosphere.rainfall || '---',
+              atmosphereTemperature: latestData.atmosphere.atmosphereTemperature || '---',
+              relativeHumidity: latestData.atmosphere.relativeHumidity || '---',
+              digitalPressure: latestData.atmosphere.digitalPressure || '---',
+              aqiIndex: latestData.atmosphere.aqiIndex || '---',
+              windDirection: latestData.atmosphere.windDirection || '---',
+              primaryPollutant: latestData.atmosphere.primaryPollutant || '---',
+              airQualityLevel: latestData.atmosphere.airQualityLevel || '---',
+              pm25: latestData.atmosphere.pm25 || '---',
+              pm10: latestData.atmosphere.pm10 || '---',
+              ozone: latestData.atmosphere.ozone || '---'
+            }
+          }
+        }
+      } else {
+        ElMessage({
+          showClose: true,
+          message: result.msg,
+          center: true,
+          type: 'error'
+        })
+        resetAtmosphereData()
+      }
+    })
+    .catch((error) => {
+      loadingInstance.close()
+      ElMessage({
+        showClose: true,
+        message: '获取数据失败，请稍后再试',
+        center: true,
+        type: 'error'
+      })
+      resetAtmosphereData()
+    })
+}
+
+// 重置气象数据为默认值
+function resetAtmosphereData() {
+  atmosphereData.value = {
+    windSpeed: '---',
+    rainfall: '---',
+    atmosphereTemperature: '---',
+    relativeHumidity: '---',
+    digitalPressure: '---',
+    aqiIndex: '---',
+    windDirection: '---',
+    primaryPollutant: '---',
+    airQualityLevel: '---',
+    pm25: '---',
+    pm10: '---',
+    ozone: '---'
+  }
+}
+
 // 组件加载时获取数据
 onMounted(() => {
-  atmosphereData.value = data
+  // 先获取设备列表，然后获取最新日期的数据
+  fetchDeviceOptions().then(() => {
+    handleVisibleChange(true, 'qixiang', 'day')
+  })
 })
 </script>
 

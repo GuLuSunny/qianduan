@@ -4,214 +4,140 @@
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline">
         <!-- Existing form items -->
         <el-form-item label="日期">
-          <el-date-picker
-            v-if="searchInfo.type == 2"
-            v-model="searchInfo.observationTime"
-            type="month"
-            placeholder="选择月份"
-            format="YYYY-MM"
-            value-format="YYYY-MM"
-            @change="handleInputChange"
-            @visible-change="
+          <el-date-picker v-if="searchInfo.type == 2" v-model="searchInfo.observationTime" type="month"
+            placeholder="选择月份" format="YYYY-MM" value-format="YYYY-MM" @change="handleInputChange" @visible-change="
               (visibility) =>
                 handleVisibleChange(visibility, 'shuitilihua', 'month')
-            "
-            :disabled-date="
-              (time) => disabledDate(time, 'shuitilihua', 'month')
-            "
-          >
+            " :disabled-date="(time) => disabledDate(time, 'shuitilihua', 'month')
+              ">
           </el-date-picker>
-          <el-date-picker
-            v-if="searchInfo.type == 1"
-            v-model="searchInfo.observationTime"
-            type="year"
-            placeholder="选择年份"
-            format="YYYY"
-            value-format="YYYY"
-            @change="handleInputChange"
-            @visible-change="
+          <el-date-picker v-if="searchInfo.type == 1" v-model="searchInfo.observationTime" type="year"
+            placeholder="选择年份" format="YYYY" value-format="YYYY" @change="handleInputChange" @visible-change="
               (visibility) =>
                 handleVisibleChange(visibility, 'shuitilihua', 'year')
-            "
-            :disabled-date="(time) => disabledDate(time, 'shuitilihua', 'year')"
-          >
+            " :disabled-date="(time) => disabledDate(time, 'shuitilihua', 'year')">
           </el-date-picker>
           <el-button @click="changeWayButton">
             {{ curWay }}
           </el-button>
         </el-form-item>
         <el-form-item label="文件名">
-          <el-input
-            v-model="searchInfo.filepath"
-            placeholder="请输入文件名"
-            @input="handleInputChange"
-          />
+          <el-input v-model="searchInfo.filepath" placeholder="请输入文件名" @input="handleInputChange" />
         </el-form-item>
         <!-- New device ID dropdown -->
         <el-form-item label="设备号">
-          <el-select
-            v-model="searchInfo.deviceId"
-            placeholder="请选择设备号"
-            @change="handleInputChange"
-            style="width: 150px"
-            :empty-values="[null, undefined]"
-          >
-            <el-option
-              v-for="device in [{id: '', deviceName: '不限'}, ...deviceOptions]"
-              :key="device.id"
-              :label="device.deviceName"
-              :value="device.id"
-            />
+          <el-select v-model="searchInfo.deviceId" placeholder="请选择设备号" @change="handleInputChange" style="width: 150px"
+            :empty-values="[null, undefined]">
+            <el-option v-for="device in [{ id: '', deviceName: '不限' }, ...deviceOptions]" :key="device.id"
+              :label="device.deviceName" :value="device.id" />
           </el-select>
         </el-form-item>
         <el-form-item>
           <el-button @click="searchButton" class="searchButton">
-            <el-icon> <Search /> </el-icon>搜索
+            <el-icon>
+              <Search />
+            </el-icon>搜索
           </el-button>
-          <el-button
-            @click="deleteSelectedRows"
-            :disabled="!isButtonDelDisabled"
-            >批量删除</el-button
-          >
+          <el-button @click="deleteSelectedRows" :disabled="!isButtonDelDisabled">批量删除</el-button>
         </el-form-item>
       </el-form>
     </div>
     <!-- Existing table and pagination -->
-    <el-table
-      :data="tableData"
-      style="width: 100%"
-      c
-      @selection-change="handleSelectionChange"
-      stripe="true"
-      max-height="600px"
-    >
+    <el-table :data="tableData" style="width: 100%" c @selection-change="handleSelectionChange" stripe="true"
+      max-height="600px">
       <el-table-column type="selection" width="auto"></el-table-column>
-      <el-table-column
-        prop="observationTime"
-        label="日期"
-        width="100"
-        align="center"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="deviceId"
-        label="设备名"
-        width="auto"
-        align="center"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="turbidity"
-        label="浊度(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="chlorophyll"
-        label="叶绿素(μg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="waterTemperature"
-        label="水温(℃)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="conductivity"
-        label="电导率(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="tss"
-        label="TSS(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="transparency"
-        label="透明度(m)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="ph"
-        label="pH"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="tn"
-        label="TN(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="dissolvedOxygen"
-        label="溶解氧(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="tp"
-        label="TP(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="codmn"
-        label="高锰酸盐指数(mg/L)"
-        width="auto"
-        align="center"
-        :formatter="formatNumber"
-        show-overflow-tooltip
-      ></el-table-column>
-      <el-table-column
-        prop="filepath"
-        label="文件名"
-        width="auto"
-        align="center"
-        show-overflow-tooltip
-      ></el-table-column>
+      <el-table-column prop="observationTime" label="日期" width="100" align="center"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="deviceId" label="站点" width="auto" align="center" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="waterTemperature" label="水温(℃)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="ph" label="pH" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="turbidity" label="浊度(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="conductivity" label="电导率(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="dissolvedOxygen" label="溶解氧(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="transparency" label="透明度(m)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="codmn" label="高锰酸盐指数(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="tss" label="TSS(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="tn" label="TN(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="tp" label="TP(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="chlorophyll" label="叶绿素(μg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <!-- 新增字段 -->
+      <el-table-column prop="waterLevel" label="水位" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="flowRate" label="流速" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="flowVolume" label="流量" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="airTemperature" label="气温(℃)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="codcr" label="CODCR(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="bod5" label="BOD5(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="ammoniaNitrogen" label="氨氮(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="copper" label="铜(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="zinc" label="锌(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="fluoride" label="氟化物(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="selenium" label="硒(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="arsenic" label="砷(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="mercury" label="汞(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cadmium" label="镉(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cr6" label="六价铬(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="pb" label="铅(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cyanide" label="氰化物(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="volatilePhenols" label="挥发酚(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="oil" label="石油类(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="las" label="LAS(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="s2" label="硫化物(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="fcg" label="粪大肠杆菌群(个)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="waterStorage" label="蓄水量" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="so4" label="硫酸盐(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cl" label="氯化物(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="no3" label="硝酸盐氮(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="fe" label="铁(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="mn" label="锰(mg/L)" width="auto" align="center" :formatter="formatNumber"
+        show-overflow-tooltip></el-table-column>
+      <el-table-column prop="filepath" label="文件名" width="auto" align="center" show-overflow-tooltip></el-table-column>
       <el-table-column label="操作" width="auto" fixed="right" align="center">
         <template #default="scope">
-          <el-button @click="confirmDeleteRow(scope.row, scope.$index)"
-            >删除</el-button
-          >
+          <el-button @click="confirmDeleteRow(scope.row, scope.$index)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="[10, 15, 30, 50, 100]"
-      :page-size="pageSize"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="totalItems"
-    ></el-pagination>
+    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="currentPage"
+      :page-sizes="[10, 15, 30, 50, 100]" :page-size="pageSize" layout="total, sizes, prev, pager, next, jumper"
+      :total="totalItems"></el-pagination>
   </div>
 </template>
 
@@ -223,8 +149,10 @@ import {
   queryDeviceByMultiWord,
   getTimesByType
 } from '@/api/getData'
-import { ElMessage, ElMessageBox,
-  ElLoading } from 'element-plus'
+import {
+  ElMessage, ElMessageBox,
+  ElLoading
+} from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 
 const isButtonDelDisabled = ref(false)
@@ -263,12 +191,12 @@ watch(
     searchInfo.value.observationTime = ''
   }
 )
-function handleInputChange () {
+function handleInputChange() {
   // 搜索框内容变化时执行
   isButtonDelDisabled.value = false
 }
 // 切换年月按钮
-function changeWayButton () {
+function changeWayButton() {
   handleInputChange()
   if (curWay.value === '切换年') {
     curWay.value = '切换月'
@@ -281,7 +209,7 @@ function changeWayButton () {
 
 const showDateArr = ref([])
 // 可用日期
-function disabledDate (time, type, searchTimeType) {
+function disabledDate(time, type, searchTimeType) {
   if (showDateArr.value == null || showDateArr.value.length === 0) {
     return true
   }
@@ -301,7 +229,7 @@ function disabledDate (time, type, searchTimeType) {
   return !isTimeInArray
 }
 // 请求日期
-function handleVisibleChange (visibility, type, searchTimeType) {
+function handleVisibleChange(visibility, type, searchTimeType) {
   if (visibility) {
     // 开启时
     const searchType = searchTimeType
@@ -336,13 +264,13 @@ function handleVisibleChange (visibility, type, searchTimeType) {
 }
 
 // 点击查询按钮
-function searchButton () {
+function searchButton() {
   currentPage.value = 1
   getWaterPhyData()
 }
 
 // 分页查询
-function getWaterPhyData () {
+function getWaterPhyData() {
   const loadingInstance = ElLoading.service(loadingoptions)
   getWaterPhyPageQuery({
     observationTime: searchInfo.value.observationTime,
@@ -379,24 +307,24 @@ function getWaterPhyData () {
     })
 }
 
-function handleSizeChange (val) {
+function handleSizeChange(val) {
   pageSize.value = val
   if (totalItems.value === 0) return
   getWaterPhyData()
 }
 
-function handleCurrentChange (val) {
+function handleCurrentChange(val) {
   currentPage.value = val
   if (totalItems.value === 0) return
   getWaterPhyData()
 }
 
-function handleSelectionChange (val) {
+function handleSelectionChange(val) {
   selectedRows.value = val.map((row) => row.id)
 }
 
 // 单行删除
-function confirmDeleteRow (row) {
+function confirmDeleteRow(row) {
   ElMessageBox.confirm('此操作将永久删除该行数据, 是否继续?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -444,8 +372,8 @@ function confirmDeleteRow (row) {
 }
 
 // 批量删除
-function deleteSelectedRows () {
-  const requestObject = { 
+function deleteSelectedRows() {
+  const requestObject = {
     ids: selectedRows.value,
     dateSelected: searchInfo.value.observationTime,
     filepath: searchInfo.value.filepath,
@@ -469,7 +397,7 @@ function deleteSelectedRows () {
   console.log(requestObject)
 
   ElMessageBox.confirm(
-    `此操作将永久删除选中的 ${selectedRows.value.length===0?totalItems.value:selectedRows.value.length} 条数据, 是否继续?`,
+    `此操作将永久删除选中的 ${selectedRows.value.length === 0 ? totalItems.value : selectedRows.value.length} 条数据, 是否继续?`,
     '提示',
     {
       confirmButtonText: '确定',
@@ -518,7 +446,7 @@ function deleteSelectedRows () {
 }
 
 // Fetch device options for the dropdown
-function fetchDeviceOptions () {
+function fetchDeviceOptions() {
   queryDeviceByMultiWord({
     id: '',
     deviceName: '',

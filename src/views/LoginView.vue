@@ -140,7 +140,7 @@ input {
   overflow-x: hidden;
   display: flex;
   /* 渐变方向从左到右 */
-  background-image: url(../assets/img/bg10.jpg);
+  background-image: url(../assets/img/开封市西湖美景.jpg);
   background-size: cover;
 }
 /* 最外层的大盒子 */

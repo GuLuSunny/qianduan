@@ -3,31 +3,59 @@
     <!-- 表单部分 -->
     <div class="row">
       <el-form-item label="产品名称:">
-        <el-input v-model="filename" placeholder="请输入产品名称" clearable />
+        <el-input v-model="filename" placeholder="请输入产品名称" clearable style="width: 150px;"/>
       </el-form-item>
-      <el-form-item label="所有者:">
-        <el-input v-model="owner" placeholder="请输入所有者" clearable />
+      <el-form-item label="所有者:" style="min-width: 0px;">
+        <el-input v-model="owner" placeholder="请输入所有者" clearable style="width: 150px;" />
       </el-form-item>
       <el-form-item label="产品分类:">
-        <el-select v-model="selectedClass" placeholder="请选择" clearable>
+        <el-select v-model="selectedClass" placeholder="请选择" clearable style="width: 130px;">
           <el-option v-for="classItem in classOptions" :key="classItem.value" 
             :value="classItem.value" :label="classItem.label" />
         </el-select>
       </el-form-item>
       <!-- 日期选择器 -->
-      <el-form-item label="观测日期:">
-        <el-date-picker
-          v-model="observationDate"
-          type="date"
-          placeholder="选择日期"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD"
-          :disabled-date="disabledDate"
+      <el-form-item label="观测时间:">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <el-select 
+            v-model="observationTimeType" 
+            @change="handleObservationTimeTypeChange"
+            style="width: 70px">
+            <el-option label="年" value="year"></el-option>
+            <el-option label="月" value="month"></el-option>
+            <el-option label="日" value="day"></el-option>
+          </el-select>
+          <!-- 改为日期选择器 -->
+          <el-date-picker
+            v-model="observationTime"
+            :type="getObservationTimePickerType()"
+            :format="getObservationTimeFormat()"
+            :value-format="getObservationTimeFormat()"
+            placeholder="选择观测时间"
+            clearable
+            :disabled-date="disabledDate"
+            style="width: 150px"
+          />
+        </div>
+      </el-form-item>
+      <!-- 开始时间（新增） -->
+      <el-form-item label="开始时间:">
+        <el-input 
+          v-model="startTime" 
+          placeholder="yyyy-mm-dd" 
           clearable
-        />
+          style="width: 120px" />
+      </el-form-item>
+      <!-- 结束时间（新增） -->
+      <el-form-item label="结束时间:">
+        <el-input 
+          v-model="endTime" 
+          placeholder="yyyy-mm-dd" 
+          clearable
+          style="width: 120px" />
       </el-form-item>
       <!-- 搜索按钮 -->
-      <el-form-item>
+      <el-form-item style="min-width: 100px;">
         <el-button @click="searchProducts" class="searchButton" type="primary">
           <el-icon>
             <Search />
@@ -137,9 +165,11 @@ import { ElMessage, ElLoading } from 'element-plus'
 const filename = ref('')
 const owner = ref('')
 const selectedClass = ref('')
-const observationDate = ref('')
+const observationTime = ref('')  // 改为 observationTime
+const observationTimeType = ref('day')  // 新增：观测时间类型
+const startTime = ref('')  // 新增：开始时间
+const endTime = ref('')    // 新增：结束时间
 const currentImageIndex = ref(null)
-
 // 分类数据
 const classNames = ref([])
 const showDateArr = ref([])
@@ -176,6 +206,40 @@ const isImage = (fileType) => {
   return imageTypes.includes(fileType?.toLowerCase())
 }
 
+// 新增方法：观测时间类型变化时重新获取数据
+const handleObservationTimeTypeChange = (type) => {
+  observationTimeType.value = type
+  observationTime.value = ''
+}
+
+// 新增：根据观测时间类型获取日期格式
+const getObservationTimeFormat = () => {
+  switch(observationTimeType.value) {
+    case 'year':
+      return 'YYYY'
+    case 'month':
+      return 'YYYY-MM'
+    case 'day':
+      return 'YYYY-MM-DD'
+    default:
+      return 'YYYY-MM-DD'
+  }
+}
+
+// 新增：根据观测时间类型获取日期选择器类型
+const getObservationTimePickerType = () => {
+  switch(observationTimeType.value) {
+    case 'year':
+      return 'year'
+    case 'month':
+      return 'month'
+    case 'day':
+      return 'date'
+    default:
+      return 'date'
+  }
+}
+
 // 修复：预加载图片，避免在模板中递归调用
 const preloadImages = (products) => {
   products.forEach(product => {
@@ -209,31 +273,58 @@ function disabledDate(time) {
   if (!showDateArr.value || showDateArr.value.length === 0) {
     return false
   }
-  const dateString = `${time.getFullYear()}-${(time.getMonth() + 1)
-    .toString()
-    .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
-  return !showDateArr.value.includes(dateString)
+  
+  const year = time.getFullYear()
+  const month = (time.getMonth() + 1).toString().padStart(2, '0')
+  const day = time.getDate().toString().padStart(2, '0')
+  
+    // 根据当前选择的观测时间类型检查对应的格式
+  if (observationTimeType.value === 'year') {
+    const yearStr = `${year}`
+    return !showDateArr.value.some(dateStr => dateStr.length === 4 && dateStr === yearStr)
+  } else if (observationTimeType.value === 'month') {
+    const monthStr = `${year}-${month}`
+    return !showDateArr.value.some(dateStr => dateStr.length === 7 && dateStr === monthStr)
+  } else {
+    // day
+    const dayStr = `${year}-${month}-${day}`
+    return !showDateArr.value.some(dateStr => dateStr.length === 10 && dateStr === dayStr)
+  }
 }
 
-// 获取可用日期
+// 修改：获取可用日期（现在获取三种格式）
 function fetchAvailableDates() {
-  getTimesByType({
-    type: 'modelproducts',
-    searchTimeType: 'day'
-  })
-    .then((res) => {
-      const result = res.response?.value || res
-      if (result.code === 'SUCCESS') {
-        showDateArr.value = result.body?.date || []
-      } else {
-        ElMessage.warning(result.msg || '获取日期数据失败')
+  // 获取所有三种格式的时间
+  Promise.all([
+    getTimesByType({ type: 'modelproducts', searchTimeType: 'year' }),
+    getTimesByType({ type: 'modelproducts', searchTimeType: 'month' }),
+    getTimesByType({ type: 'modelproducts', searchTimeType: 'day' })
+  ])
+    .then(([yearRes, monthRes, dayRes]) => {
+      const yearResult = yearRes.response?.value || yearRes
+      const monthResult = monthRes.response?.value || monthRes
+      const dayResult = dayRes.response?.value || dayRes
+      
+      const dates = []
+      
+      if (yearResult.code === 'SUCCESS') {
+        dates.push(...(yearResult.body?.date || []))
       }
+      if (monthResult.code === 'SUCCESS') {
+        dates.push(...(monthResult.body?.date || []))
+      }
+      if (dayResult.code === 'SUCCESS') {
+        dates.push(...(dayResult.body?.date || []))
+      }
+      
+      showDateArr.value = [...new Set(dates)]  // 去重
     })
     .catch((error) => {
       console.error('获取日期数据失败:', error)
     })
 }
 
+// 修改：获取所有产品数据
 function fetchAllProducts() {
   const loadingInstance = ElLoading.service(loadingOptions)
   
@@ -241,10 +332,19 @@ function fetchAllProducts() {
     filename: filename.value,
     owner: owner.value,
     className: selectedClass.value === '' ? null : selectedClass.value,
-    observationTime: observationDate.value || null,
+    observationTime: observationTime.value || null,  // 改为 observationTime
+    startTime: startTime.value || null,  // 新增：开始时间
+    endTime: endTime.value || null,      // 新增：结束时间
     currentPage: currentPage.value,
     pageSize: itemsPerPage.value
   }
+
+  // 清理空值参数
+  Object.keys(params).forEach(key => {
+    if (params[key] === null || params[key] === undefined || params[key] === '') {
+      delete params[key]
+    }
+  })
   
   getProductPageData(params)
     .then((res) => {
@@ -267,7 +367,6 @@ function fetchAllProducts() {
       ElMessage.error('获取产品数据失败，请稍后再试')
     })
 }
-
 // 显示详情
 function showDetail(index) {
   currentImageIndex.value = index
@@ -315,9 +414,11 @@ function downloadFile(product) {
     .then((res) => {
       loadingInstance.close()
       
+      const response = res.response?.value || res
+      
       // 创建 Blob 对象，设置正确的 MIME 类型
-      const blob = new Blob([res], { 
-        type: getMimeType(product.filename) 
+      const blob = new Blob([response], { 
+        type: getMimeType(product.type) 
       })
       
       // 创建下载链接
@@ -326,7 +427,13 @@ function downloadFile(product) {
       link.href = url
       
       // 设置下载文件名 - 兼容 Linux 和 Windows
-      const fileName = product.filename || `download_${product.id}`
+      let fileName = product.filename || `download_${product.id}`
+
+      // 如果文件名没有扩展名，尝试从type字段添加
+      if (!fileName.includes('.') && product.type) {
+        fileName = `${fileName}.${product.type.toLowerCase()}`
+      }
+
       link.setAttribute('download', fileName)
       
       // 兼容不同平台的下载方式
@@ -352,8 +459,8 @@ function downloadFile(product) {
 }
 
 // 根据文件名获取 MIME 类型
-function getMimeType(filename) {
-  const ext = filename.split('.').pop().toLowerCase()
+function getMimeType(type) {
+  const ext = type
   const mimeTypes = {
     'png': 'image/png',
     'jpg': 'image/jpeg',
@@ -371,14 +478,14 @@ function getMimeType(filename) {
   return mimeTypes[ext] || 'application/octet-stream'
 }
 
-// 获取产品分类数据
+// 修改：获取产品分类数据
 function fetchClassNames() {
   getModelClassName()
     .then((res) => {
       const response = res.response?.value || res
       if (response.code === 'SUCCESS') {
         classNames.value = response.body || []
-        fetchAvailableDates()
+        fetchAvailableDates()  // 获取可用日期
         fetchAllProducts()
       } else {
         ElMessage.error('获取分类数据失败: ' + (response.msg || '未知错误'))
@@ -413,7 +520,7 @@ onMounted(() => {
   flex-wrap: wrap;
   width: 100%;
   margin-bottom: 20px;
-  gap: 16px;
+  gap: 16px;  /* 调整间隙，避免重叠 */
   background: white;
   padding: 20px;
   border-radius: 8px;
@@ -424,6 +531,11 @@ onMounted(() => {
   margin-bottom: 0;
   width: auto;
   min-width: 200px;
+}
+
+/* 修复：观测时间表单项宽度调整 */
+:deep(.el-form-item[data-v-][data-v-]:nth-child(4) .el-form-item__content) {
+  min-width: 230px; /* 观测时间类型选择器+日期选择器的总宽度 */
 }
 
 .image-grid {

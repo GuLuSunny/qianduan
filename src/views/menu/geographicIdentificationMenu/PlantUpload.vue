@@ -179,22 +179,74 @@ const uploadType = ref('dual') // 'dual' 或 'full'
 const modelName = ref('')
 
 // 双极化数据所需文件
+// 双极化数据所需文件（更新为中文描述）
 const dualPolarizationFiles = [
-  'Alpha.tif', 'Entropy.tif', 'HA.tif',
-  'C11.tif', 'C12_imag.tif', 'C22.tif',
-  'DpRVI.tif'
+  'Alpha.tif - Cloude-Pottier分解参数(Alpha)',
+  'Entropy.tif - Cloude-Pottier分解参数(Entropy)',
+  'HA.tif - Cloude-Pottier分解参数(HA)',
+  'C11.tif - 协方差矩阵(C11)',
+  'C12_imag.tif - 协方差矩阵(C12_imag)',
+  'C22.tif - 协方差矩阵(C22)',
+  'DpRVI.tif - 双极化雷达植被指数(DpRVI)'
 ]
 
-// 全极化数据所需文件
+// 全极化数据所需文件（更新为中文描述，使用替代名称）
 const fullPolarizationFiles = [
-  'HV.tif', 'VV.tif',
-  'Pauli_b.tif',
-  'l1.tif', 'Span.tif',
-  'Alpha.tif', 'Entropy.tif', '1mH1mA.tif',
-  'VZ_dbl.tif', 'VZ_vol.tif',
-  'Free_vol.tif',
-  'Yama_surf.tif', 'Yama_vol.tif'
+  'HV.tif - 后向散射系数(HV)',
+  'VV.tif - 后向散射系数(VV)',
+  'Pauli_b.tif - Pauli分解参数(Pauli_b)',
+  'l1.tif - 相干矩阵(l1代替λ1)',
+  'Span.tif - 相干矩阵(Span)',
+  'Alpha.tif - Cloude-Pottier分解参数(Alpha)',
+  'Entropy.tif - Cloude-Pottier分解参数(Entropy)',
+  '1mH1mA.tif - Cloude-Pottier分解参数(1mH1mA)',
+  'VZ_dbl.tif - Van Zyl分解参数(VZ_dbl)',
+  'VZ_vol.tif - Van Zyl分解参数(VZ_vol)',
+  'Free_vol.tif - Freeman分解参数(Free_vol)',
+  'Yama_surf.tif - Yamaguchi分解参数(Yama_surf)',
+  'Yama_vol.tif - Yamaguchi分解参数(Yama_vol)'
 ]
+
+// 添加常量定义，映射小写文件名到标准文件名
+const FILE_NAME_MAPPING = {
+  // 双极化模型
+  'alpha.tif': 'Alpha.tif',
+  'entropy.tif': 'Entropy.tif',
+  'c11.tif': 'C11.tif',
+  'c12_imag.tif': 'C12_imag.tif',
+  'c22.tif': 'C22.tif',
+  'ha.tif': 'HA.tif',
+  'dprvi.tif': 'DpRVI.tif',
+  
+  // 全极化模型
+  '1mh1ma.tif': '1mH1mA.tif',
+  'free_vol.tif': 'Free_Vol.tif',
+  'hv.tif': 'HV.tif',
+  'l1.tif': 'l1.tif',
+  'pauli_b.tif': 'Pauli_b.tif',
+  'span.tif': 'Span.tif',
+  'vv.tif': 'VV.tif',
+  'vz_dbl.tif': 'VZ_Dbl.tif',
+  'vz_vol.tif': 'VZ_Vol.tif',
+  'yama_surf.tif': 'Yama_Surf.tif',
+  'yama_vol.tif': 'Yama_Vol.tif'
+}
+
+// 获取当前模型需要的标准文件名列表
+const getRequiredStandardFileNames = () => {
+  if (uploadType.value === 'dual') {
+    return [
+      'Alpha.tif', 'Entropy.tif', 'C11.tif', 'C12_imag.tif',
+      'C22.tif', 'HA.tif', 'DpRVI.tif'
+    ]
+  } else {
+    return [
+      '1mH1mA.tif', 'Alpha.tif', 'Entropy.tif', 'Free_Vol.tif', 'HV.tif',
+      'l1.tif', 'Pauli_b.tif', 'Span.tif', 'VV.tif', 'VZ_Dbl.tif',
+      'VZ_Vol.tif', 'Yama_Surf.tif', 'Yama_Vol.tif'
+    ]
+  }
+}
 
 // 可用模型列表
 const availableModels = ref([
@@ -231,23 +283,25 @@ const hasMissingFiles = computed(() => {
   )
 
   return requiredFiles.value.some(requiredFile => {
-    const requiredName = requiredFile.toLowerCase().replace('.tif', '')
+    const requiredName = requiredFile.split(' - ')[0].toLowerCase().replace('.tif', '')
     return !uploadedFileNames.includes(requiredName)
   })
 })
 
 // 检查单个文件是否缺失
-const isFileMissing = (fileName) => {
+const isFileMissing = (fileDisplayName) => {
   if (files.value.length === 0) return true
   if (files.value.some(file => file.name.toLowerCase().endsWith('.zip'))) return false
 
+  // 从显示名称中提取实际文件名（去掉中文描述部分）
+  const actualFileName = fileDisplayName.split(' - ')[0].toLowerCase().replace('.tif', '')
+  
   const uploadedFileNames = files.value.map(file =>
     file.name.toLowerCase().replace('.tif', '')
   )
-  const requiredName = fileName.toLowerCase().replace('.tif', '')
-  return !uploadedFileNames.includes(requiredName)
+  
+  return !uploadedFileNames.includes(actualFileName)
 }
-
 // 生命周期
 onMounted(() => {
   if (userinfo) {
@@ -292,6 +346,21 @@ function beforeUpload(file) {
     return false
   }
 
+  // 标准化文件名（如果是.tif文件）
+  let fileToAdd = file
+  if (fileExt === '.tif') {
+    const lowerName = file.name.toLowerCase()
+    const standardName = FILE_NAME_MAPPING[lowerName]
+    
+    if (standardName) {
+      // 创建新的File对象，使用标准文件名
+      fileToAdd = new File([file], standardName, {
+        type: file.type,
+        lastModified: file.lastModified
+      })
+    }
+  }
+
   // 检查zip文件数量
   if (fileExt === '.zip') {
     const existingZip = files.value.find(f => f.name.toLowerCase().endsWith('.zip'))
@@ -301,7 +370,7 @@ function beforeUpload(file) {
     }
 
     // 如果有ZIP文件，清空其他文件
-    files.value = [file]
+    files.value = [fileToAdd]
   } else {
     // 如果是tif文件，检查是否已存在ZIP文件
     const existingZip = files.value.find(f => f.name.toLowerCase().endsWith('.zip'))
@@ -310,7 +379,18 @@ function beforeUpload(file) {
       return false
     }
 
-    files.value.push(file)
+    // 检查是否已存在同名文件（不区分大小写）
+    const existingFileIndex = files.value.findIndex(
+      f => f.name.toLowerCase() === fileToAdd.name.toLowerCase()
+    )
+    
+    if (existingFileIndex !== -1) {
+      // 替换已存在的文件
+      files.value.splice(existingFileIndex, 1, fileToAdd)
+      message.warning(`文件 ${file.name} 已替换为标准化文件名 ${fileToAdd.name}`)
+    } else {
+      files.value.push(fileToAdd)
+    }
   }
 
   return false
@@ -328,7 +408,23 @@ function removeFile(index) {
 }
 
 function handleCustomRequest({ file, onSuccess, onError }) {
-  files.value.push(file)
+  // 标准化文件名
+  let fileToAdd = file
+  const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+  
+  if (fileExt === '.tif') {
+    const lowerName = file.name.toLowerCase()
+    const standardName = FILE_NAME_MAPPING[lowerName]
+    
+    if (standardName) {
+      fileToAdd = new File([file], standardName, {
+        type: file.type,
+        lastModified: file.lastModified
+      })
+    }
+  }
+  
+  files.value.push(fileToAdd)
   message.success(`${file.name} 已添加到上传列表`)
   onSuccess()
 }
@@ -422,6 +518,7 @@ async function handleConfirm() {
             } catch (e) {
               console.error('解析响应失败:', e)
               message.error('上传过程中发生错误')
+              loadingInstance.close()
             }
           }
           reader.readAsText(response)
@@ -431,17 +528,18 @@ async function handleConfirm() {
           message.success(`成功上传 ${files.value.length} 个文件`)
           uploadCurrent.value = 2
         }
+        loadingInstance.close()
       })
       .catch((error) => {
         console.error('上传失败:', error)
         message.error('上传过程中发生错误')
+        loadingInstance.close()
       })
 
 
   } catch (error) {
     console.error('上传失败:', error)
     message.error('上传过程中发生错误')
-  } finally {
     loadingInstance.close()
   }
 }

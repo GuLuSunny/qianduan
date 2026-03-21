@@ -9,7 +9,7 @@
         </div>
         <div :class="['step-item', { 'active': predictCurrent === 1 }]">
           <div class="step-number">2</div>
-          <div class="step-title">预测结果</div>
+          <div class="step-title">分类结果</div>
         </div>
       </div>
     </div>
@@ -21,73 +21,43 @@
           <!-- 表单列 -->
           <div class="form-column-full">
             <el-form-item label="可用模型" :required="true">
-              <el-select v-model="selectedModel" placeholder="请选择预测模型">
+              <el-select v-model="selectedModel" placeholder="请选择分类模型">
                 <el-option v-for="model in models" :key="model.id" :label="model.modelInfo || model.modelName"
                   :value="model.modelName"></el-option>
               </el-select>
             </el-form-item>
 
-            <!-- 添加观测日期字段 -->
-            <el-form-item 
-              label="观测日期：" 
-              required 
-              v-if="!isDualModel"
-              class="date-picker-item"
-            >
-              <el-date-picker 
-                v-model="observationDate" 
-                type="date" 
-                placeholder="选择日期" 
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              ></el-date-picker>
+            <!-- 修改观测日期字段 -->
+            <el-form-item label="观测日期" required v-if="!isDualModel" class="date-picker-item">
+              <el-date-picker v-model="observationDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" :disabled-date="disabledDate" style="width: 100%"></el-date-picker>
             </el-form-item>
-
             <!-- 双极化模型的两个日期选择器 -->
             <div v-if="isDualModel" class="dual-date-container">
               <el-form-item label="第一时相" required class="date-picker-item">
-                <el-date-picker 
-                  v-model="firstTime" 
-                  type="date" 
-                  placeholder="选择第一时相日期" 
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                ></el-date-picker>
+                <el-date-picker v-model="firstTime" type="date" placeholder="选择第一时相日期" format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
               </el-form-item>
-              
+
               <el-form-item label="第二时相" required class="date-picker-item">
-                <el-date-picker 
-                  v-model="secondTime" 
-                  type="date" 
-                  placeholder="选择第二时相日期" 
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                ></el-date-picker>
+                <el-date-picker v-model="secondTime" type="date" placeholder="选择第二时相日期" format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
               </el-form-item>
             </div>
 
-            <!-- 预测参数选项 -->
-            <el-form-item label="预测参数">
+            <!-- 分类参数选项 -->
+            <el-form-item label="分类参数">
               <el-checkbox-group v-model="predictOptions">
-                <el-checkbox 
-                  v-for="option in allPredictOptions" 
-                  :key="option.value"
-                  :label="option.value"
-                  :disabled="!isOptionAvailable(option.value, 'predict')"
-                >
+                <el-checkbox v-for="option in allPredictOptions" :key="option.value" :label="option.value"
+                  :disabled="!isOptionAvailable(option.value, 'predict')">
                   {{ option.label }}
                 </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
-            
+
             <!-- 添加颜色选择器 -->
-            <el-form-item 
-              label="类别颜色" 
-              v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')"
-            >
+            <el-form-item label="类别颜色"
+              v-if="predictOptions.includes('preview_png') && isOptionAvailable('preview_png', 'predict')">
               <div class="color-picker-container">
                 <div v-for="(color, classId) in colorMap" :key="classId" class="color-picker-item">
                   <span class="class-label">{{ classNames[classId] }}:</span>
@@ -98,20 +68,11 @@
 
             <!-- 轮询状态显示 -->
             <div v-if="isPolling" class="polling-status">
-              <el-alert
-                title="任务正在执行中，请稍候..."
-                type="info"
-                :closable="false"
-                show-icon
-              >
+              <el-alert title="任务正在执行中，请稍候..." type="info" :closable="false" show-icon>
                 <template #default>
                   <div class="polling-progress">
-                    <el-progress
-                      :percentage="pollingProgress"
-                      :status="pollingStatus === 'failed' ? 'exception' : ''"
-                      :stroke-width="8"
-                      :show-text="false"
-                    />
+                    <el-progress :percentage="pollingProgress" :status="pollingStatus === 'failed' ? 'exception' : ''"
+                      :stroke-width="8" :show-text="false" />
                     <div class="polling-info">
                       <span v-if="pollingStatus === 'executing'">正在处理...</span>
                       <span v-if="pollingStatus === 'success'" style="color: #67c23a">任务完成！</span>
@@ -121,26 +82,16 @@
                   </div>
                 </template>
               </el-alert>
-              <el-button 
-                v-if="pollingStatus === 'failed'" 
-                @click="stopPolling" 
-                type="danger" 
-                size="small"
-                class="stop-polling-btn"
-              >
+              <el-button v-if="pollingStatus === 'failed'" @click="stopPolling" type="danger" size="small"
+                class="stop-polling-btn">
                 停止轮询
               </el-button>
             </div>
 
             <div class="button-group">
-              <el-button 
-                @click="handlePredict" 
-                class="submit-button" 
-                type="primary" 
-                :loading="predictLoading"
-                :disabled="isPolling"
-              >
-                {{ isPolling ? '任务执行中...' : '开始预测' }}
+              <el-button @click="handlePredict" class="submit-button" type="primary" :loading="predictLoading"
+                :disabled="isPolling">
+                {{ isPolling ? '任务执行中...' : '开始分类' }}
               </el-button>
             </div>
 
@@ -149,20 +100,17 @@
 
             <el-form-item label="结果获取参数">
               <el-checkbox-group v-model="resultOptions">
-                <el-checkbox 
-                  v-for="option in allResultOptions" 
-                  :key="option.value"
-                  :label="option.value"
-                  :disabled="!isOptionAvailable(option.value, 'result') && option.value !== 'tif'"
-                >
+                <el-checkbox v-for="option in allResultOptions" :key="option.value" :label="option.value"
+                  :disabled="!isOptionAvailable(option.value, 'result') && option.value !== 'tif'">
                   {{ option.label }}
                 </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
 
             <div class="button-group">
-              <el-button @click="fetchResultFiles" type="success" :loading="loadingResults" :disabled="!selectedModel || !observationDate">
-                获取预测结果
+              <el-button @click="fetchResultFiles" type="success" :loading="loadingResults"
+                :disabled="!selectedModel || !observationDate">
+                获取分类结果
               </el-button>
             </div>
           </div>
@@ -170,13 +118,13 @@
       </el-form>
     </div>
 
-    <!-- 预测结果页面 -->
+    <!-- 分类结果页面 -->
     <div class="result-container" v-if="predictCurrent === 1">
       <div class="result-content">
         <!-- 图片展示区域 -->
         <div class="image-section" v-if="previewData">
           <div class="result-image">
-            <img :src="previewData" alt="预测结果预览" />
+            <img :src="previewData" alt="分类结果预览" />
           </div>
           <el-button @click="openImageDialog" type="primary" plain class="view-full-button">
             <el-icon>
@@ -191,22 +139,24 @@
           </el-icon>
           <span>暂无预览图</span>
         </div>
-        
+
         <!-- 文件下载区域 -->
         <div class="download-section" v-if="hasDownloadableFiles">
           <h3>结果文件下载</h3>
           <div class="download-buttons">
             <!-- TIF文件下载按钮 - 始终可用 -->
-            <el-button @click="downloadFile('tif')" type="success" plain icon="Download">
+            <el-button @click="downloadFile('tif')" type="success" plain :icon="Download">
               TIF文件
             </el-button>
-
+            <el-button @click="downloadFile('preview_png')" type="success" plain :icon="Download">
+              png预览图
+            </el-button>
             <!-- <el-button v-if="downloadFiles.confusion_matrix && isOptionAvailable('confusion_matrix', 'result')" 
                       @click="downloadFile('confusion_matrix')" type="primary" plain icon="Download">
               混淆矩阵
             </el-button> -->
-            <el-button v-if="downloadFiles.class_stats && isOptionAvailable('evaluate', 'result')" 
-                      @click="downloadFile('evaluate')" type="primary" plain icon="Download">
+            <el-button v-if="downloadFiles.class_stats && isOptionAvailable('class_stats', 'result')"
+              @click="downloadFile('class_stats')" type="primary" plain :icon="Download">
               统计报告
             </el-button>
 
@@ -220,11 +170,11 @@
 
         <!-- 操作按钮 -->
         <div class="button-group">
-          <el-button @click="handlePredictPrevious" class="cancel-button" icon="Back">
+          <el-button @click="handlePredictPrevious" class="cancel-button" :icon="Back">
             上一步
           </el-button>
-          <el-button @click="handlePredictContinue" class="submit-button" type="primary" icon="Refresh">
-            继续预测
+          <el-button @click="handlePredictContinue" class="submit-button" type="primary" :icon="Refresh">
+            继续分类
           </el-button>
         </div>
       </div>
@@ -260,16 +210,17 @@ import {
   ElAlert,
   ElProgress
 } from 'element-plus'
-import { 
-  getModelByClassName, 
-  landPredictByCommons, 
-  getLandResult, 
-  getLandResultPreview, 
-  getLandResultConfusionMatrix, 
+import {
+  getModelByClassName,
+  landPredictByCommons,
+  getLandResult,
+  getLandResultPreview,
+  getLandResultConfusionMatrix,
   getLandResultConfusionMatrixClassStats,
   getLandResultHeatmap,
   getLandResultTif,
-  getModelStatusByConditions  // 导入状态查询接口
+  getModelStatusByConditions,  // 导入状态查询接口
+  getTimesByType
 } from '@/api/getData'
 
 // 定义emit事件
@@ -304,20 +255,20 @@ const taskStartTime = ref(null)
 const allPredictOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' }, // class_stats对应统计报告
+  { value: 'class_stats', label: '统计报告' }, // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' }, // heatmaps_summary对应热力图
 ])
 
 const allResultOptions = ref([
   { value: 'preview_png', label: '预览图' },
   // { value: 'confusion_matrix', label: '混淆矩阵' },
-  { value: 'evaluate', label: '统计报告' } , // class_stats对应统计报告
+  { value: 'class_stats', label: '统计报告' }, // class_stats对应统计报告
   // { value: 'heatmap', label: '热力图' },
   { value: 'tif', label: 'TIF文件' }  // 添加TIF选项
 ])
 
-const predictOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'heatmap'])
-const resultOptions = ref(['preview_png', 'confusion_matrix', 'evaluate', 'tif']) // 默认包含tif
+const predictOptions = ref(['preview_png', 'confusion_matrix', 'class_stats', 'heatmap'])
+const resultOptions = ref(['preview_png', 'confusion_matrix', 'class_stats', 'tif']) // 默认包含tif
 const previewData = ref('')
 const downloadFiles = ref({})
 const predictLoading = ref(false)
@@ -325,6 +276,7 @@ const loadingResults = ref(false)
 const error = ref('')
 const imageDialogVisible = ref(false)
 
+const availableDates = ref([])
 
 // 颜色映射状态
 const colorMap = ref({
@@ -359,7 +311,7 @@ const predefineColors = ref([
 const classNames = {
   "-1": "无效/边界区域",
   0: '农田',
-  1: '林地', 
+  1: '林地',
   2: '水体',
   3: '城市',
   4: '裸地',
@@ -375,27 +327,27 @@ watch(selectedModel, (newVal) => {
     selectedModelType.value = ''
     return
   }
-  
+
   const currentModel = models.value.find(m => m.modelName === newVal)
   if (!currentModel || !currentModel.functions) {
     currentModelFunctions.value = []
     selectedModelType.value = ''
     return
   }
-  
+
   // 解析功能字符串为数组
   currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
-  
+
   // 设置模型类型
   selectedModelType.value = currentModel.type || ''
-  
+
   // 根据模型类型重置日期
   if (selectedModelType.value === 'dual') {
     // 双极化模型：设置默认日期（今天和7天前）
     const today = new Date()
     const sevenDaysAgo = new Date(today)
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    
+
     firstTime.value = sevenDaysAgo.toISOString().split('T')[0]
     secondTime.value = today.toISOString().split('T')[0]
   } else {
@@ -403,13 +355,13 @@ watch(selectedModel, (newVal) => {
     const today = new Date()
     observationDate.value = today.toISOString().split('T')[0]
   }
-  
+
   // 过滤不可用的选项（除了tif）
-  predictOptions.value = predictOptions.value.filter(option => 
+  predictOptions.value = predictOptions.value.filter(option =>
     isOptionAvailable(option, 'predict')
   )
-  
-  resultOptions.value = resultOptions.value.filter(option => 
+
+  resultOptions.value = resultOptions.value.filter(option =>
     isOptionAvailable(option, 'result') || option === 'tif'
   )
 })
@@ -423,31 +375,31 @@ const form = computed(() => ({
 }))
 
 const hasDownloadableFiles = computed(() => {
-  return downloadFiles.value.confusion_matrix || downloadFiles.value.evaluate || downloadFiles.value.heatmap
+  return downloadFiles.value.confusion_matrix || downloadFiles.value.class_stats || downloadFiles.value.heatmap
 })
 
 // 检查是否可以下载热力图（模型为xgbv1且heatmaps_summary为true）
 const canDownloadHeatmap = computed(() => {
-  return selectedModel.value === 'xgbv1' && 
-         predictOptions.value.includes('heatmap') && 
-         isOptionAvailable('heatmap', 'predict')
+  return selectedModel.value === 'xgbv1' &&
+    predictOptions.value.includes('heatmap') &&
+    isOptionAvailable('heatmap', 'predict')
 })
 
 // 检查选项是否可用
 const isOptionAvailable = (optionValue, type) => {
   if (!selectedModel.value || currentModelFunctions.value.length === 0) return false
-  
+
   // TIF文件始终可用
   if (optionValue === 'tif') return true
-  
+
   // 功能映射：将前端选项值映射到后端功能名称
   const functionMap = {
     'preview_png': 'preview_png',
     'confusion_matrix': 'confusion_matrix',
-    'evaluate': 'class_stats', // 前端统计报告对应后端class_stats
+    'class_stats': 'class_stats', // 前端统计报告对应后端class_stats
     'heatmap': 'heatmaps_summary' // 前端热力图对应后端heatmaps_summary
   }
-  
+
   const backendFunction = functionMap[optionValue]
   return currentModelFunctions.value.includes(backendFunction)
 }
@@ -458,32 +410,71 @@ watch(selectedModel, (newVal) => {
     currentModelFunctions.value = []
     return
   }
-  
+
   const currentModel = models.value.find(m => m.modelName === newVal)
   if (!currentModel || !currentModel.functions) {
     currentModelFunctions.value = []
     return
   }
-  
+
   // 解析功能字符串为数组
   currentModelFunctions.value = currentModel.functions.split(',').map(func => func.trim())
-  
+
   // 过滤不可用的选项（除了tif）
-  predictOptions.value = predictOptions.value.filter(option => 
+  predictOptions.value = predictOptions.value.filter(option =>
     isOptionAvailable(option, 'predict')
   )
-  
-  resultOptions.value = resultOptions.value.filter(option => 
+
+  resultOptions.value = resultOptions.value.filter(option =>
     isOptionAvailable(option, 'result') || option === 'tif'
   )
 })
 
+// 新增方法：获取土地类别的可用日期
+const fetchAvailableDates = () => {
+  getTimesByType({
+    type: 'modelfiles',
+    searchTimeType: 'day',
+    className: 'land'  // 固定为 land
+  })
+    .then((res) => {
+      const response = res?.response?.value || res?.value || res
+      if (response?.code === 'SUCCESS') {
+        // 过滤掉 null 值
+        availableDates.value = (response.body?.date || []).filter(date => date !== null && date !== undefined)
+
+        // 如果有可用日期，将默认日期设置为最后一个日期
+        if (availableDates.value.length > 0) {
+          observationDate.value = availableDates.value[availableDates.value.length - 1]
+        }
+      } else {
+        message.warning(response?.msg || '获取可用日期失败')
+      }
+    })
+    .catch((error) => {
+      console.error('获取日期数据失败:', error)
+      message.error('获取日期数据失败，请稍后再试')
+    })
+}
+
+// 新增方法：禁用不可用日期
+const disabledDate = (time) => {
+  if (!availableDates.value || availableDates.value.length === 0) {
+    return false
+  }
+
+  const dateString = `${time.getFullYear()}-${(time.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')}`
+
+  return !availableDates.value.includes(dateString)
+}
+
+
 // 生命周期
 onMounted(() => {
   fetchModels()
-  // 设置默认观测日期为今天
-  const today = new Date()
-  observationDate.value = today.toISOString().split('T')[0]
+  fetchAvailableDates()
 })
 
 // 组件卸载时停止轮询
@@ -525,13 +516,13 @@ const fetchModels = () => {
 // 开始轮询任务状态
 const startPolling = () => {
   stopPolling() // 先停止之前的轮询
-  
+
   isPolling.value = true
   pollingCount.value = 0
   pollingProgress.value = 0
   pollingStatus.value = 'executing'
   taskStartTime.value = new Date()
-  
+
   // 开始轮询
   pollingTimer.value = setInterval(() => {
     checkTaskStatus()
@@ -556,7 +547,7 @@ const checkTaskStatus = async () => {
   }
 
   pollingCount.value++
-  
+
   // 更新进度条（基于时间估算，0-90%）
   const elapsedTime = new Date() - taskStartTime.value
   const estimatedMaxTime = maxPollingCount * pollingInterval // 最大预估时间
@@ -567,15 +558,15 @@ const checkTaskStatus = async () => {
     if (!userData) {
       throw new Error('用户信息未找到')
     }
-    
+
     const userinfo = JSON.parse(userData)
-    
+
     const params = {
       userName: userinfo.username,
       createUserid: userinfo.id,
       modelName: selectedModel.value,
     }
-    
+
     // 根据模型类型添加日期参数
     if (isDualModel.value) {
       params.startTime = firstTime.value
@@ -583,46 +574,46 @@ const checkTaskStatus = async () => {
     } else {
       params.observationTime = observationDate.value
     }
-    
+
     const res = await getModelStatusByConditions(params)
     const response = res?.response?.value || res?.value || res
-    
+
     console.log('任务状态查询结果:', response)
-    
+
     if (response?.code === 'SUCCESS') {
       const taskData = response.body?.[0] // 获取第一个任务数据
-      
+
       if (taskData) {
         const status = taskData.usageStatus?.toLowerCase()
-        
+
         if (status === 'success') {
           // 任务成功完成
           pollingStatus.value = 'success'
           pollingProgress.value = 100
           message.success('任务执行成功！')
-          
+
           // 停止轮询
           stopPolling()
-          
+
           // 延迟500ms后跳转到结果页面并获取结果
           setTimeout(() => {
             predictCurrent.value = 1
             fetchResultFiles()
           }, 500)
-          
+
         } else if (status === 'failed') {
           // 任务失败
           pollingStatus.value = 'failed'
           pollingProgress.value = 100
           message.error('任务执行失败，请检查参数或联系管理员')
-          
+
           // 停止轮询
           stopPolling()
-          
+
         } else if (status === 'executing') {
           // 任务仍在执行中，继续轮询
           pollingStatus.value = 'executing'
-          
+
         } else {
           // 未知状态
           console.warn('未知的任务状态:', status)
@@ -636,7 +627,7 @@ const checkTaskStatus = async () => {
       const msg = response?.msg || '查询任务状态失败'
       console.error(msg)
     }
-    
+
   } catch (err) {
     console.error('查询任务状态失败:', err)
     // 网络错误时不立即停止轮询，继续尝试
@@ -647,17 +638,17 @@ const checkTaskStatus = async () => {
   }
 }
 
-// 处理预测请求
+// 处理分类请求
 const handlePredict = () => {
   if (!selectedModel.value) {
-    message.error('请选择预测模型')
+    message.error('请选择分类模型')
     return
   }
 
   if (!observationDate.value) {
     message.error('请选择观测日期')
     return
-  } 
+  }
 
   if (isDualModel.value && (!firstTime.value || !secondTime.value)) {
     message.error('请选择双时相日期')
@@ -676,13 +667,13 @@ const handlePredict = () => {
     modelName: selectedModel.value,
     preview_png: predictOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: predictOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: predictOptions.value.includes('evaluate') ? "True" : "False", // evaluate对应class_stats
+    class_stats: predictOptions.value.includes('class_stats') ? "True" : "False", // class_stats对应class_stats
     heatmaps_summary: predictOptions.value.includes('heatmap') ? "True" : "False", // heatmap对应heatmaps_summary
     userName: userinfo.username,
     createUserId: userinfo.id
   }
 
-    // 根据模型类型添加日期参数
+  // 根据模型类型添加日期参数
   if (isDualModel.value) {
     params.firstTime = firstTime.value
     params.secondTime = secondTime.value
@@ -704,11 +695,11 @@ const handlePredict = () => {
       const response = res?.response?.value || res?.value || res
 
       if (response?.code === 'SUCCESS') {
-        message.success('预测任务已提交，正在等待执行结果...')
+        message.success('分类任务已提交，正在等待执行结果...')
         // 不立即跳转，开始轮询任务状态
         startPolling()
       } else {
-        const msg = response?.msg || '预测任务提交失败'
+        const msg = response?.msg || '分类任务提交失败'
         error.value = msg
         message.error(msg)
       }
@@ -753,7 +744,7 @@ const fetchResultFiles = () => {
     modelName: selectedModel.value,
     preview_png: resultOptions.value.includes('preview_png') ? "True" : "False",
     confusion_matrix: resultOptions.value.includes('confusion_matrix') ? "True" : "False",
-    class_stats: resultOptions.value.includes('evaluate') ? "True" : "False",
+    class_stats: resultOptions.value.includes('class_stats') ? "True" : "False",
     userName: userinfo.username,
     createUserId: userinfo.id,
     className: "land"
@@ -771,30 +762,30 @@ const fetchResultFiles = () => {
   }
 
   getLandResult(params)
-  .then((res) => {
-    console.log('getLandResult 完整响应:', res)
+    .then((res) => {
+      console.log('getLandResult 完整响应:', res)
 
-    const response = res?.response?.value || res?.value || res
-    console.log('处理后的响应数据:', response)
+      const response = res?.response?.value || res?.value || res
+      console.log('处理后的响应数据:', response)
 
-    if (response?.code === 'SUCCESS') {
-      downloadFiles.value = response.body?.urls || {}
-      console.log('下载文件信息:', downloadFiles.value)
+      if (response?.code === 'SUCCESS') {
+        downloadFiles.value = response.body?.urls || {}
+        console.log('下载文件信息:', downloadFiles.value)
 
-      if (downloadFiles.value.preview_png) {
-        loadPreviewImage()
+        if (downloadFiles.value.preview_png) {
+          loadPreviewImage()
+        }
+
+        message.success('结果获取成功')
+
+        // 新增：跳转到结果页面
+        predictCurrent.value = 1
+      } else {
+        const msg = response?.msg || '获取结果文件失败'
+        error.value = msg
+        message.error(msg)
       }
-
-      message.success('结果获取成功')
-      
-      // 新增：跳转到结果页面
-      predictCurrent.value = 1
-    } else {
-      const msg = response?.msg || '获取结果文件失败'
-      error.value = msg
-      message.error(msg)
-    }
-  })
+    })
     .catch((err) => {
       console.error('获取结果文件失败:', err)
       error.value = '获取结果文件失败: ' + err.message
@@ -841,16 +832,18 @@ const loadPreviewImage = () => {
 // 下载文件
 const downloadFile = (type) => {
   const fileNameMap = {
+    preview_png: `${selectedModel.value}_preview.png`,
     tif: `${selectedModel.value}_result.tif`,
     confusion_matrix: `${selectedModel.value}_confusion_matrix.png`,
-    evaluate: `${selectedModel.value}_class_stats.txt`, // evaluate对应统计报告文件
+    class_stats: `${selectedModel.value}_class_stats.txt`, // class_stats对应统计报告文件
     heatmap: `class_heatmaps_summary.png`
   }
 
   const apiCallMap = {
+    preview_png: getLandResultPreview,
     tif: getLandResultTif, // 添加TIF下载接口
     confusion_matrix: getLandResultConfusionMatrix,
-    evaluate: getLandResultConfusionMatrixClassStats, // evaluate对应class_stats接口  
+    class_stats: getLandResultConfusionMatrixClassStats, // class_stats对应class_stats接口  
     heatmap: getLandResultHeatmap
   }
 
@@ -878,9 +871,9 @@ const downloadFile = (type) => {
 
       const response = res?.response?.value || res?.value || res
 
-      const contentType = type === 'tif' ? 'image/tiff' : 
-                         type === 'evaluate' ? 'text/plain' : 'image/png'
-      
+      const contentType = type === 'tif' ? 'image/tiff' :
+        type === 'class_stats' ? 'text/plain' : 'image/png'
+
       const blob = new Blob([response], {
         type: contentType
       })
@@ -913,7 +906,7 @@ const handlePredictPrevious = () => {
   }
 }
 
-// 继续预测（同时停止轮询）
+// 继续分类（同时停止轮询）
 const handlePredictContinue = () => {
   stopPolling()
   predictCurrent.value = 0
@@ -928,6 +921,45 @@ const handleBack = () => {
 </script>
 
 <style scoped>
+/* 调整日期选择器的垂直对齐 */
+:deep(.el-form-item__label) {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  line-height: 1;
+}
+
+/* 确保日期选择器与标签垂直对齐 */
+.el-form-item :deep(.el-date-editor) {
+  line-height: 32px;
+}
+
+/* 调整日期选择器容器内的垂直对齐 */
+.el-form-item :deep(.el-input__wrapper) {
+  display: flex;
+  align-items: center;
+}
+
+/* 针对日期选择器的特定调整 */
+.date-picker-item :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+}
+
+/* 针对双极化模型日期选择器的垂直对齐 */
+.dual-date-container .date-picker-item :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+}
+
+/* 确保双极化模型的标签与选择器对齐 */
+.dual-date-container .el-form-item__label {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  line-height: 1;
+}
+
 .feature-container {
   margin: 0 auto;
   max-width: 1200px;
@@ -1155,6 +1187,7 @@ const handleBack = () => {
   max-height: 100%;
   object-fit: contain;
 }
+
 .no-image .el-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -1246,11 +1279,11 @@ const handleBack = () => {
   .form-container {
     width: 95%;
   }
-  
+
   .custom-steps {
     max-width: 90%;
   }
-  
+
   .form-column-full {
     padding: 0 10px;
   }
@@ -1290,7 +1323,7 @@ const handleBack = () => {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .dual-date-container .date-picker-item {
     width: 100%;
   }

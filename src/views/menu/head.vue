@@ -1,67 +1,46 @@
 <template>
   <div class="header-actions">
-    <!-- 用户头像和昵称 -->
     <div class="user-info">
       <el-space wrap size="20">
-        <img class="avatar" src="@/assets/img/avatar.jpg" alt="用户头像" />
-        <el-text class="mx-1" type="info" size="large">{{ nickname }} </el-text>
-        <el-button type="info" text bg @click="goToLink">
-          进入大屏系统
-        </el-button>
-        <el-button type="info" text bg @click="goToQuit"> 退出系统 </el-button>
+        <!-- 头像点击跳转个人信息页 -->
+        <img 
+          class="avatar" 
+          src="@/assets/img/avatar.jpg" 
+          alt="用户头像" 
+          @click="goToProfile" 
+          title="修改个人信息"
+        />
+        <el-text class="mx-1" type="info" size="large">{{ nickname }}</el-text>
+        <el-button type="info" text bg @click="goToLink">进入大屏系统</el-button>
+        <el-button type="info" text bg @click="goToQuit">退出系统</el-button>
       </el-space>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref,onMounted,getCurrentInstance } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { logoutuser } from '@/api/getData'
 import { ElMessage } from 'element-plus'
+
+// 纯静态昵称（不用读缓存）
 const nickname = ref('刘思远')
-const routers = useRouter()
-function goToLink () {
-  routers.push('/Cesuimap')
+const router = useRouter()
+
+// 跳转大屏系统（静态路由跳转）
+function goToLink() {
+  router.push('/Cesuimap')
 }
 
-onMounted(() => {
-  // 初始化
-  const instance = getCurrentInstance()
-  if (instance) {
-    instance.proxy.$nextTick(() => {
-      // 在 DOM 更新后执行
-      const userinfo = JSON.parse(localStorage.getItem('Userinfo'))
-      nickname.value = userinfo.username
-    })
-  }
-})
+// 核心：跳转个人信息页（静态路由跳转）
+function goToProfile() {
+  router.push('/user/profile')
+}
 
-
-function goToQuit () {
-  if (
-    localStorage.getItem('Authorization') === null ||
-    localStorage.getItem('Authorization') === ''
-  ) {
-    routers.push('/login')
-  } else {
-    logoutuser({}).then((res) => {
-      const result = res.response.value // 处理成功的响应
-      // console.log(result)
-      if (result.code === 'SUCCESS') {
-        localStorage.setItem('Authorization', '')
-        routers.push('/login')
-      } else {
-        const message = result.msg
-        // alert(message)
-        ElMessage({
-          showClose: true,
-          message: message,
-          center: true
-        })
-      }
-    })
-  }
+// 退出系统（静态逻辑，只跳转不调接口）
+function goToQuit() {
+  ElMessage.info('已退出系统（静态演示）')
+  router.push('/login')
 }
 </script>
 
@@ -70,7 +49,7 @@ function goToQuit () {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  background-color: white;
+  background-color: #fff;
   padding: 0;
 }
 
@@ -81,12 +60,17 @@ function goToQuit () {
 }
 
 .avatar {
-  width: 36px; /* 修改宽度为 36px */
-  height: 36px; /* 修改高度为 36px */
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   margin-right: 10px;
-  margin-bottom: 10px; /* 调整下边距 */
+  margin-bottom: 10px;
   cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
 }
 
 .nickname {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- 水体变化识别功能 -->
+    <!-- 植被覆盖度变化生产功能 -->
     <div class="feature-container">
       <!-- 自定义步骤条 - 添加动画 -->
       <div class="steps-container animate__animated animate__fadeInDown">
@@ -21,7 +21,7 @@
             >
               2
             </div>
-            <div class="step-title">预测结果</div>
+            <div class="step-title">生产结果</div>
           </div>
         </div>
       </div>
@@ -68,8 +68,8 @@
                   </el-form-item>
 
                   <!-- 后期文件上传 - 添加动画 -->
-                  <el-form-item label="后期文件：" required class="center-form">
-                    <div class="file-input-wrapper center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.2s'}">
+                  <el-form-item label="后期文件：" required>
+                    <div class="file-input-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.2s'}">
                       <el-input
                         v-model="lateFilePath"
                         placeholder="请选择后期文件"
@@ -117,36 +117,19 @@
                     </div>
                   </el-form-item>
 
-                  <!-- 水体标签值 - 添加动画 -->
-                  <el-form-item label="水体标签值：" prop="waterTagValue">
+                  <!-- 生产参数选项 - 添加动画 -->
+                  <el-form-item label="生产参数">
                     <div class="center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.4s'}">
-                      <el-input-number
-                        v-model="form.waterTagValue"
-                        :min="0"
-                        :max="255"
-                        step="1"
-                        placeholder="请输入水体标签值（0-255）"
-                        class="water-tag-input"
-                      />
-                    </div>
-                    <div class="input-hint animate__animated animate__fadeIn" :style="{animationDelay: '0.5s'}">
-                      注：代表水体的像素值，通常为0-255之间的整数
-                    </div>
-                  </el-form-item>
-
-                  <!-- 预测参数选项 - 添加动画 -->
-                  <el-form-item label="预测参数">
-                    <div class="center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
                       <el-checkbox-group v-model="predictOptions" class="checkbox-group">
-                        <el-checkbox label="change_stats" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">变化统计</el-checkbox>
-                        <el-checkbox label="change_image" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">变化预览</el-checkbox>
-                        <el-checkbox label="change_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.75s'}">变化结果下载</el-checkbox>
+                        <el-checkbox label="change_stats" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.45s'}">变化统计</el-checkbox>
+                        <el-checkbox label="change_image" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.5s'}">变化预览</el-checkbox>
+                        <el-checkbox label="change_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.55s'}">变化结果下载</el-checkbox>
                       </el-checkbox-group>
                     </div>
                   </el-form-item>
 
                   <!-- 按钮组 - 添加动画 -->
-                  <div class="button-group animate__animated animate__fadeInUp" :style="{animationDelay: '0.8s'}">
+                  <div class="button-group animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
                     <el-button
                       @click="handlePredict"
                       class="submit-button"
@@ -155,7 +138,7 @@
                       :disabled="!earlyFileObject || !lateFileObject"
                       :class="{'animate__animated animate__pulse animate__infinite': earlyFileObject && lateFileObject && !predictLoading}"
                     >
-                      {{ predictLoading ? '上传并预测中...' : '开始预测' }}
+                      {{ predictLoading ? '上传并生产中...' : '开始生产' }}
                     </el-button>
                   </div>
                 </div>
@@ -163,7 +146,7 @@
             </el-form>
           </div>
 
-          <!-- 预测结果页面 - 添加切换动画 -->
+          <!-- 生产结果页面 - 添加切换动画 -->
           <div class="result-container" v-else-if="predictCurrent === 1">
             <div class="result-content">
               <!-- 结果内容区域 - 真正的左右布局 -->
@@ -242,8 +225,8 @@
                 <el-button @click="handlePredictPrevious" icon="Back" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">
                   上一步
                 </el-button>
-                <el-button @click="handlePredictContinue" type="primary" icon="Refresh" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">
-                  继续预测
+                <el-button @click="handlePredictContinue" type="primary" icon="RefreshRight" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">
+                  继续生产
                 </el-button>
               </div>
             </div>
@@ -277,9 +260,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { Check, Picture, Download, Back, Refresh, ZoomIn, ZoomOut, Close } from '@element-plus/icons-vue'
+import { Check, Picture, Download, Back, RefreshRight, ZoomIn, ZoomOut, Close } from '@element-plus/icons-vue'
 import {
   ElForm,
   ElFormItem,
@@ -289,9 +272,8 @@ import {
   ElCheckbox,
   ElCheckboxGroup,
   ElDialog
-  
 } from 'element-plus'
-import { getWaterChangeResult } from '@/api/getData'
+import { getPlantChangeResult } from '@/api/getData'
 
 // 状态定义
 const predictCurrent = ref(0)
@@ -303,10 +285,8 @@ const previewData = ref('')
 const isImageLoaded = ref(false)
 const zoomLevel = ref(1)
 
-// 新增：水体标签值状态
-const form = ref({
-  waterTagValue: 1
-})
+// 表单数据
+const form = ref({})
 
 // 文件上传相关状态
 const earlyFilePath = ref('')
@@ -356,11 +336,11 @@ const handleRemoveFile = (type) => {
   if (type === 'early') {
     earlyFilePath.value = ''
     earlyFileObject.value = null
-    earlyFileInput.value && (earlyFileInput.value.value = '')
+    if (earlyFileInput.value) earlyFileInput.value.value = ''
   } else if (type === 'late') {
     lateFilePath.value = ''
     lateFileObject.value = null
-    lateFileInput.value && (lateFileInput.value.value = '')
+    if (lateFileInput.value) lateFileInput.value.value = ''
   }
 }
 
@@ -388,7 +368,7 @@ function beforeUpload(file) {
   return true
 }
 
-// 预测处理
+// 生产处理
 const handlePredict = async () => {
   if (!earlyFileObject.value || !lateFileObject.value) {
     message.error('请上传早期和后期文件')
@@ -396,12 +376,6 @@ const handlePredict = async () => {
   }
   if (!earlyFileObject.value.size || !lateFileObject.value.size) {
     message.error('文件内容为空，请重新选择')
-    return
-  }
-
-  // 新增：验证水体标签值
-  if (form.value.waterTagValue === undefined || form.value.waterTagValue === null || form.value.waterTagValue === '') {
-    message.error('请输入水体标签值')
     return
   }
 
@@ -413,38 +387,43 @@ const handlePredict = async () => {
     formData.append('earlyFile', earlyFileObject.value)
     formData.append('lateFile', lateFileObject.value)
     
-    // 新增：添加水体标签值参数
-    formData.append('waterTagValue', form.value.waterTagValue.toString())
-    
+    // 只添加用户选择的参数
     predictOptions.value.forEach(option => {
       formData.append(option, 'True')
     })
 
-    const res = await getWaterChangeResult(formData)
+    const res = await getPlantChangeResult(formData)
     const response = res?.response?.value || res?.value || res
 
     if (response?.code === 'SUCCESS') {
-      message.success('预测完成')
+      message.success('生产完成')
       const body = response.body
-      changeStats.value = body.stats
-      downloadFiles.value = {
-        stats_file: body.stats_file.replace(/\\/g, '/'),
-        image_file: body.image_file.replace(/\\/g, '/'),
-        tif_file: body.tif_file.replace(/\\/g, '/')
+      
+      // 根据用户选择的参数显示对应的结果
+      if (predictOptions.value.includes('change_stats')) {
+        changeStats.value = body.stats || {}
       }
-      if (body.image_file) {
+      
+      downloadFiles.value = {
+        stats_file: body.stats_file ? body.stats_file.replace(/\\/g, '/') : '',
+        image_file: body.image_file ? body.image_file.replace(/\\/g, '/') : '',
+        tif_file: body.tif_file ? body.tif_file.replace(/\\/g, '/') : ''
+      }
+      
+      if (predictOptions.value.includes('change_image') && body.image_file) {
         await loadPreviewImage(body.image_file.replace(/\\/g, '/'))
       }
+      
       predictCurrent.value = 1
     } else {
-      const msg = response?.msg || '预测失败'
+      const msg = response?.msg || '生产失败'
       error.value = msg
       message.error(msg)
     }
   } catch (err) {
-    console.error('预测失败:', err)
-    error.value = '预测失败: ' + err.message
-    message.error('预测失败: ' + err.message)
+    console.error('生产失败:', err)
+    error.value = '生产失败: ' + err.message
+    message.error('生产失败: ' + err.message)
   } finally {
     predictLoading.value = false
   }
@@ -472,8 +451,6 @@ const loadPreviewImage = async (imagePath) => {
       console.error('预览图请求失败:', response.status, errorText)
       if (errorText.includes('token 已过期')) {
         message.error('token 已过期，请重新登录')
-        // 触发重新登录逻辑
-        // window.location.href = '/login'
       } else {
         message.error(`加载失败: ${errorText || '未知错误'}`)
       }
@@ -497,12 +474,11 @@ const loadPreviewImage = async (imagePath) => {
     }
     const imageUrl = URL.createObjectURL(blob)
     previewData.value = imageUrl
-    isImageLoaded.value = false // 重置加载状态
+    isImageLoaded.value = false
     const img = new Image()
     img.src = imageUrl
     img.onload = () => {
       isImageLoaded.value = true
-      console.log('图片成功加载')
     }
     img.onerror = () => {
       console.error('图片加载失败')
@@ -520,7 +496,6 @@ const loadPreviewImage = async (imagePath) => {
 
 // 图片预览加载完成后的动画
 const onImagePreviewLoad = () => {
-  // 图片加载完成后添加一个轻微的脉冲效果
   const img = document.querySelector('.preview-image')
   if (img) {
     img.classList.add('animate__pulse')
@@ -530,12 +505,13 @@ const onImagePreviewLoad = () => {
   }
 }
 
+// 下载功能
 const downloadStatsFile = async () => {
   if (!downloadFiles.value.stats_file) {
     message.error('没有可下载的统计文件')
     return
   }
-  await downloadFile(downloadFiles.value.stats_file, 'water_change_stats.txt')
+  await downloadFile(downloadFiles.value.stats_file, 'plant_change_stats.txt')
 }
 
 const downloadTifFile = async () => {
@@ -543,7 +519,7 @@ const downloadTifFile = async () => {
     message.error('没有可下载的变化地图')
     return
   }
-  await downloadFile(downloadFiles.value.tif_file, 'water_change_map.tif')
+  await downloadFile(downloadFiles.value.tif_file, 'plant_change_map.tif')
 }
 
 const downloadFile = async (filePath, defaultName) => {
@@ -573,8 +549,6 @@ const downloadFile = async (filePath, defaultName) => {
     console.error('下载失败:', error)
     if (error.message.includes('401')) {
       message.error('token 可能已过期，请重新登录')
-      // 触发重新登录逻辑
-      // window.location.href = '/login'
     } else {
       message.error('下载失败: ' + error.message)
     }
@@ -586,16 +560,17 @@ const handlePredictPrevious = () => {
 }
 
 const handlePredictContinue = () => {
-  predictCurrent.value = 0
+  // 清空所有文件和数据
   earlyFilePath.value = ''
   lateFilePath.value = ''
   earlyFileObject.value = null
   lateFileObject.value = null
+  if (earlyFileInput.value) earlyFileInput.value.value = ''
+  if (lateFileInput.value) lateFileInput.value.value = ''
   changeStats.value = {}
   downloadFiles.value = { stats_file: '', image_file: '', tif_file: '' }
   previewData.value = ''
-  isImageLoaded.value = false
-  zoomLevel.value = 1
+  predictCurrent.value = 0
 }
 
 const openImageDialog = () => {
@@ -612,12 +587,12 @@ const onImageLoad = (event) => {
 
 // 缩放控制
 const zoomIn = () => {
-  zoomLevel.value = Math.min(zoomLevel.value + 0.1, 2) // 最大2倍
+  zoomLevel.value = Math.min(zoomLevel.value + 0.1, 2)
   applyZoom()
 }
 
 const zoomOut = () => {
-  zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1) // 最小0.1倍
+  zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1)
   applyZoom()
 }
 
@@ -721,60 +696,10 @@ const applyZoom = () => {
   box-sizing: border-box;
 }
 
-/* 居中对齐相关样式 */
 .center-form {
   display: flex;
   justify-content: center;
-}
-
-.center-form-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.center-form-item :deep(.el-form-item__label) {
-  text-align: center;
   width: 100%;
-  margin-bottom: 10px;
-  font-weight: bold;
-  color: #606266;
-}
-
-.center-content {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.center-input {
-  max-width: 400px;
-  width: 100%;
-}
-
-.center-water-input {
-  max-width: 200px;
-  width: 100%;
-}
-
-.center-hint {
-  text-align: center;
-  width: 100%;
-  margin-top: 8px;
-}
-
-.center-checkbox-group {
-  justify-content: center;
-}
-
-.status-form-item {
-  margin-top: -10px;
-  margin-bottom: 20px;
-}
-
-.center-status-item {
-  justify-content: center;
-  text-align: center;
 }
 
 /* 文件输入样式 */
@@ -838,23 +763,12 @@ const applyZoom = () => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* 水体标签值输入 */
-.water-tag-input {
-  width: 100%;
-  max-width: 200px;
-}
-
-.input-hint {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 5px;
-}
-
 /* 复选框组 */
 .checkbox-group {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
+  justify-content: center;
 }
 
 .checkbox-group .el-checkbox {
@@ -864,6 +778,12 @@ const applyZoom = () => {
 .checkbox-group .el-checkbox:hover {
   transform: scale(1.05);
   color: #409eff;
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 /* 按钮组 */
@@ -1213,23 +1133,6 @@ const applyZoom = () => {
     max-width: 100%;
   }
   
-  .water-tag-input {
-    max-width: 100%;
-  }
-  
-  .center-form-item :deep(.el-form-item__label) {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  
-  .center-input {
-    max-width: 100%;
-  }
-  
-  .center-water-input {
-    max-width: 100%;
-  }
-  
   .status-item {
     min-width: 250px;
     font-size: 13px;
@@ -1279,10 +1182,6 @@ const applyZoom = () => {
     min-width: 200px;
     font-size: 12px;
     padding: 4px 8px;
-  }
-  
-  .center-form-item :deep(.el-form-item__label) {
-    font-size: 13px;
   }
 }
 

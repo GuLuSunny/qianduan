@@ -255,6 +255,16 @@ export function atmosphereInsertByExcel (data: any) {
   })
 }
 /**
+ *单条气象数据更新
+ * @returns UseAxiosReturn
+ */
+export function updateOnly(data: any) {
+  return useAxiosApi('/api/atmosphere/updateOnly',{
+    method: 'post',
+    data: data
+  })
+}
+/**
  * 径流Excel方式提交
  * @returns UseAxiosReturn
  */
@@ -760,6 +770,13 @@ export function PlantGetData (data: any) {
     data: data
   })
 }
+// 👇 注册已完成的物种列表接口
+export function getPlantDistinctSpecies (data: any) {
+  return useAxiosApi('/api/monitoring/plantGetDistinctSpecies', {
+    method: 'POST',
+    data: data
+  })
+}
 /**
  * 土壤检测
  * @returns UseAxiosReturn
@@ -994,14 +1011,14 @@ export function uploadPumpingStationShpfiles(data: any) {
 }
 //湖泊点位文件上传
 export function uploadlakesByShpfiles(data: any) {
-  return useAxiosApi('/api/lakes/getAlllakesByConditions', {
+  return useAxiosApi('/api/lakes/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
 }
 //渠道点位文件上传
 export function uploadChannelByShpfiles(data: any) {
-  return useAxiosApi('/api/Channel/selectAllByconditions', {
+  return useAxiosApi('/api/Channel/uploadByShpfiles', {
     method: 'POST',
     data: data,
   });
@@ -1364,6 +1381,18 @@ export function landFilesUploadMul(data: any) {
  */
 export function getFarmlandgeojson(data: any) {
   return useAxiosApi('/api/farmland/exportGeojson', {
+    method: 'POST',
+    data: data,
+    responseType: 'blob'
+  });
+
+}
+/**
+ * 产品单文件上传
+ * @returns UseAxiosReturn
+ */
+export function uploadModelProduct(data: any) {
+  return useAxiosApi('/api/modelFile/uploadModelProducts', {
     method: 'POST',
     data: data,
     responseType: 'blob'

@@ -121,8 +121,7 @@
                             <el-icon color="#67C23A">
                               <Check />
                             </el-icon>
-                            <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 /
-                              1024).toFixed(2) }} MB)</span>
+                            <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
                           </div>
                           <div v-else class="status-item error">
                             <el-icon color="#F56C6C">
@@ -134,8 +133,7 @@
                             <el-icon color="#67C23A">
                               <Check />
                             </el-icon>
-                            <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 /
-                              1024).toFixed(2) }} MB)</span>
+                            <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
                           </div>
                           <div v-else class="status-item error">
                             <el-icon color="#F56C6C">
@@ -147,8 +145,7 @@
                             <el-icon color="#67C23A">
                               <Check />
                             </el-icon>
-                            <span>配置文件: {{ configFilePath }} ({{ (configFileObject.size / 1024).toFixed(2)
-                            }} KB)</span>
+                            <span>配置文件: {{ configFilePath }} ({{ (configFileObject.size / 1024).toFixed(2) }} KB)</span>
                           </div>
                         </div>
                       </div>
@@ -191,27 +188,21 @@
                     <div class="stat-summary animate__animated animate__fadeIn" :style="{animationDelay: '0.15s'}">
                       <div class="stat-item">
                         <span class="stat-label">总像素数：</span>
-                        <span class="stat-value">{{ totalStats.total_pixels?.toLocaleString() || '0'
-                          }}</span>
+                        <span class="stat-value">{{ totalStats.total_pixels?.toLocaleString() || '0' }}</span>
                       </div>
                       <div class="stat-item">
                         <span class="stat-label">有效像素：</span>
-                        <span class="stat-value">{{ totalStats.valid_pixels?.toLocaleString() || '0'
-                          }}</span>
+                        <span class="stat-value">{{ totalStats.valid_pixels?.toLocaleString() || '0' }}</span>
                       </div>
                       <div class="stat-item">
                         <span class="stat-label">变化像素：</span>
-                        <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() || '0'
-                          }}</span>
-                        <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) ||
-                          '0.00' }}%)</span>
+                        <span class="stat-value">{{ totalStats.changed_pixels?.toLocaleString() || '0' }}</span>
+                        <span class="stat-percent">({{ totalStats.change_percentage?.toFixed(2) || '0.00' }}%)</span>
                       </div>
                       <div class="stat-item">
                         <span class="stat-label">未变化像素：</span>
-                        <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() || '0'
-                          }}</span>
-                        <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2) ||
-                          '0.00' }}%)</span>
+                        <span class="stat-value">{{ totalStats.unchanged_pixels?.toLocaleString() || '0' }}</span>
+                        <span class="stat-percent">({{ totalStats.unchanged_percentage?.toFixed(2) || '0.00' }}%)</span>
                       </div>
                     </div>
 
@@ -226,13 +217,10 @@
                             <span class="change-from">{{ key }}</span>
                           </div>
                           <div class="change-type-details">
-                            <span>像素数: {{ value.count?.toLocaleString() || value?.toLocaleString()
-                              || '0' }}</span>
-                            <span v-if="value.percentage !== undefined">比例: {{
-                              value.percentage.toFixed(2) }}%</span>
+                            <span>像素数: {{ value.count?.toLocaleString() || value?.toLocaleString() || '0' }}</span>
+                            <span v-if="value.percentage !== undefined">比例: {{ value.percentage.toFixed(2) }}%</span>
                             <span v-else-if="totalStats.valid_pixels > 0">
-                              比例: {{ ((value.count || value) * 100.0 /
-                              totalStats.valid_pixels).toFixed(2) }}%
+                              比例: {{ ((value.count || value) * 100.0 / totalStats.valid_pixels).toFixed(2) }}%
                             </span>
                           </div>
                         </div>
@@ -363,6 +351,7 @@ import {
   ElTag
 } from 'element-plus'
 import { getLandChangeResult } from '@/api/getData'
+import 'animate.css'
 
 // 状态定义
 const predictCurrent = ref(0)
@@ -441,15 +430,15 @@ const handleRemoveFile = (type) => {
   if (type === 'early') {
     earlyFilePath.value = ''
     earlyFileObject.value = null
-    earlyFileInput.value && (earlyFileInput.value.value = '')
+    if (earlyFileInput.value) earlyFileInput.value.value = ''
   } else if (type === 'late') {
     lateFilePath.value = ''
     lateFileObject.value = null
-    lateFileInput.value && (lateFileInput.value.value = '')
+    if (lateFileInput.value) lateFileInput.value.value = ''
   } else if (type === 'config') {
     configFilePath.value = ''
     configFileObject.value = null
-    configFileInput.value && (configFileInput.value.value = '')
+    if (configFileInput.value) configFileInput.value.value = ''
   }
 }
 
@@ -485,6 +474,29 @@ function beforeUpload(file, expectedType) {
     return false
   }
   return true
+}
+
+// 添加动画函数
+const animateItem = (event, animationClass) => {
+  const element = event.currentTarget
+  element.classList.remove('animate__animated', 'animate__pulse', 'animate__headShake', 'animate__bounce')
+  void element.offsetWidth
+  element.classList.add('animate__animated', animationClass)
+
+  element.addEventListener('animationend', () => {
+    element.classList.remove('animate__animated', animationClass)
+  }, { once: true })
+}
+
+const animateButton = (event) => {
+  const button = event.currentTarget
+  button.classList.remove('animate__animated', 'animate__rubberBand')
+  void button.offsetWidth
+  button.classList.add('animate__animated', 'animate__rubberBand')
+
+  button.addEventListener('animationend', () => {
+    button.classList.remove('animate__animated', 'animate__rubberBand')
+  }, { once: true })
 }
 
 // 预测处理
@@ -526,13 +538,13 @@ const handlePredict = async () => {
       if (body.stats) {
         // 获取未变化类别统计
         if (body.stats.unchanged_classes) {
-          changeStats.value = body.stats.unchanged_classes;
+          changeStats.value = body.stats.unchanged_classes
         } else {
-          changeStats.value = {};
+          changeStats.value = {}
         }
 
         // 获取总统计信息
-        const pixelStats = body.stats.pixel_statistics || {};
+        const pixelStats = body.stats.pixel_statistics || {}
         totalStats.value = {
           total_pixels: pixelStats.total_pixels || 0,
           valid_pixels: pixelStats.valid_pixels || 0,
@@ -542,13 +554,13 @@ const handlePredict = async () => {
             ((pixelStats.changed_pixels || 0) * 100.0 / pixelStats.valid_pixels) : 0,
           unchanged_percentage: pixelStats.valid_pixels > 0 ?
             ((pixelStats.unchanged_pixels || 0) * 100.0 / pixelStats.valid_pixels) : 0
-        };
+        }
 
         // 获取变化类型统计
-        changeTypes.value = body.stats.change_types || [];
+        changeTypes.value = body.stats.change_types || []
       } else {
-        // 如果后端直接将统计信息放在顶层，使用这种方式
-        changeStats.value = body.unchanged_classes || {};
+        // 如果后端直接将统计信息放在顶层
+        changeStats.value = body.unchanged_classes || {}
         totalStats.value = {
           total_pixels: body.total_pixels || 0,
           valid_pixels: body.valid_pixels || 0,
@@ -556,15 +568,15 @@ const handlePredict = async () => {
           unchanged_pixels: body.unchanged_pixels || 0,
           change_percentage: body.change_percentage || 0,
           unchanged_percentage: body.unchanged_percentage || 0
-        };
-        changeTypes.value = body.change_types || [];
+        }
+        changeTypes.value = body.change_types || []
       }
 
       downloadFiles.value = {
         stats_file: body.stats_file?.replace(/\\/g, '/') || '',
         image_file: body.image_file?.replace(/\\/g, '/') || '',
         tif_file: body.tif_file?.replace(/\\/g, '/') || ''
-      };
+      }
 
       if (body.image_file) {
         await loadPreviewImage(body.image_file.replace(/\\/g, '/'))
