@@ -255,6 +255,16 @@ export function atmosphereInsertByExcel (data: any) {
   })
 }
 /**
+ *单条气象数据更新
+ * @returns UseAxiosReturn
+ */
+export function updateOnly(data: any) {
+  return useAxiosApi('/api/atmosphere/updateOnly',{
+    method: 'post',
+    data: data
+  })
+}
+/**
  * 径流Excel方式提交
  * @returns UseAxiosReturn
  */
