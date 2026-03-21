@@ -54,17 +54,23 @@
   <div class="container1">
     <div class="header1">
       <h3 style="text-align: left">土壤植物监测指标</h3>
-      <el-form-item label="植被物种：" style="margin-left: 38%">
-        <el-select
-          v-model="plantPicked"
-          placeholder="芦苇、碎米莎草"
-          class="custom-select"
-          style="width: 200px"
-          @change="fetchWetLandData()"
-        >
-          <el-option label="芦苇、碎米莎草" value="芦苇、碎米莎草" />
-        </el-select>
-      </el-form-item>
+<el-form-item label="植被物种：" style="margin-left: 38%">
+  <el-select
+    v-model="plantPicked"
+    placeholder="请选择植被物种"
+    class="custom-select"
+    style="width: 200px"
+    @change="fetchWetLandData()"
+    :disabled="!plantList.length"
+  >
+    <el-option
+      v-for="plant in plantList"
+      :key="plant.value"
+      :label="plant.label"
+      :value="plant.value"
+    />
+  </el-select>
+</el-form-item>
     </div>
   </div>
 
@@ -85,12 +91,13 @@
 <script setup>
 import { ref, onMounted, getCurrentInstance, watch } from 'vue'
 import * as echarts from 'echarts'
-import { PlantGetData, WetlandSoilGetData, getTimesByType } from '@/api/getData'
+import { PlantGetData, WetlandSoilGetData, getTimesByType,getPlantDistinctSpecies } from '@/api/getData'
 import { ElMessage, ElLoading } from 'element-plus'
 
 // Reactive references
 const datePicked = ref('')
-const plantPicked = ref('芦苇、碎米莎草')
+const plantList = ref([])
+const plantPicked = ref('')
 const wetLandData = ref([])
 const soilChart = ref(null)
 const selectedValue = ref(4)
@@ -109,7 +116,29 @@ const switchItems = ref([
   { value: 4, text: '土壤含氮总量', visible: true },
   { value: 5, text: '土壤含磷总量', visible: false }
 ])
-
+const fetchPlantList = async () => {
+  try {
+    // 调用后端物种接口
+    const res = await getPlantDistinctSpecies({})
+    const result = res.response.value
+    if (result.code === 'SUCCESS' && result.body) {
+      // 解析逗号分隔的字符串为数组
+      const speciesArr = result.body.split(',').filter(item => item.trim())
+      // 转成下拉框需要的格式
+      plantList.value = speciesArr.map(item => ({
+        label: item,
+        value: item
+      }))
+      // 默认选中第一个物种
+      plantPicked.value = plantList.value[0]?.value || ''
+    } else {
+      ElMessage.warning('暂无植被物种数据')
+    }
+  } catch (err) {
+    console.error('获取物种列表失败：', err)
+    ElMessage.error('获取物种列表失败，请稍后再试')
+  }
+}
 function onSwitchChange (item) {
   if (item.visible) {
     switchItems.value.forEach((controlItem) => {
@@ -268,6 +297,15 @@ function handleVisibleChange (visibility, type, searchTimeType) {
 
 // Fetch wetland data
 function fetchWetLandData () {
+  // 新增：校验物种和日期
+  if (!plantPicked.value) {
+    ElMessage.warning('请先选择植被物种')
+    return
+  }
+  if (!datePicked.value) {
+    ElMessage.warning('请先选择查询日期')
+    return
+  }
   const loadingInstance = ElLoading.service(loadingoptions)
   PlantGetData({ time: datePicked.value, plant: plantPicked.value })
     .then((res) => {
@@ -352,32 +390,43 @@ function updateChart () {
 onMounted(() => {
   const instance = getCurrentInstance()
   if (instance) {
-    instance.proxy.$nextTick(() => {
-      updateChart() // Initialize the chart on mount
-      // Ensure at least one item is visible on mount
+    // 改动：给nextTick加async
+    instance.proxy.$nextTick(async () => {
+      // 新增：页面加载时先获取物种列表
+      await fetchPlantList()
+      
+      updateChart() // 原有逻辑不变
       const countVisible = switchItems.value.filter(
         (control) => control.visible
       ).length
       if (countVisible === 0) {
-        switchItems.value[0].visible = true // Make the first item visible
+        switchItems.value[0].visible = true
       }
-       handleVisibleChange(true, 'shiditurang', 'day')
+      handleVisibleChange(true, 'shiditurang', 'day')
     })
   }
-  // fetchWetLandData()
-  // fetchSoilData()
-
 })
 
 // Watchers for data changes
-// watch(() => plantPicked.value, fetchWetLandData)
-// watch(
-//   () => datePicked.value,
-//   () => {
-//     fetchSoilData()
-//     fetchWetLandData()
-//   }
-// )
+// Watchers for data changes
+watch(() => plantPicked.value, (newVal) => {
+  // 加校验：只有选中物种且有日期时才刷新
+  if (newVal && datePicked.value) {
+    fetchWetLandData()
+  }
+})
+watch(
+  () => datePicked.value,
+  (newVal) => {
+    if (newVal) {
+      fetchSoilData() // 日期变了先刷新土壤图表
+      // 有选中物种时再刷新植物表格
+      if (plantPicked.value) {
+        fetchWetLandData()
+      }
+    }
+  }
+)
 </script>
 
 <style scoped>

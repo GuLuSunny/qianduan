@@ -255,6 +255,16 @@ export function atmosphereInsertByExcel (data: any) {
   })
 }
 /**
+ *单条气象数据更新
+ * @returns UseAxiosReturn
+ */
+export function updateOnly(data: any) {
+  return useAxiosApi('/api/atmosphere/updateOnly',{
+    method: 'post',
+    data: data
+  })
+}
+/**
  * 径流Excel方式提交
  * @returns UseAxiosReturn
  */
@@ -756,6 +766,13 @@ export function addRoleInfo (data: any) {
  */
 export function PlantGetData (data: any) {
   return useAxiosApi('/api/monitoring/plantGetData', {
+    method: 'POST',
+    data: data
+  })
+}
+// 👇 注册已完成的物种列表接口
+export function getPlantDistinctSpecies (data: any) {
+  return useAxiosApi('/api/monitoring/plantGetDistinctSpecies', {
     method: 'POST',
     data: data
   })
