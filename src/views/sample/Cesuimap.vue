@@ -277,6 +277,32 @@
     <!-- <div class="mars3d-animation-point" id="htmlElement">
       <p></p>
     </div> -->
+
+    <!-- AI 小助手 -->
+    <div class="ai-assistant">
+      <div class="ai-button" @click="toggleAI" title="AI 小助手">
+        <img src="/Images/ai小助手/1.gif" alt="AI 小助手" class="ai-btn-img" />
+      </div>
+      <transition name="fade">
+        <div v-show="aiVisible" class="ai-panel">
+          <div class="ai-header">
+            <span>AI 小助手</span>
+            <span class="close" @click="toggleAI">&times;</span>
+          </div>
+          <div class="ai-messages" ref="aiMessagesContainer">
+            <div v-for="(m, idx) in aiMessages" :key="idx" :class="['ai-message', m.from]">
+              <div class="ai-from">{{ m.from === 'assistant' ? '小助手' : '我' }}</div>
+              <div class="ai-text">{{ m.text }}</div>
+            </div>
+          </div>
+          <div class="ai-input">
+            <input id="ai-input" v-model="aiInput" @keyup.enter="sendAIMessage" placeholder="请描述你的问题或命令（示例：定位到 114.34,34.79 / 放大 / 加载水体）" />
+            <button @click="sendAIMessage">发送</button>
+          </div>
+        </div>
+      </transition>
+    </div>
+
   </div>
 </template>
 <script setup>
@@ -631,6 +657,211 @@ function enlargeImg(src) {
 
 function closeEnlargeModal() {
   showEnlargeModal.value = false;
+}
+
+// ====================== AI 小助手 状态与逻辑 ======================
+const aiVisible = ref(false);
+const aiMessages = ref([
+  { from: "assistant", text: "你好，我是 AI 小助手，有什么我可以帮你的吗？" },
+]);
+const aiInput = ref("");
+
+function toggleAI() {
+  aiVisible.value = !aiVisible.value;
+  // 打开时聚焦输入框
+  if (aiVisible.value) {
+    setTimeout(() => {
+      const el = document.getElementById("ai-input");
+      if (el) el.focus();
+      // 滚动到底部
+      const c = document.querySelector(".ai-messages");
+      if (c) c.scrollTop = c.scrollHeight;
+    }, 80);
+  }
+}
+
+async function sendAIMessage() {
+  const text = (aiInput.value || "").trim();
+  if (!text) return;
+  aiMessages.value.push({ from: "user", text });
+  aiInput.value = "";
+
+  // 尝试请求后端 AI 接口，若不可用则使用本地规则回复
+  let reply = "";
+  try {
+    const base = process.env.VUE_APP_AI_PROXY_URL || '';
+    const url = base ? `${base}/api/ai-assistant` : '/api/ai-assistant';
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text }),
+    });
+    if (resp.ok) {
+      const textBody = await resp.text();
+      console.log('AI proxy response text:', textBody.slice(0,500));
+      // 尝试解析 JSON，否则直接使用返回的原始文本
+      let json;
+      try { json = JSON.parse(textBody); } catch (e) { json = null; }
+      const rawReply = (json && (json.reply || json.result)) || textBody;
+      // 解析并合并可能的 NDJSON/分片回复
+      reply = parseLLMReply(rawReply) || "抱歉，未收到有效回复";
+    } else {
+      reply = ruleBasedReply(text);
+    }
+  } catch (e) {
+    // 网络或未实现的接口走本地规则
+    reply = ruleBasedReply(text);
+  }
+
+  aiMessages.value.push({ from: "assistant", text: reply });
+
+  // 优先使用 LLM 的回答执行命令（例如 LLM 可能返回“放大到 ...”），若无效果也尝试使用用户原始指令
+  handleAssistantCommand(reply);
+  handleAssistantCommand(text);
+
+  // 确保消息区域滚动到底部
+  setTimeout(() => {
+    const c = document.querySelector(".ai-messages");
+    if (c) c.scrollTop = c.scrollHeight;
+  }, 120);
+}
+
+function ruleBasedReply(text) {
+  const t = String(text || "").toLowerCase();
+  if (t.includes("放大")) return "好的，帮你放大地图视图。";
+  if (t.includes("缩小")) return "好的，帮你缩小地图视图。";
+  if (t.includes("定位")) return "请告诉我经度和纬度，例如：定位到 114.34,34.79 或 定位到 114.34 34.79";
+  if (t.includes("加载水体") || t.includes("加载 水体")) return loadedWater.value ? "水体已加载。" : "收到，我将在地图上加载智慧水体。";
+  if (t.includes("隐藏水体")) return "收到，我将移除水体图层。";
+  return "抱歉，我还在学习中。你可以尝试询问其他相关水利问题。";
+}
+
+// 解析来自本地大模型的回复（可能是 NDJSON / 多行 JSON / 转义的 JSON 字符串）并合并为可读文本
+function parseLLMReply(raw) {
+  if (!raw) return '';
+  // 规范化转义的换行符和引号
+  let s = String(raw).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+
+  // 简单短句直接返回
+  if (!/\{|\n/.test(s)) return s;
+
+  // 尝试从文本中提取多个 JSON 对象（支持没有真实换行但包含多个 JSON 的情况）
+  function extractJsonObjects(text) {
+    const objs = [];
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '{') {
+        if (depth === 0) start = i;
+        depth++;
+      } else if (ch === '}') {
+        depth--;
+        if (depth === 0 && start !== -1) {
+          objs.push(text.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+    return objs;
+  }
+
+  const parts = [];
+
+  // 1) 优先按行拆分并解析每一行
+  const lines = s.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line);
+      if (obj.response) parts.push(String(obj.response));
+      else if (obj.output) {
+        if (Array.isArray(obj.output)) parts.push(obj.output.map(o => (typeof o === 'string' ? o : (o?.content || o?.text || JSON.stringify(o)))).join(''));
+        else parts.push(typeof obj.output === 'string' ? obj.output : (obj.output?.content || obj.output?.text || JSON.stringify(obj.output)));
+      } else if (obj.text) parts.push(obj.text);
+      else if (obj.result) parts.push(obj.result);
+    } catch (e) {
+      // 继续 - 有可能该行不是 JSON
+    }
+  }
+
+  // 2) 如果行解析没有结果，尝试从整体中抽取 JSON 对象并解析
+  if (parts.length === 0) {
+    const objs = extractJsonObjects(s);
+    for (const j of objs) {
+      try {
+        const obj = JSON.parse(j);
+        if (obj.response) parts.push(String(obj.response));
+        else if (obj.output) {
+          if (Array.isArray(obj.output)) parts.push(obj.output.map(o => (typeof o === 'string' ? o : (o?.content || o?.text || JSON.stringify(o)))).join(''));
+          else parts.push(typeof obj.output === 'string' ? obj.output : (obj.output?.content || obj.output?.text || JSON.stringify(obj.output)));
+        } else if (obj.text) parts.push(obj.text);
+        else if (obj.result) parts.push(obj.result);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  if (parts.length > 0) return parts.join('');
+
+  // 3) 最后尝试整体解析为 JSON
+  try {
+    const obj = JSON.parse(s);
+    if (obj.reply) return String(obj.reply);
+    if (obj.output) return Array.isArray(obj.output) ? obj.output.join('') : (obj.output?.content || obj.output?.text || String(obj.output));
+    if (obj.text) return String(obj.text);
+    if (obj.result) return String(obj.result);
+  } catch (e) {
+    // not JSON
+  }
+
+  // 返回原始文本
+  return s;
+}
+
+function handleAssistantCommand(text) {
+  if (!viewer) return;
+  const t = String(text || "").replace(/，/g, ",").trim().toLowerCase();
+
+  // 缩放（通过调整相机高度）
+  function adjustCameraScale(factor) {
+    try {
+      const carto = Cesium.Cartographic.fromCartesian(viewer.camera.position);
+      const lon = carto.longitude;
+      const lat = carto.latitude;
+      const height = carto.height || 10000;
+      const newHeight = Math.max(10, height * factor);
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromRadians(lon, lat, newHeight), duration: 1 });
+    } catch (e) {
+      console.warn('调整相机高度失败', e);
+    }
+  }
+
+  if (t.includes("放大")) {
+    adjustCameraScale(0.5);
+  }
+  if (t.includes("缩小")) {
+    adjustCameraScale(2.0);
+  }
+  if (t.includes("加载水体")) {
+    if (!loadedWater.value) toggleWaterFeatures();
+  }
+  if (t.includes("隐藏水体")) {
+    if (loadedWater.value) toggleWaterFeatures();
+  }
+
+  // 定位：尝试解析经纬度
+  if (t.startsWith("定位到") || t.startsWith("定位")) {
+    const nums = t.match(/(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/);
+    if (nums) {
+      const lon = parseFloat(nums[1]);
+      const lat = parseFloat(nums[2]);
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 15000), duration: 2 });
+      aiMessages.value.push({ from: "assistant", text: `已前往 ${lon}, ${lat}` });
+    } else {
+      aiMessages.value.push({ from: "assistant", text: "无法解析坐标，请使用“定位到 经度,纬度”格式" });
+    }
+  }
 }
 
 // 监听年份变化，确保联动更新
@@ -3497,4 +3728,133 @@ async function rotate() {
     margin-right: 5px;
   }
 }
+
+/* ====================== AI 小助手 样式 ====================== */
+.ai-assistant {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 99999;
+  pointer-events: all;
+}
+
+.ai-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(31, 124, 129, 0.2);
+  }
+
+  .ai-button .ai-btn-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+  }
+
+  /* AI 面板样式：白底、圆角、阴影，便于在地图上阅读 */
+  .ai-panel {
+    width: 340px;
+    max-height: 480px;
+    background: #ffffff;
+    color: #222;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+.ai-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-weight: 600;
+  background: linear-gradient(90deg, rgba(31,124,129,0.06), rgba(34,232,254,0.03));
+  color: #0b2930; /* 深色，便于白底显示 */
+}
+
+.ai-header .close {
+  cursor: pointer;
+  color: #4b5563;
+  font-weight: 700;
+}
+
+.ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 90%;
+}
+
+.ai-message .ai-from {
+  font-size: 12px;
+  color: #6b7280; /* 深灰，更适合白底 */
+  margin-bottom: 4px;
+}
+
+.ai-message.assistant .ai-text {
+  background: #f7f7f9; /* 浅灰背景 */
+  color: #111827; /* 深色文字 */
+  padding: 8px 10px;
+  border-radius: 6px;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.ai-message.user .ai-text {
+  background: linear-gradient(90deg, #e6f7fa, #d5f1ef); /* 浅蓝-青背景 */
+  color: #0b2930; /* 深色文字 */
+  padding: 8px 10px;
+  border-radius: 6px;
+  align-self: flex-end;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.ai-input {
+  display: flex;
+  padding: 10px;
+  gap: 8px;
+  background: #f4f6f8;
+  border-top: 1px solid #e6e9ec;
+}
+
+.ai-input input {
+  flex: 1;
+  height: 36px;
+  border-radius: 6px;
+  padding: 0 8px;
+  border: 1px solid #dbe4e8;
+  background: #ffffff;
+  color: #111827;
+}
+
+.ai-input button {
+  width: 64px;
+  border-radius: 6px;
+  background: #0d98a2; /* 稍深的青色按钮 */
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
 </style>
