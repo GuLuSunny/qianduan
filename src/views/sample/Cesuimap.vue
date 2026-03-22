@@ -361,6 +361,29 @@ const waterBoundsDeg = ref(null);
 
 // 预生成网格点（lon/lat + 相位）
 let floodGridPoints = [];
+// 【新增】原水体 primitive / 材质缓存（用于蔓延层复用材质）
+let waterPrimitive = null;
+let waterMaterial = null;
+
+// 【新增】蔓延层 primitive
+let waterSpreadPrimitive = null;
+
+// 【新增】蔓延动画独立定时器与帧
+let waterSpreadTimer = null;
+let waterSpreadFrameIndex = 0;
+
+// 【新增】蔓延参数（可调）
+const WATER_SPREAD_FRAME_MS = 80;     // 蔓延帧间隔（越大越慢）
+const WATER_SPREAD_TOTAL_FRAMES = 400; // 蔓延总帧数（越大越慢越平滑）
+const WATER_SPREAD_MAX_M = 150;      // 最大外扩米数（越大扩得越远）
+const WATER_SPREAD_HEIGHT_M = 1.5;    // 蔓延层抬高（米，避免Z-fighting）
+// 【新增】单个水面参与蔓延的最小面积（平方米）
+// 小于这个值的零碎小水面，不做蔓延
+const WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2 = 25000; // 例：1万㎡，自行调整
+// 【新增】细长水体识别参数（仅用于决定是否走“沿边界法线偏移”）
+const WATER_SPREAD_SLENDER_MIN_LENGTH_M = 200; // 细长水体最小长度
+const WATER_SPREAD_SLENDER_MAX_WIDTH_M = 120;  // 细长水体最大宽度
+const WATER_SPREAD_SLENDER_MIN_ASPECT = 5;     // 最小长宽比
 
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
@@ -766,6 +789,101 @@ function metersToDegStep(latDeg, meters) {
   const dLon = meters / (111320 * Math.cos((latDeg * Math.PI) / 180));
   return { dLat, dLon };
 }
+// 【新增】经纬度转局部平面坐标（米）
+// 用于近似计算单个水面 polygon 面积
+function projectLonLatToMeters(lon, lat, lon0, lat0) {
+  const R = 6378137;
+  const x = ((lon - lon0) * Math.PI / 180) * R * Math.cos((lat0 * Math.PI) / 180);
+  const y = ((lat - lat0) * Math.PI / 180) * R;
+  return { x, y };
+}
+
+// 【新增】计算单个环面积（平方米）
+function calcRingAreaM2(ring) {
+  if (!Array.isArray(ring) || ring.length < 3) return 0;
+
+  let lon0 = 0;
+  let lat0 = 0;
+
+  for (const p of ring) {
+    lon0 += Number(p.lon) || 0;
+    lat0 += Number(p.lat) || 0;
+  }
+
+  lon0 /= ring.length;
+  lat0 /= ring.length;
+
+  const pts = ring.map(p =>
+    projectLonLatToMeters(
+      Number(p.lon) || 0,
+      Number(p.lat) || 0,
+      lon0,
+      lat0
+    )
+  );
+
+  let sum = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    sum += pts[j].x * pts[i].y - pts[i].x * pts[j].y;
+  }
+
+  return Math.abs(sum) * 0.5;
+}
+// 【新增】计算 ring 周长（米）
+// 用于更稳地识别弯曲细长水体
+function calcRingPerimeterM(ring) {
+  if (!Array.isArray(ring) || ring.length < 2) return 0;
+
+  let lon0 = 0;
+  let lat0 = 0;
+  for (const p of ring) {
+    lon0 += Number(p.lon) || 0;
+    lat0 += Number(p.lat) || 0;
+  }
+  lon0 /= ring.length;
+  lat0 /= ring.length;
+
+  const pts = ring.map(p =>
+    projectLonLatToMeters(
+      Number(p.lon) || 0,
+      Number(p.lat) || 0,
+      lon0,
+      lat0
+    )
+  );
+
+  let sum = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    sum += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return sum;
+}
+// 【新增】计算带洞多边形面积（平方米）
+function calcPolygonAreaM2(poly) {
+  if (!poly || !Array.isArray(poly.outer) || poly.outer.length < 3) return 0;
+
+  const outerArea = calcRingAreaM2(poly.outer);
+  const holesArea = (poly.holes || []).reduce((sum, hole) => {
+    return sum + calcRingAreaM2(hole);
+  }, 0);
+
+  return Math.max(0, outerArea - holesArea);
+}
+
+// 【新增】筛选“允许参与蔓延”的水面 polygon
+function getSpreadEligiblePolygons(polys) {
+  if (!Array.isArray(polys) || polys.length === 0) return [];
+
+  return polys.filter(poly => {
+    const areaM2 = calcPolygonAreaM2(poly);
+    return areaM2 >= WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2;
+  });
+}
 
 // 点在环内（射线法）
 function pointInRing(lon, lat, ring) {
@@ -990,6 +1108,8 @@ function startFloodHeatmap() {
   }, FLOOD_FRAME_MS);
 
   floodEnabled.value = true;
+  // 【新增】启动蔓延（与热力图无关，独立定时器）
+  startWaterSpread();
 }
 
 function stopFloodHeatmap() {
@@ -1009,8 +1129,486 @@ function stopFloodHeatmap() {
     viewer.entities.remove(floodBorderEntity);
     floodBorderEntity = null;
   }
+  //停止蔓延并清理蔓延层
+  stopWaterSpread();
 }
 
+//ring 的中心点
+function ringCentroidDeg(ring) {
+  let sx = 0, sy = 0;
+  const n = ring?.length || 1;
+  for (let i = 0; i < (ring?.length || 0); i++) {
+    sx += ring[i].lon;
+    sy += ring[i].lat;
+  }
+  return { lon: sx / n, lat: sy / n };
+}
+// 将 ring 规范化：去掉重复闭合点、去掉相邻重复点
+function normalizeRingDeg(ring) {
+  if (!Array.isArray(ring)) return [];
+
+  const out = [];
+  for (const p of ring) {
+    if (!p || !Number.isFinite(p.lon) || !Number.isFinite(p.lat)) continue;
+
+    const last = out[out.length - 1];
+    if (!last || last.lon !== p.lon || last.lat !== p.lat) {
+      out.push({ lon: p.lon, lat: p.lat });
+    }
+  }
+
+  // 如果首尾重复，去掉最后一个
+  if (out.length >= 2) {
+    const first = out[0];
+    const last = out[out.length - 1];
+    if (first.lon === last.lon && first.lat === last.lat) {
+      out.pop();
+    }
+  }
+
+  return out;
+}
+
+// 以局部原点做经纬度 <-> 米 的近似投影（足够用于局部河道偏移）
+function projectDegToLocalXY(p, origin) {
+  const latRad = origin.lat * Math.PI / 180.0;
+  const metersPerDegLat = 111320.0;
+  const metersPerDegLon = 111320.0 * Math.cos(latRad);
+
+  return {
+    x: (p.lon - origin.lon) * metersPerDegLon,
+    y: (p.lat - origin.lat) * metersPerDegLat,
+  };
+}
+
+function projectLocalXYToDeg(p, origin) {
+  const latRad = origin.lat * Math.PI / 180.0;
+  const metersPerDegLat = 111320.0;
+  const metersPerDegLon = 111320.0 * Math.cos(latRad) || 1e-9;
+
+  return {
+    lon: origin.lon + p.x / metersPerDegLon,
+    lat: origin.lat + p.y / metersPerDegLat,
+  };
+}
+
+// 计算 ring 在局部平面下的有向面积
+function signedAreaXY(ringXY) {
+  let s = 0;
+  const n = ringXY.length;
+  for (let i = 0; i < n; i++) {
+    const a = ringXY[i];
+    const b = ringXY[(i + 1) % n];
+    s += a.x * b.y - b.x * a.y;
+  }
+  return s * 0.5;
+}
+
+function normalizeVec2(vx, vy) {
+  const len = Math.sqrt(vx * vx + vy * vy);
+  if (len < 1e-9) return { x: 0, y: 0, len: 0 };
+  return { x: vx / len, y: vy / len, len };
+}
+
+// 根据 ring 方向返回“外法线”
+// CCW：外侧在右手边 -> (dy, -dx)
+// CW ：外侧在左手边 -> (-dy, dx)
+function getOutwardNormal(dx, dy, isCCW) {
+  const v = normalizeVec2(dx, dy);
+  if (v.len < 1e-9) return { x: 0, y: 0 };
+
+  if (isCCW) {
+    return { x: v.y, y: -v.x };
+  } else {
+    return { x: -v.y, y: v.x };
+  }
+}
+
+// 两条二维直线求交点：L1 = p1 + t*d1, L2 = p2 + s*d2
+function lineIntersection2D(p1, d1, p2, d2) {
+  const cross = d1.x * d2.y - d1.y * d2.x;
+  if (Math.abs(cross) < 1e-9) return null;
+
+  const qpx = p2.x - p1.x;
+  const qpy = p2.y - p1.y;
+  const t = (qpx * d2.y - qpy * d2.x) / cross;
+
+  return {
+    x: p1.x + d1.x * t,
+    y: p1.y + d1.y * t,
+  };
+}
+// 【修改】计算 polygon 主轴方向上的长度/宽度（米）
+// 修正点：
+// 1. 不能直接用 PCA 次轴跨度当“河道宽度”，弯曲细长水体会被误判
+// 2. 改为：长度取 max(PCA主轴长度, 外环周长/2)
+// 3. 宽度取 面积/长度，得到平均宽度，更符合细长河道/水渠特征
+function getPolygonSlimStatsM(poly) {
+  if (!poly?.outer?.length || poly.outer.length < 3) return null;
+
+  const cleanRing = normalizeRingDeg(poly.outer);
+  if (cleanRing.length < 3) return null;
+
+  const origin = ringCentroidDeg(cleanRing);
+  const pts = cleanRing.map(p => projectDegToLocalXY(p, origin));
+  if (pts.length < 3) return null;
+
+  // ---------- 1) PCA 主轴长度 ----------
+  let mx = 0, my = 0;
+  for (const p of pts) {
+    mx += p.x;
+    my += p.y;
+  }
+  mx /= pts.length;
+  my /= pts.length;
+
+  let xx = 0, xy = 0, yy = 0;
+  for (const p of pts) {
+    const dx = p.x - mx;
+    const dy = p.y - my;
+    xx += dx * dx;
+    xy += dx * dy;
+    yy += dy * dy;
+  }
+  xx /= pts.length;
+  xy /= pts.length;
+  yy /= pts.length;
+
+  const trace = xx + yy;
+  const det = xx * yy - xy * xy;
+  const temp = Math.sqrt(Math.max(0, trace * trace * 0.25 - det));
+  const lambda1 = trace * 0.5 + temp;
+
+  let axis1;
+  if (Math.abs(xy) > 1e-9) {
+    axis1 = normalizeVec2(lambda1 - yy, xy);
+  } else {
+    axis1 = xx >= yy ? { x: 1, y: 0, len: 1 } : { x: 0, y: 1, len: 1 };
+  }
+
+  let min1 = Infinity;
+  let max1 = -Infinity;
+  for (const p of pts) {
+    const dx = p.x - mx;
+    const dy = p.y - my;
+    const s1 = dx * axis1.x + dy * axis1.y;
+    min1 = Math.min(min1, s1);
+    max1 = Math.max(max1, s1);
+  }
+  const pcaLengthM = Math.max(0, max1 - min1);
+
+  // ---------- 2) 面积 ----------
+  const areaM2 = calcPolygonAreaM2(poly);
+
+  // ---------- 3) 周长近似中心线长度 ----------
+  // 对细长水体，外环周长约等于 2*(长度 + 宽度)
+  // 用 perimeter/2 作为“河道长度”的稳健近似，对弯曲河道比 bbox/PCA 次轴更稳定
+  const perimeterM = calcRingPerimeterM(cleanRing);
+  const perimeterBasedLengthM = Math.max(0, perimeterM * 0.5);
+
+  // ---------- 4) 最终长度 / 平均宽度 ----------
+  // 弯曲河道常常 PCA 长度偏小，所以取两者较大值
+  const lengthM = Math.max(pcaLengthM, perimeterBasedLengthM);
+
+  if (lengthM < 1e-6) return null;
+
+  // 平均宽度 = 面积 / 长度
+  const widthM = areaM2 / Math.max(lengthM, 1e-6);
+  const aspect = lengthM / Math.max(widthM, 1e-6);
+
+  return {
+    lengthM,
+    widthM,
+    aspect,
+    pcaLengthM,
+    perimeterM,
+    areaM2,
+  };
+}
+
+// 【新增】识别是否为细长水体
+function isSlenderWaterPolygon(poly) {
+  const stats = getPolygonSlimStatsM(poly);
+  if (!stats) return false;
+
+  return (
+    stats.lengthM >= WATER_SPREAD_SLENDER_MIN_LENGTH_M &&
+    stats.widthM <= WATER_SPREAD_SLENDER_MAX_WIDTH_M &&
+    stats.aspect >= WATER_SPREAD_SLENDER_MIN_ASPECT
+  );
+}
+// 外环向外扩（改为“沿边法线偏移”，适合细长河道）
+// 外环向外扩（默认：从多边形中心向外发散，适用于普通水体）
+function expandRingDeg(ring, expandMeters) {
+  if (!ring || ring.length < 3) return ring;
+
+  const cleanRing = normalizeRingDeg(ring);
+  if (cleanRing.length < 3) return ring;
+
+  const c = ringCentroidDeg(cleanRing);
+  const step = metersToDegStep(c.lat, expandMeters);
+  const dLon = step.dLon;
+  const dLat = step.dLat;
+
+  const out = [];
+  for (let i = 0; i < cleanRing.length; i++) {
+    const p = cleanRing[i];
+    const vx = p.lon - c.lon;
+    const vy = p.lat - c.lat;
+    const len = Math.sqrt(vx * vx + vy * vy) || 1;
+
+    const ux = vx / len;
+    const uy = vy / len;
+
+    out.push({
+      lon: p.lon + ux * dLon,
+      lat: p.lat + uy * dLat,
+    });
+  }
+
+  return out;
+}
+// 【新增】沿边界法线偏移（仅适用于细长水体，如细长水渠）
+function expandRingByEdgeNormalDeg(ring, expandMeters) {
+  if (!ring || ring.length < 3 || !expandMeters) return ring;
+
+  const cleanRing = normalizeRingDeg(ring);
+  if (cleanRing.length < 3) return ring;
+
+  // 用中心只作为局部投影原点，不作为发散中心
+  const origin = ringCentroidDeg(cleanRing);
+
+  // 转为局部平面坐标（米）
+  const ringXY = cleanRing.map(p => projectDegToLocalXY(p, origin));
+  const n = ringXY.length;
+  if (n < 3) return ring;
+
+  // 判断方向：CCW 时外法线取右法线；CW 时外法线取左法线
+  const isCCW = signedAreaXY(ringXY) > 0;
+
+  const outXY = [];
+
+  for (let i = 0; i < n; i++) {
+    const prev = ringXY[(i - 1 + n) % n];
+    const curr = ringXY[i];
+    const next = ringXY[(i + 1) % n];
+
+    const e1 = normalizeVec2(curr.x - prev.x, curr.y - prev.y);
+    const e2 = normalizeVec2(next.x - curr.x, next.y - curr.y);
+
+    const n1 = isCCW
+      ? normalizeVec2(e1.y, -e1.x)
+      : normalizeVec2(-e1.y, e1.x);
+
+    const n2 = isCCW
+      ? normalizeVec2(e2.y, -e2.x)
+      : normalizeVec2(-e2.y, e2.x);
+
+    // 顶点法线：相邻边外法线求平均
+    let nv = normalizeVec2(n1.x + n2.x, n1.y + n2.y);
+
+    // 极端情况下退化
+    if (!isFinite(nv.x) || !isFinite(nv.y) || (Math.abs(nv.x) < 1e-9 && Math.abs(nv.y) < 1e-9)) {
+      nv = normalizeVec2(n2.x || n1.x, n2.y || n1.y);
+    }
+
+    // 轻量 miter 修正，避免尖角位移过小
+    const dot1 = Math.abs(nv.x * n1.x + nv.y * n1.y);
+    const dot2 = Math.abs(nv.x * n2.x + nv.y * n2.y);
+    const denom = Math.max(0.35, dot1, dot2);
+    const moveDist = Math.min(expandMeters * 2.5, expandMeters / denom);
+
+    outXY.push({
+      x: curr.x + nv.x * moveDist,
+      y: curr.y + nv.y * moveDist,
+    });
+  }
+
+  return outXY.map(p => projectLocalXYToDeg(p, origin));
+}
+// 先识别细长水体：
+// 细长水体 -> 沿边界法线偏移
+// 其余水体 -> 继续使用从多边形中心向外发散
+function expandPolygonWithHolesDeg(poly, expandMeters) {
+  const useEdgeNormal = isSlenderWaterPolygon(poly);
+
+  return {
+    outer: useEdgeNormal
+      ? expandRingByEdgeNormalDeg(poly.outer, expandMeters)
+      : expandRingDeg(poly.outer, expandMeters),
+    holes: (poly.holes || []).map(h => h),
+  };
+}
+
+// 【新增】删除蔓延层 primitive
+function clearWaterSpreadPrimitive() {
+  if (!viewer) return;
+  if (waterSpreadPrimitive) {
+    try { viewer.scene.primitives.remove(waterSpreadPrimitive); } catch (e) {}
+    waterSpreadPrimitive = null;
+  }
+}
+
+// 【新增】构建蔓延层（用 Primitive + height 抬高，避免看不见）
+function rebuildWaterSpreadPrimitive(expandMeters) {
+  if (!viewer) return;
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先清上一帧
+  clearWaterSpreadPrimitive();
+
+  const instances = [];
+
+  for (const poly of waterPolygonsDeg.value) {
+    const ep = expandPolygonWithHolesDeg(poly, expandMeters);
+
+    const hierarchy = new Cesium.PolygonHierarchy(
+      Cesium.Cartesian3.fromDegreesArray(ep.outer.flatMap(p => [p.lon, p.lat])),
+      (ep.holes || []).map(holeRing =>
+        new Cesium.PolygonHierarchy(
+          Cesium.Cartesian3.fromDegreesArray(holeRing.flatMap(p => [p.lon, p.lat]))
+        )
+      )
+    );
+
+    // 关键：给一个很小的 height 抬高，避开与贴地 waterPrimitive 的 z-fighting
+    const geom = new Cesium.PolygonGeometry({
+      polygonHierarchy: hierarchy,
+      height: WATER_SPREAD_HEIGHT_M,
+      vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+    });
+
+    instances.push(new Cesium.GeometryInstance({ geometry: geom }));
+  }
+
+  waterSpreadPrimitive = new Cesium.Primitive({
+    geometryInstances: instances,
+    appearance: new Cesium.EllipsoidSurfaceAppearance({
+      aboveGround: true,
+      material: waterMaterial, // 与原水体同材质
+    }),
+    asynchronous: false,
+  });
+
+  viewer.scene.primitives.add(waterSpreadPrimitive);
+}
+// 【新增】仅让“大于单体面积阈值”的水面参与蔓延
+rebuildWaterSpreadPrimitive = function (expandMeters) {
+  if (!viewer) return;
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先筛掉零碎小水面
+  const spreadPolygons = getSpreadEligiblePolygons(waterPolygonsDeg.value);
+
+  // 没有可参与蔓延的水面，则直接清掉蔓延层
+  if (spreadPolygons.length === 0) {
+    clearWaterSpreadPrimitive();
+    return;
+  }
+
+  // 先清上一帧
+  clearWaterSpreadPrimitive();
+
+  const instances = [];
+
+  for (const poly of spreadPolygons) {
+    const ep = expandPolygonWithHolesDeg(poly, expandMeters);
+
+    const hierarchy = new Cesium.PolygonHierarchy(
+      Cesium.Cartesian3.fromDegreesArray(ep.outer.flatMap(p => [p.lon, p.lat])),
+      (ep.holes || []).map(holeRing =>
+        new Cesium.PolygonHierarchy(
+          Cesium.Cartesian3.fromDegreesArray(holeRing.flatMap(p => [p.lon, p.lat]))
+        )
+      )
+    );
+
+    const geom = new Cesium.PolygonGeometry({
+      polygonHierarchy: hierarchy,
+      height: WATER_SPREAD_HEIGHT_M,
+      vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+    });
+
+    instances.push(new Cesium.GeometryInstance({ geometry: geom }));
+  }
+
+  if (instances.length === 0) {
+    clearWaterSpreadPrimitive();
+    return;
+  }
+
+  waterSpreadPrimitive = new Cesium.Primitive({
+    geometryInstances: instances,
+    appearance: new Cesium.EllipsoidSurfaceAppearance({
+      aboveGround: true,
+      material: waterMaterial,
+    }),
+    asynchronous: false,
+  });
+
+  viewer.scene.primitives.add(waterSpreadPrimitive);
+};
+
+// 【新增】启动蔓延（独立于热力图定时器）
+function startWaterSpread() {
+  if (!viewer) return;
+
+  // 必须有水体缓存
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先建第0帧
+  waterSpreadFrameIndex = 0;
+  rebuildWaterSpreadPrimitive(0);
+
+  // 独立定时器
+  if (waterSpreadTimer) window.clearInterval(waterSpreadTimer);
+  waterSpreadTimer = window.setInterval(() => {
+    waterSpreadFrameIndex = (waterSpreadFrameIndex + 1) % WATER_SPREAD_TOTAL_FRAMES;
+
+    // easeOut：前期明显、后期趋缓
+    const t01 = waterSpreadFrameIndex / (WATER_SPREAD_TOTAL_FRAMES - 1);
+    const ease = 1 - Math.pow(1 - t01, 3);
+    const spreadMeters = WATER_SPREAD_MAX_M * ease;
+
+    rebuildWaterSpreadPrimitive(spreadMeters);
+    viewer.scene?.requestRender?.();
+  }, WATER_SPREAD_FRAME_MS);
+}
+
+// 【新增】启动蔓延前，先判断是否存在“可参与蔓延”的水面
+const __rawStartWaterSpread = startWaterSpread;
+
+startWaterSpread = function (...args) {
+  const spreadPolygons = getSpreadEligiblePolygons(waterPolygonsDeg.value || []);
+
+  if (spreadPolygons.length === 0) {
+    clearWaterSpreadPrimitive();
+    if (waterSpreadTimer) {
+      window.clearInterval(waterSpreadTimer);
+      waterSpreadTimer = null;
+    }
+    waterSpreadFrameIndex = 0;
+
+    console.info(
+      `[waterSpread] 已跳过蔓延：当前只有零碎小水面，单体面积阈值为 ${WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2}㎡`
+    );
+    return;
+  }
+
+  return __rawStartWaterSpread.apply(this, args);
+};
+// 【新增】停止蔓延
+function stopWaterSpread() {
+  if (waterSpreadTimer) {
+    window.clearInterval(waterSpreadTimer);
+    waterSpreadTimer = null;
+  }
+  waterSpreadFrameIndex = 0;
+  clearWaterSpreadPrimitive();
+}
 function toggleFloodHeatmap() {
   if (!viewer) return;
   if (!floodEnabled.value) startFloodHeatmap();
@@ -2434,6 +3032,37 @@ async function initializeWater() {
 
     // 将生成的 Primitive 添加到场景中，并缩放至目标区域
     viewer.scene.primitives.add(primitive);
+
+    // 你原来的水面材质创建位置：把 Material 对象缓存到 waterMaterial
+    waterMaterial = new Cesium.Material({
+      fabric: {
+        type: "Water",
+        uniforms: {
+          normalMap: "./water/water.jpg",
+          frequency: 2000.0,
+          animationSpeed: 0.1,
+          amplitude: 5.0,
+          specularIntensity: 0.5,
+          baseWaterColor: new Cesium.Color(
+              0 / 255.0,
+              54 / 255.0,
+              84 / 255.0,
+              0.8
+          ),
+        },
+      },
+    });
+
+    // 你原来的 primitive：把 primitive 缓存到 waterPrimitive
+    waterPrimitive = new Cesium.GroundPrimitive({
+      geometryInstances: instances,
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        aboveGround: true,
+        material: waterMaterial, // 用缓存材质（与原效果一致）
+      }),
+    });
+
+    viewer.scene.primitives.add(waterPrimitive);
   });
   console.log("水体加载完毕");
 }
