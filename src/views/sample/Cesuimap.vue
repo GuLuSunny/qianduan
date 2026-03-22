@@ -9,6 +9,10 @@
         <!-- <div class="headWeather">开封 34℃ 浮尘</div> -->
       </div>
     </transition>
+        <div v-if="showHenanLayer" class="back-to-province-btn" @click="backToProvinceLayer">
+      <i class="el-icon-back"></i>
+      <span>返回省级视图</span>
+    </div>
      <!-- 新增：行政区图层切换开关 -->
     <div class="admin-layer-btn" @click="toggleAdminLayer">
       <i class="el-icon-map-location"></i>
@@ -266,14 +270,13 @@
       </div>
     </transition>
 
-    <!-- 鼠标悬浮窗口 -->
-    <!-- <transition name="fade">
+    <transition name="fade2">
       <div v-show="hoverPopupShow">
         <div class="hoverModal-content" id="hoverPopup">
-          <p id="hoverPopup-p">我悬浮窗口哦</p>
+          <p id="hoverPopup-p">{{hoverPopupContent}}</p>
         </div>
       </div>
-    </transition> -->
+    </transition>
 
     <!-- 图片放大模态框 -->
     <transition name="fade">
@@ -469,56 +472,644 @@ const smartForestPosition = Cesium.Cartesian3.fromDegrees(
 );
 // 行政区状态变量
 const showAdminLayer = ref(false);
-let adminLayerImageryProvider = null;
+let adminDataSource = null;
+let adminEntities = []; 
+
+// ========== 河南省行政区相关变量 ==========
+const showHenanLayer = ref(false); // 是否显示河南省详细区划
+let henanDataSource = null; // 河南省数据源
+let henanEntities = []; // 河南省实体数组
+let doubleClickHandler = null; // 双击事件处理器
+let clickTimer = null; // 双击检测计时器
+let clickCount = 0; // 点击计数
+// 悬浮弹窗相关
+const hoverPopupContent = ref(""); 
+let hoverHandler = null; 
+
 
 // 行政区图层切换方法
 function toggleAdminLayer() {
   if (!showAdminLayer.value) {
-    // 开启行政区图层
     addAdminLayer();
   } else {
-    // 关闭行政区图层
     removeAdminLayer();
+    // 同时移除河南省图层
+    removeHenanLayer();
+    showHenanLayer.value = false;
   }
   showAdminLayer.value = !showAdminLayer.value;
 }
 
 // 添加行政区图层
-function addAdminLayer() {
-  if (adminLayerImageryProvider) {
-    viewer.imageryLayers.remove(adminLayerImageryProvider);
-    adminLayerImageryProvider = null;
-  }
-    try {
-      adminLayerImageryProvider = new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 18,
-        minimumLevel: 3,
-      });
+async function addAdminLayer() {
+  try {
+    const response = await fetch("/provincial_level_json/中国_省.geojson");
+    let geojsonData = await response.json();
+    delete geojsonData.crs;
+    
+    // 加载GeoJSON数据
+    adminDataSource = await Cesium.GeoJsonDataSource.load(geojsonData, {
+      clampToGround: true,
+      stroke: Cesium.Color.fromCssColorString("#47e8fe"),
+      strokeWidth: 2,
+      fill: false,
+    });
+
+    viewer.dataSources.add(adminDataSource);
+    adminEntities = [];
+    
+    // 遍历所有实体，设置属性
+    adminDataSource.entities.values.forEach(entity => {
+      if (entity.properties) {
+        try {
+          const nameValue = entity.properties.NAME;
+          if (nameValue) {
+            entity.name = nameValue;
+          }
+        } catch (e) {
+          console.warn("获取省份名称失败:", e);
+        }
+      }
       
-      viewer.imageryLayers.addImageryProvider(adminLayerImageryProvider);
-      console.log("行政区图层（Esri地图）加载成功");
-    } catch (esriError) {
-      console.error("加载Esri地图也失败:", esriError);
-      alert("行政区图层加载失败，请检查网络连接");
-    }
+      if (!entity.name && entity.id) {
+        entity.name = entity.id;
+      }
+      
+      adminEntities.push(entity);
+      
+      if (entity.polygon) {
+        entity.polygon.fill = false;
+        entity.polygon.outline = true;
+        entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+        entity.polygon.outlineWidth = 2;
+        entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+      }
+    });
+
+    // 添加鼠标交互（原有）
+    setupAdminLayerInteraction();
+    
+    // ========== 新增：添加双击事件监听 ==========
+    setupDoubleClickHandler();
+    
+    console.log(`行政区图层加载成功，共加载 ${adminEntities.length} 个省份`);
+    
+    return true;
+  } catch (error) {
+    console.error("行政区图层加载失败:", error);
+    return false;
+  }
 }
-function removeAdminLayer() {
-  if (adminLayerImageryProvider) {
-    // 从viewer的imageryLayers中移除这个图层
-    const layers = viewer.imageryLayers;
-    const layerToRemove = layers._layers.find(layer => 
-      layer.imageryProvider === adminLayerImageryProvider
-    );
-    
-    if (layerToRemove) {
-      layers.remove(layerToRemove);
-      console.log("行政区图层已移除");
-    } else {
-      console.warn("未找到要移除的行政区图层");
+
+// ========== 新增：设置双击事件处理器 ==========
+function setupDoubleClickHandler() {
+  // 移除之前的双击处理器
+  if (doubleClickHandler) {
+    doubleClickHandler.destroy();
+  }
+  
+  doubleClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  
+  // 修复：使用LEFT_DOUBLE_CLICK事件，更可靠
+  doubleClickHandler.setInputAction((movement) => {
+    // 处理双击逻辑
+    handleDoubleClick(movement);
+  }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+  
+  // 清除单击检测的旧代码
+  clickCount = 0;
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+}
+
+// ========== 新增：处理双击事件 ==========
+async function handleDoubleClick(movement) {
+  // 获取双击位置的地理坐标
+  const ray = viewer.camera.getPickRay(movement.position);
+  if (!ray) return;
+  
+  const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+  if (!cartesian) return;
+  
+  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+  const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+  const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+  
+  // 检测是否双击在河南省内
+  const clickedEntity = getEntityAtPosition(longitude, latitude);
+  
+  if (clickedEntity && clickedEntity.name === "河南省") {
+    console.log("双击河南省，加载详细区划");
+    // 传入clickedEntity参数
+    await loadHenanAdminLayer(clickedEntity);
+  }
+}
+
+// ========== 新增：加载河南省详细行政区划 ==========
+async function loadHenanAdminLayer(clickedEntity) {
+  try {
+    // 隐藏省级图层
+    if (adminDataSource) {
+      adminDataSource.show = false;
     }
     
-    adminLayerImageryProvider = null;
+    removeHenanLayer();
+    
+    const response = await fetch("/provincial_level_json/河南省_市.geojson"); // 建议使用市级数据
+    if (!response.ok) {
+      throw new Error(`加载河南省GeoJSON失败: ${response.status}`);
+    }
+    
+    let geojsonData = await response.json();
+    delete geojsonData.crs;
+    
+    // 加载GeoJSON数据
+    henanDataSource = await Cesium.GeoJsonDataSource.load(geojsonData, {
+      clampToGround: true,
+      stroke: Cesium.Color.fromCssColorString("#ff6b6b"), // 红色边框
+      strokeWidth: 3,
+      fill: false,
+    });
+
+    viewer.dataSources.add(henanDataSource);
+    henanEntities = [];
+    
+    // 遍历所有实体，设置样式
+    henanDataSource.entities.values.forEach(entity => {
+      henanEntities.push(entity);
+      
+      if (entity.polygon) {
+        entity.polygon.fill = false;
+        entity.polygon.outline = true;
+        entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+        entity.polygon.outlineWidth = 3;
+        entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+        
+        // 修复悬停高亮的正确写法
+        entity.polygon.onMouseOver = function() {
+          this.outlineColor = Cesium.Color.YELLOW;
+          this.outlineWidth = 4;
+        };
+        
+        entity.polygon.onMouseOut = function() {
+          this.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+          this.outlineWidth = 3;
+        };
+      }
+    });
+    
+    // 飞行到河南省
+    flyToProvince(clickedEntity);
+    
+    // 显示返回按钮
+    showHenanLayer.value = true;
+    
+    console.log(`河南省详细区划加载成功，共加载 ${henanEntities.length} 个区域`);
+    
+  } catch (error) {
+    console.error("河南省行政区划加载失败:", error);
+    // 恢复省级图层显示
+    if (adminDataSource) {
+      adminDataSource.show = true;
+    }
+    
+    // 显示错误提示
+    alert("加载河南省行政区划失败，请检查GeoJSON文件路径是否正确！");
+  }
+}
+
+
+// ========== 新增：返回省级图层 ==========
+function backToProvinceLayer() {
+  // 移除河南省图层
+  removeHenanLayer();
+  
+  // 显示省级图层
+  if (adminDataSource) {
+    adminDataSource.show = true;
+  }
+  
+  // 隐藏返回按钮
+  showHenanLayer.value = false;
+  
+  console.log("已返回省级行政区图层");
+}
+
+// ========== 新增：移除河南省图层 ==========
+function removeHenanLayer() {
+  if (henanDataSource) {
+    viewer.dataSources.remove(henanDataSource);
+    henanDataSource = null;
+    henanEntities = [];
+  }
+}
+
+// 存储当前高亮的省份
+let highlightedEntity = null;
+
+
+// 修改悬停检测逻辑
+function setupAdminLayerInteraction() {
+  // 移除之前的事件处理器
+  if (hoverHandler) {
+    hoverHandler.destroy();
+  }
+  
+  hoverHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  
+  // 存储上次悬停的实体
+  let lastHoveredEntity = null;
+  
+  // 存储鼠标位置，用于悬浮窗跟随
+  let lastMousePosition = null;
+
+  // 鼠标移动事件
+  hoverHandler.setInputAction((movement) => {
+    // 保存鼠标位置
+    lastMousePosition = movement.endPosition;
+    
+    // 尝试使用 Cesium 内置的 pick 方法
+    let hoveredEntity = null;
+    const pickedObject = viewer.scene.pick(movement.endPosition);
+    if (pickedObject && pickedObject.id) {
+      hoveredEntity = pickedObject.id;
+    }
+    
+    // 如果没直接点选到，进行多边形区域检测
+    if (!hoveredEntity) {
+      // 获取鼠标对应的地理坐标
+      const ray = viewer.camera.getPickRay(movement.endPosition);
+      if (!ray) return;
+      
+      const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+      if (!cartesian) return;
+      
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+      const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+      const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+      
+      // 检测点在哪个行政区多边形内
+      hoveredEntity = getEntityAtPosition(longitude, latitude);
+    }
+    
+    // 更新悬停状态
+    if (hoveredEntity) {
+      // 获取显示名称
+      let displayName = hoveredEntity.name || "未知区域";
+      
+      // 如果是河南省详细区划，尝试获取更友好的名称
+      if (showHenanLayer.value && henanEntities.includes(hoveredEntity)) {
+        if (hoveredEntity.properties) {
+          // 尝试从properties中获取名称
+          const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+          for (const prop of possibleProps) {
+            try {
+              const val = hoveredEntity.properties[prop];
+              if (val) {
+                displayName = val;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+      
+      // 更新悬停弹窗
+      updateHoverPopup(displayName, movement.endPosition);
+      
+      // 高亮显示当前悬停的区域
+      if (lastHoveredEntity && lastHoveredEntity !== hoveredEntity) {
+        resetHoverStyle(lastHoveredEntity);
+      }
+      setHoverStyle(hoveredEntity);
+      
+      lastHoveredEntity = hoveredEntity;
+    } 
+    else if (lastHoveredEntity) {
+      // 移出区域
+      resetHoverStyle(lastHoveredEntity);
+      hoverPopupShow.value = false;
+      lastHoveredEntity = null;
+    }
+    else if (lastMousePosition) {
+      // 在同一区域内移动，更新悬浮窗位置
+      updateHoverPopupPosition(movement.endPosition);
+    }
+    
+  }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+  hoverHandler.setInputAction((movement) => {
+  const ray = viewer.camera.getPickRay(movement.position);
+  if (!ray) return;
+  
+  const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+  if (!cartesian) return;
+  
+  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+  const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+  const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+  
+  // 先取消之前的高亮
+  if (highlightedEntity) {
+    resetEntityStyle(highlightedEntity);
+    highlightedEntity = null;
+  }
+  
+  // 检测点击区域
+  const clickedEntity = getEntityAtPosition(longitude, latitude);
+  
+  // ========== 新增逻辑：如果在河南详细视图且点击了其他省份 ==========
+  if (showHenanLayer.value) {
+    // 如果点击的实体存在且不是河南详细视图中的实体（即不是河南省内的市县）
+    if (clickedEntity && !henanEntities.includes(clickedEntity)) {
+      // 自动返回省级视图
+      backToProvinceLayer();
+      
+      // 返回后重新获取点击实体（现在是省级实体）
+      const newClickedEntity = getEntityAtPosition(longitude, latitude);
+      if (newClickedEntity) {
+        highlightedEntity = newClickedEntity;
+        setHighlightStyle(highlightedEntity);
+        
+        // 获取显示名称并飞行
+        let displayName = newClickedEntity.name || "未知区域";
+        if (showHenanLayer.value && henanEntities.includes(newClickedEntity)) {
+          // 这里不会进入，因为已经返回省级视图，但保留逻辑
+          if (newClickedEntity.properties) {
+            const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+            for (const prop of possibleProps) {
+              try {
+                const val = newClickedEntity.properties[prop];
+                if (val) {
+                  displayName = val;
+                  break;
+                }
+              } catch (e) {}
+            }
+          }
+        }
+        console.log(`点击选中区域: ${displayName}`);
+        flyToProvince(newClickedEntity);
+      }
+      return; // 结束，不再执行原有逻辑
+    }
+  }
+  if (clickedEntity) {
+    highlightedEntity = clickedEntity;
+    setHighlightStyle(highlightedEntity);
+    
+    // 获取显示名称
+    let displayName = clickedEntity.name || "未知区域";
+    if (showHenanLayer.value && henanEntities.includes(clickedEntity)) {
+      if (clickedEntity.properties) {
+        const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+        for (const prop of possibleProps) {
+          try {
+            const val = clickedEntity.properties[prop];
+            if (val) {
+              displayName = val;
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+    
+    console.log(`点击选中区域: ${displayName}`);
+    flyToProvince(clickedEntity);
+  }
+  
+}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// 新增辅助函数：根据经纬度获取对应的行政区实体
+function getEntityAtPosition(longitude, latitude) {
+  const point = Cesium.Cartesian3.fromDegrees(longitude, latitude, 0);
+  
+  // 先检查河南省详细区划（如果有显示）
+  if (showHenanLayer.value && henanEntities.length > 0) {
+    for (const entity of henanEntities) {
+      if (entity.polygon && isPointInPolygonFast(entity, point)) {
+        return entity;
+      }
+    }
+  }
+  
+  // 再检查省级行政区
+  for (const entity of adminEntities) {
+    if (entity.polygon && isPointInPolygonFast(entity, point)) {
+      return entity;
+    }
+  }
+  
+  return null;
+}
+
+
+// 新增辅助函数：优化的点在多边形检测
+function isPointInPolygonFast(entity, point) {
+  if (!entity.polygon) return false;
+  
+  try {
+    // 获取多边形的层次结构
+    const hierarchy = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now());
+    if (!hierarchy || !hierarchy.positions) return false;
+    
+    const positions = hierarchy.positions;
+    if (positions.length < 3) return false;
+    
+    // 射线法判断点是否在多边形内
+    const ellipsoid = viewer.scene.globe.ellipsoid;
+    const cartographic = ellipsoid.cartesianToCartographic(point);
+    
+    let inside = false;
+    const vertices = [];
+    
+    // 预转换所有顶点为经纬度
+    for (let i = 0; i < positions.length; i++) {
+      const vertexCartographic = ellipsoid.cartesianToCartographic(positions[i]);
+      vertices.push({
+        lon: vertexCartographic.longitude,
+        lat: vertexCartographic.latitude
+      });
+    }
+    
+    // 射线法算法
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const vi = vertices[i];
+      const vj = vertices[j];
+      
+      if (((vi.lat > cartographic.latitude) !== (vj.lat > cartographic.latitude)) &&
+          (cartographic.longitude < (vj.lon - vi.lon) * 
+           (cartographic.latitude - vi.lat) / 
+           (vj.lat - vi.lat) + vi.lon)) {
+        inside = !inside;
+      }
+    }
+    
+    return inside;
+  } catch (error) {
+    console.warn("点在多边形检测出错:", error);
+    return false;
+  }
+}
+
+// 更新悬停弹窗
+function updateHoverPopup(displayName, mousePosition) {
+  if (!displayName) return;
+  
+  hoverPopupContent.value = displayName;
+  hoverPopupShow.value = true;
+  
+  // 更新弹窗位置
+  updateHoverPopupPosition(mousePosition);
+}
+
+// 新增函数：更新悬停弹窗位置（跟随鼠标）
+function updateHoverPopupPosition(mousePosition) {
+  if (!hoverPopupShow.value) return;
+  
+  const hoverPopup = document.getElementById("hoverPopup");
+  if (!hoverPopup) return;
+  
+  // 设置悬浮窗位置（跟随鼠标，偏移一些距离避免遮挡）
+  const offsetX = 15;
+  const offsetY = 15;
+  
+  // 确保位置在可视区域内
+  const popupWidth = hoverPopup.offsetWidth || 120;
+  const popupHeight = hoverPopup.offsetHeight || 40;
+  
+  // 计算弹窗位置
+  let left = mousePosition.x + offsetX;
+  let top = mousePosition.y - popupHeight - offsetY;
+  
+  // 边界检查
+  const canvas = viewer.scene.canvas;
+  if (left + popupWidth > canvas.width) {
+    left = mousePosition.x - popupWidth - offsetX;
+  }
+  if (top < 0) {
+    top = mousePosition.y + offsetY;
+  }
+  
+  hoverPopup.style.left = `${left}px`;
+  hoverPopup.style.top = `${top}px`;
+}
+
+//设置高亮样式
+function setHighlightStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = true;
+    entity.polygon.material = Cesium.Color.fromCssColorString("#00ff00").withAlpha(0.3);
+    entity.polygon.outlineColor = Cesium.Color.RED;
+    entity.polygon.outlineWidth = 3;
+  }
+}
+// 新增：设置悬停高亮样式
+function setHoverStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = true;
+    entity.polygon.material = Cesium.Color.fromCssColorString("#47e8fe").withAlpha(0.2);
+    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+    entity.polygon.outlineWidth = 3;
+  }
+}
+
+// 新增：重置悬停样式
+function resetHoverStyle(entity) {
+  if (entity && entity.polygon) {
+    if (showHenanLayer.value && henanEntities.includes(entity)) {
+      // 河南省样式
+      entity.polygon.fill = false;
+      entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+      entity.polygon.outlineWidth = 3;
+    } else {
+      // 省级样式
+      entity.polygon.fill = false;
+      entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+      entity.polygon.outlineWidth = 2;
+    }
+  }
+}
+
+//重置实体样式
+function resetEntityStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = false;
+    entity.polygon.outline = true;
+    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+    entity.polygon.outlineWidth = 2;
+  }
+}
+// 辅助函数：飞行到省份
+function flyToProvince(entity) {
+  if (!entity) return;
+  
+  try {
+    // 使用实体的包围盒进行飞行
+    const boundingSphere = entity.boundingSphere;
+    
+    if (boundingSphere) {
+      viewer.camera.flyToBoundingSphere(boundingSphere, {
+        duration: 2,
+        offset: new Cesium.HeadingPitchRange(
+          0,
+          Cesium.Math.toRadians(-45), // 俯视角度
+          boundingSphere.radius * 1.5 // 根据省份大小调整距离
+        ),
+        complete: () => {
+          console.log(`已飞行聚焦到 ${entity.name || '选中省份'}`);
+        }
+      });
+    } else {
+      // 如果没有包围盒，使用默认飞行参数
+      viewer.flyTo(entity, {
+        duration: 2,
+        offset: new Cesium.HeadingPitchRange(
+          0,
+          Cesium.Math.toRadians(-30),
+          0
+        ),
+        complete: () => {
+          console.log(`已飞行聚焦到 ${entity.name || '选中省份'}`);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("飞行失败:", error);
+  }
+}
+
+function removeAdminLayer() {
+  if (adminDataSource) {
+    viewer.dataSources.remove(adminDataSource);
+    adminDataSource = null;
+    adminEntities = [];
+    highlightedEntity = null;
+    
+    // 清理事件处理器
+    if (hoverHandler) {
+      hoverHandler.destroy();
+      hoverHandler = null;
+    }
+    
+    // 清理双击事件处理器
+    if (doubleClickHandler) {
+      doubleClickHandler.destroy();
+      doubleClickHandler = null;
+    }
+    
+    // 移除河南省图层
+    removeHenanLayer();
+    showHenanLayer.value = false;
+    
+    // 隐藏悬浮弹窗
+    hoverPopupShow.value = false;
+    
+    console.log("自定义行政区图层已移除");
   } else {
     console.log("行政区图层未加载，无需移除");
   }
@@ -2842,14 +3433,14 @@ async function onMovement(movement) {
   //     // 设置模型轮廓宽度
   //     //entity.model.silhouetteSize = 0;
   // }
-
+  
   // 如果点击到了一个具有 monitoItems 属性的实体对象
   if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
     // 获取实体的位置信息（Cartesian 坐标）
     const entityPosition = pickedObject.id.position.getValue(
       Cesium.JulianDate.now()
     );
-
+    
     // 将 Cartesian 坐标转换为窗口坐标
     const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
       viewer.scene,
@@ -2864,7 +3455,7 @@ async function onMovement(movement) {
       modalElement.style.left = windowPosition.x + "px";
       modalElement.style.top = windowPosition.y + "px";
       // 在悬浮窗中显示实体名称
-      modal_P_Element.innerHTML = pickedObject.id.monitoItems.data.name || "监测点";
+      //modal_P_Element.innerHTML = pickedObject.id.monitoItems.data.name || "监测点";
     }
 
     // 判断clickPopup状态决定是否显示hoverPopup
@@ -3941,7 +4532,43 @@ async function rotate() {
     transform: translateY(0);
   }
 }
+.back-to-province-btn {
+  position: fixed;
+  top: 6px;
+  left: 60px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 24px;
+  background: rgba(71, 232, 254, 0.2);
+  border: 1px solid rgba(71, 232, 254, 0.5);
+  border-radius: 4px;
+  color: #47e8fe;
+  font-family: PuHuiTi, serif;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  pointer-events: all;
 
+  i {
+    margin-right: 0px;
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(71, 232, 254, 0.3);
+    border-color: #47e8fe;
+    box-shadow: 0 0 10px rgba(71, 232, 254, 0.5);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
 /* ====================== 响应式适配 ====================== */
 /* 笔记本屏幕适配 (最大宽度1440px) */
 @media screen and (max-width: 1440px) {
@@ -3962,6 +4589,14 @@ async function rotate() {
     height: 34px;
     font-size: 13px;
   }
+  .back-to-province-btn {
+    top: 24px;
+    right: 140px;
+    width: 110px;
+    height: 34px;
+    font-size: 13px;
+  }nt-size: 13px;
+  
 }
 
 /* 小屏幕笔记本适配 (最大宽度1366px) */
@@ -3975,6 +4610,14 @@ async function rotate() {
   }
 
   .admin-layer-btn {
+    top: 26px;
+    right: 240px;
+    width: 100px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .back-to-province-btn{
     top: 26px;
     right: 240px;
     width: 100px;
@@ -4009,6 +4652,20 @@ async function rotate() {
   .admin-layer-btn i {
     font-size: 14px;
     margin-right: 5px;
+  }
+
+  .back-to-province-btn {
+    top: 21px;
+    right: 110px;
+    width: 90px;
+    height: 30px;
+    font-size: 11px;
+    
+
+  }    
+  .back-to-province-btn i {
+      font-size: 14px;
+      margin-right: 5px;
   }
 }
 </style>
