@@ -198,6 +198,22 @@ lhhvue
 │  │  ├─ 📄LoginView.vue	登录页面
 │  │  └─ 📄MainMenuView.vue	后台页面布局
 │  ├─ 📄App.vue
+
+---
+
+## AI 小助手 (本地化)
+
+- 默认使用本地 Ollama 服务：`AI_PROVIDER=ollama`，默认 `AI_API_URL=http://127.0.0.1:11434/api/generate`。
+- 可在根目录创建或编辑 `.env.local` 来覆盖：例如设置 `AI_MODEL=deepseek-r1:1.5b`、`AI_API_URL`、或 `AI_API_KEY`（仅在使用带鉴权的提供商时需要）。
+- 启动代理：
+
+```
+npm run ai-server
+```
+
+代理监听 `http://localhost:<AI_PORT>`（默认 3001），前端通过 `/api/ai-assistant` 调用该代理。
+
+---
 │  ├─ 📄main.ts
 │  └─ 📄shims-vue.d.ts
 ├─ 📄.browserslistrc
