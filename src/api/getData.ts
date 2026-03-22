@@ -1123,6 +1123,9 @@ export function modelFilesUpload(data: any) {
   return useAxiosApi('/api/modelFile/upload', {
     method: 'POST',
     data: data,
+    headers: {
+    'Content-Type': 'multipart/form-data'
+    }
   });
 }
 /**
@@ -1388,4 +1391,48 @@ export function uploadModelProduct(data: any) {
     responseType: 'blob'
   });
 
+}
+/**
+ * 获取ModelFileStatus数据表数据
+ * @returns UseAxiosReturn
+ */
+export function getModelFileStatus(data: any) {
+  return useAxiosApi('/api/modelFile/getModelFileStatus', {
+    method: 'POST',
+    data: data
+  })
+}
+/**
+ * 批量删除模型文件
+ * @returns UseAxiosReturn
+ */
+export function batchDeleteModelFileStatus(data: any) {
+  return useAxiosApi('/api/modelFile/batchDeleteModelFileStatus', {
+    method: 'POST',
+    data: data,
+    responseType: 'json'
+  });
+}
+
+/**
+ * 更新模型文件状态
+ * @returns UseAxiosReturn
+ */
+export function updateModelFileStatus(data: any) {
+  return useAxiosApi('/api/modelFile/updateModelFileStatus', {
+    method: 'POST',
+    data: data,
+    responseType: 'json'
+  });
+}
+/**
+ * 获取ModelFileStatus数据表数据
+ * @param data 请求参数
+ * @returns UseAxiosReturn
+ */
+export function queryModelFileStatusList(data: any) {
+  return useAxiosApi('/api/modelFile/queryModelFileStatusList', {
+    method: 'POST',
+    data: data
+  })
 }
