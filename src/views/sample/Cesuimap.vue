@@ -353,6 +353,14 @@ let floodBorderEntity = null;
 let floodTimer = null;
 let floodFrameIndex = 0;
 
+// 【新增】洪水热力图相机高度控制
+let floodHeightCheckHandler = null;
+const FLOOD_HIDE_HEIGHT = 10000; // 1万米以下隐藏热力图
+const FLOOD_CAMERA_HEIGHT = 100; // 点击洪水模拟后镜头高度
+// 【新增】固定定位点
+const FLOOD_CAMERA_LON = 114.321;
+const FLOOD_CAMERA_LAT = 34.8642;
+
 // Cesium 有时对“同一 canvas 对象内容变化”不刷新：用双缓冲 canvas 交替返回更稳
 let bufferCanvasA = null;
 let bufferCanvasB = null;
@@ -401,7 +409,7 @@ let waterSpreadFrameIndex = 0;
 // 【新增】蔓延参数（可调）
 const WATER_SPREAD_FRAME_MS = 80;     // 蔓延帧间隔（越大越慢）
 const WATER_SPREAD_TOTAL_FRAMES = 400; // 蔓延总帧数（越大越慢越平滑）
-const WATER_SPREAD_MAX_M = 150;      // 最大外扩米数（越大扩得越远）
+const WATER_SPREAD_MAX_M = 60;      // 最大外扩米数（越大扩得越远）
 const WATER_SPREAD_HEIGHT_M = 1.5;    // 蔓延层抬高（米，避免Z-fighting）
 // 【新增】单个水面参与蔓延的最小面积（平方米）
 // 小于这个值的零碎小水面，不做蔓延
@@ -1303,7 +1311,12 @@ function startFloodHeatmap() {
   floodEntity = viewer.entities.add({
     name: "flood-heatmap",
     rectangle: {
-      coordinates: Cesium.Rectangle.fromDegrees(b.lonMin, b.latMin, b.lonMax, b.latMax),
+      coordinates: Cesium.Rectangle.fromDegrees(
+        b.lonMin,
+        b.latMin,
+        b.lonMax,
+        b.latMax
+      ),
       material: new Cesium.ImageMaterialProperty({
         image: dynamicImage,
         transparent: true,
@@ -1330,8 +1343,52 @@ function startFloodHeatmap() {
       clampToGround: false,
     },
   });
+  // 可调参数：-90 是完全俯视，越接近 0 越平视
+  const FLOOD_CAMERA_HEADING = 0;     // 朝向
+  const FLOOD_CAMERA_PITCH = -45;     // 倾斜角，建议 -35 到 -60 之间
+  const FLOOD_CAMERA_ROLL = 0;
+  // 4) 点击洪水模拟后，定位到指定 POINT，并把镜头拉到 500 米高度
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(
+      FLOOD_CAMERA_LON,
+      FLOOD_CAMERA_LAT,
+      FLOOD_CAMERA_HEIGHT
+    ),
+    orientation: {
+      heading: Cesium.Math.toRadians(FLOOD_CAMERA_HEADING),
+      pitch: Cesium.Math.toRadians(FLOOD_CAMERA_PITCH),
+      roll: Cesium.Math.toRadians(FLOOD_CAMERA_ROLL),
+    },
+    duration: 2,
+    easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+  });
 
-  // 4) 帧动画推进
+  // 5) 一万米高度以下不显示热力图
+  if (floodHeightCheckHandler) {
+    viewer.scene.preRender.removeEventListener(floodHeightCheckHandler);
+    floodHeightCheckHandler = null;
+  }
+
+  floodHeightCheckHandler = function () {
+    if (!viewer) return;
+
+    const cameraHeight = viewer.camera.positionCartographic.height;
+    const shouldShow = cameraHeight >= FLOOD_HIDE_HEIGHT;
+
+    if (floodEntity) {
+      floodEntity.show = shouldShow;
+    }
+    if (floodBorderEntity) {
+      floodBorderEntity.show = shouldShow;
+    }
+  };
+
+  viewer.scene.preRender.addEventListener(floodHeightCheckHandler);
+
+  // 启动后立刻执行一次，避免初始状态不对
+  floodHeightCheckHandler();
+
+  // 6) 帧动画推进
   if (floodTimer) window.clearInterval(floodTimer);
   floodTimer = window.setInterval(() => {
     floodFrameIndex = (floodFrameIndex + 1) % FLOOD_TOTAL_FRAMES;
@@ -1339,6 +1396,7 @@ function startFloodHeatmap() {
   }, FLOOD_FRAME_MS);
 
   floodEnabled.value = true;
+
   // 【新增】启动蔓延（与热力图无关，独立定时器）
   startWaterSpread();
 }
@@ -1352,6 +1410,12 @@ function stopFloodHeatmap() {
   }
   floodFrameIndex = 0;
 
+  // 【新增】移除高度监听，避免重复绑定或关闭后仍继续执行
+  if (viewer && floodHeightCheckHandler) {
+    viewer.scene.preRender.removeEventListener(floodHeightCheckHandler);
+    floodHeightCheckHandler = null;
+  }
+
   if (viewer && floodEntity) {
     viewer.entities.remove(floodEntity);
     floodEntity = null;
@@ -1360,7 +1424,8 @@ function stopFloodHeatmap() {
     viewer.entities.remove(floodBorderEntity);
     floodBorderEntity = null;
   }
-  //停止蔓延并清理蔓延层
+
+  // 停止蔓延并清理蔓延层
   stopWaterSpread();
 }
 
@@ -2990,7 +3055,7 @@ async function initializeCesium() {
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 100; // 例如设置为 1000 米
 
   // 设置最大缩放距离（以米为单位）
   viewer.scene.screenSpaceCameraController.maximumZoomDistance = 800000; // 例如设置为 5000000 米
