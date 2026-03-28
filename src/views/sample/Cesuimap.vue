@@ -9,6 +9,10 @@
         <!-- <div class="headWeather">开封 34℃ 浮尘</div> -->
       </div>
     </transition>
+        <div v-if="showHenanLayer" class="back-to-province-btn" @click="backToProvinceLayer">
+      <i class="el-icon-back"></i>
+      <span>返回省级视图</span>
+    </div>
      <!-- 新增：行政区图层切换开关 -->
     <div class="admin-layer-btn" @click="toggleAdminLayer">
       <i class="el-icon-map-location"></i>
@@ -266,14 +270,13 @@
       </div>
     </transition>
 
-    <!-- 鼠标悬浮窗口 -->
-    <!-- <transition name="fade">
+    <transition name="fade2">
       <div v-show="hoverPopupShow">
         <div class="hoverModal-content" id="hoverPopup">
-          <p id="hoverPopup-p">我悬浮窗口哦</p>
+          <p id="hoverPopup-p">{{hoverPopupContent}}</p>
         </div>
       </div>
-    </transition> -->
+    </transition>
 
     <!-- 图片放大模态框 -->
     <transition name="fade">
@@ -288,6 +291,32 @@
     <!-- <div class="mars3d-animation-point" id="htmlElement">
       <p></p>
     </div> -->
+
+    <!-- AI 小助手 -->
+    <div class="ai-assistant">
+      <div class="ai-button" @click="toggleAI" title="AI 小助手">
+        <img src="/Images/ai小助手/1.gif" alt="AI 小助手" class="ai-btn-img" />
+      </div>
+      <transition name="fade">
+        <div v-show="aiVisible" class="ai-panel">
+          <div class="ai-header">
+            <span>AI 小助手</span>
+            <span class="close" @click="toggleAI">&times;</span>
+          </div>
+          <div class="ai-messages" ref="aiMessagesContainer">
+            <div v-for="(m, idx) in aiMessages" :key="idx" :class="['ai-message', m.from]">
+              <div class="ai-from">{{ m.from === 'assistant' ? '小助手' : '我' }}</div>
+              <div class="ai-text">{{ m.text }}</div>
+            </div>
+          </div>
+          <div class="ai-input">
+            <input id="ai-input" v-model="aiInput" @keyup.enter="sendAIMessage" placeholder="请描述你的问题或命令（示例：定位到 114.34,34.79 / 放大 / 加载水体）" />
+            <button @click="sendAIMessage">发送</button>
+          </div>
+        </div>
+      </transition>
+    </div>
+
   </div>
 </template>
 <script setup>
@@ -327,6 +356,14 @@ let floodBorderEntity = null;
 let floodTimer = null;
 let floodFrameIndex = 0;
 
+// 【新增】洪水热力图相机高度控制
+let floodHeightCheckHandler = null;
+const FLOOD_HIDE_HEIGHT = 10000; // 1万米以下隐藏热力图
+const FLOOD_CAMERA_HEIGHT = 100; // 点击洪水模拟后镜头高度
+// 【新增】固定定位点
+const FLOOD_CAMERA_LON = 114.321;
+const FLOOD_CAMERA_LAT = 34.8642;
+
 // Cesium 有时对“同一 canvas 对象内容变化”不刷新：用双缓冲 canvas 交替返回更稳
 let bufferCanvasA = null;
 let bufferCanvasB = null;
@@ -361,6 +398,29 @@ const waterBoundsDeg = ref(null);
 
 // 预生成网格点（lon/lat + 相位）
 let floodGridPoints = [];
+// 【新增】原水体 primitive / 材质缓存（用于蔓延层复用材质）
+let waterPrimitive = null;
+let waterMaterial = null;
+
+// 【新增】蔓延层 primitive
+let waterSpreadPrimitive = null;
+
+// 【新增】蔓延动画独立定时器与帧
+let waterSpreadTimer = null;
+let waterSpreadFrameIndex = 0;
+
+// 【新增】蔓延参数（可调）
+const WATER_SPREAD_FRAME_MS = 80;     // 蔓延帧间隔（越大越慢）
+const WATER_SPREAD_TOTAL_FRAMES = 400; // 蔓延总帧数（越大越慢越平滑）
+const WATER_SPREAD_MAX_M = 60;      // 最大外扩米数（越大扩得越远）
+const WATER_SPREAD_HEIGHT_M = 1.5;    // 蔓延层抬高（米，避免Z-fighting）
+// 【新增】单个水面参与蔓延的最小面积（平方米）
+// 小于这个值的零碎小水面，不做蔓延
+const WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2 = 25000; // 例：1万㎡，自行调整
+// 【新增】细长水体识别参数（仅用于决定是否走“沿边界法线偏移”）
+const WATER_SPREAD_SLENDER_MIN_LENGTH_M = 200; // 细长水体最小长度
+const WATER_SPREAD_SLENDER_MAX_WIDTH_M = 120;  // 细长水体最大宽度
+const WATER_SPREAD_SLENDER_MIN_ASPECT = 5;     // 最小长宽比
 
 
 // 绿色水滴   http://mars3d.cn/project/vue/img/marker/mark-green.png
@@ -469,56 +529,644 @@ const smartForestPosition = Cesium.Cartesian3.fromDegrees(
 );
 // 行政区状态变量
 const showAdminLayer = ref(false);
-let adminLayerImageryProvider = null;
+let adminDataSource = null;
+let adminEntities = []; 
+
+// ========== 河南省行政区相关变量 ==========
+const showHenanLayer = ref(false); // 是否显示河南省详细区划
+let henanDataSource = null; // 河南省数据源
+let henanEntities = []; // 河南省实体数组
+let doubleClickHandler = null; // 双击事件处理器
+let clickTimer = null; // 双击检测计时器
+let clickCount = 0; // 点击计数
+// 悬浮弹窗相关
+const hoverPopupContent = ref(""); 
+let hoverHandler = null; 
+
 
 // 行政区图层切换方法
 function toggleAdminLayer() {
   if (!showAdminLayer.value) {
-    // 开启行政区图层
     addAdminLayer();
   } else {
-    // 关闭行政区图层
     removeAdminLayer();
+    // 同时移除河南省图层
+    removeHenanLayer();
+    showHenanLayer.value = false;
   }
   showAdminLayer.value = !showAdminLayer.value;
 }
 
 // 添加行政区图层
-function addAdminLayer() {
-  if (adminLayerImageryProvider) {
-    viewer.imageryLayers.remove(adminLayerImageryProvider);
-    adminLayerImageryProvider = null;
-  }
-    try {
-      adminLayerImageryProvider = new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 18,
-        minimumLevel: 3,
-      });
+async function addAdminLayer() {
+  try {
+    const response = await fetch("/provincial_level_json/中国_省.geojson");
+    let geojsonData = await response.json();
+    delete geojsonData.crs;
+    
+    // 加载GeoJSON数据
+    adminDataSource = await Cesium.GeoJsonDataSource.load(geojsonData, {
+      clampToGround: true,
+      stroke: Cesium.Color.fromCssColorString("#47e8fe"),
+      strokeWidth: 2,
+      fill: false,
+    });
+
+    viewer.dataSources.add(adminDataSource);
+    adminEntities = [];
+    
+    // 遍历所有实体，设置属性
+    adminDataSource.entities.values.forEach(entity => {
+      if (entity.properties) {
+        try {
+          const nameValue = entity.properties.NAME;
+          if (nameValue) {
+            entity.name = nameValue;
+          }
+        } catch (e) {
+          console.warn("获取省份名称失败:", e);
+        }
+      }
       
-      viewer.imageryLayers.addImageryProvider(adminLayerImageryProvider);
-      console.log("行政区图层（Esri地图）加载成功");
-    } catch (esriError) {
-      console.error("加载Esri地图也失败:", esriError);
-      alert("行政区图层加载失败，请检查网络连接");
-    }
+      if (!entity.name && entity.id) {
+        entity.name = entity.id;
+      }
+      
+      adminEntities.push(entity);
+      
+      if (entity.polygon) {
+        entity.polygon.fill = false;
+        entity.polygon.outline = true;
+        entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+        entity.polygon.outlineWidth = 2;
+        entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+      }
+    });
+
+    // 添加鼠标交互（原有）
+    setupAdminLayerInteraction();
+    
+    // ========== 新增：添加双击事件监听 ==========
+    setupDoubleClickHandler();
+    
+    console.log(`行政区图层加载成功，共加载 ${adminEntities.length} 个省份`);
+    
+    return true;
+  } catch (error) {
+    console.error("行政区图层加载失败:", error);
+    return false;
+  }
 }
-function removeAdminLayer() {
-  if (adminLayerImageryProvider) {
-    // 从viewer的imageryLayers中移除这个图层
-    const layers = viewer.imageryLayers;
-    const layerToRemove = layers._layers.find(layer => 
-      layer.imageryProvider === adminLayerImageryProvider
-    );
-    
-    if (layerToRemove) {
-      layers.remove(layerToRemove);
-      console.log("行政区图层已移除");
-    } else {
-      console.warn("未找到要移除的行政区图层");
+
+// ========== 新增：设置双击事件处理器 ==========
+function setupDoubleClickHandler() {
+  // 移除之前的双击处理器
+  if (doubleClickHandler) {
+    doubleClickHandler.destroy();
+  }
+  
+  doubleClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  
+  // 修复：使用LEFT_DOUBLE_CLICK事件，更可靠
+  doubleClickHandler.setInputAction((movement) => {
+    // 处理双击逻辑
+    handleDoubleClick(movement);
+  }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+  
+  // 清除单击检测的旧代码
+  clickCount = 0;
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+}
+
+// ========== 新增：处理双击事件 ==========
+async function handleDoubleClick(movement) {
+  // 获取双击位置的地理坐标
+  const ray = viewer.camera.getPickRay(movement.position);
+  if (!ray) return;
+  
+  const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+  if (!cartesian) return;
+  
+  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+  const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+  const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+  
+  // 检测是否双击在河南省内
+  const clickedEntity = getEntityAtPosition(longitude, latitude);
+  
+  if (clickedEntity && clickedEntity.name === "河南省") {
+    console.log("双击河南省，加载详细区划");
+    // 传入clickedEntity参数
+    await loadHenanAdminLayer(clickedEntity);
+  }
+}
+
+// ========== 新增：加载河南省详细行政区划 ==========
+async function loadHenanAdminLayer(clickedEntity) {
+  try {
+    // 隐藏省级图层
+    if (adminDataSource) {
+      adminDataSource.show = false;
     }
     
-    adminLayerImageryProvider = null;
+    removeHenanLayer();
+    
+    const response = await fetch("/provincial_level_json/河南省_市.geojson"); // 建议使用市级数据
+    if (!response.ok) {
+      throw new Error(`加载河南省GeoJSON失败: ${response.status}`);
+    }
+    
+    let geojsonData = await response.json();
+    delete geojsonData.crs;
+    
+    // 加载GeoJSON数据
+    henanDataSource = await Cesium.GeoJsonDataSource.load(geojsonData, {
+      clampToGround: true,
+      stroke: Cesium.Color.fromCssColorString("#ff6b6b"), // 红色边框
+      strokeWidth: 3,
+      fill: false,
+    });
+
+    viewer.dataSources.add(henanDataSource);
+    henanEntities = [];
+    
+    // 遍历所有实体，设置样式
+    henanDataSource.entities.values.forEach(entity => {
+      henanEntities.push(entity);
+      
+      if (entity.polygon) {
+        entity.polygon.fill = false;
+        entity.polygon.outline = true;
+        entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+        entity.polygon.outlineWidth = 3;
+        entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+        
+        // 修复悬停高亮的正确写法
+        entity.polygon.onMouseOver = function() {
+          this.outlineColor = Cesium.Color.YELLOW;
+          this.outlineWidth = 4;
+        };
+        
+        entity.polygon.onMouseOut = function() {
+          this.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+          this.outlineWidth = 3;
+        };
+      }
+    });
+    
+    // 飞行到河南省
+    flyToProvince(clickedEntity);
+    
+    // 显示返回按钮
+    showHenanLayer.value = true;
+    
+    console.log(`河南省详细区划加载成功，共加载 ${henanEntities.length} 个区域`);
+    
+  } catch (error) {
+    console.error("河南省行政区划加载失败:", error);
+    // 恢复省级图层显示
+    if (adminDataSource) {
+      adminDataSource.show = true;
+    }
+    
+    // 显示错误提示
+    alert("加载河南省行政区划失败，请检查GeoJSON文件路径是否正确！");
+  }
+}
+
+
+// ========== 新增：返回省级图层 ==========
+function backToProvinceLayer() {
+  // 移除河南省图层
+  removeHenanLayer();
+  
+  // 显示省级图层
+  if (adminDataSource) {
+    adminDataSource.show = true;
+  }
+  
+  // 隐藏返回按钮
+  showHenanLayer.value = false;
+  
+  console.log("已返回省级行政区图层");
+}
+
+// ========== 新增：移除河南省图层 ==========
+function removeHenanLayer() {
+  if (henanDataSource) {
+    viewer.dataSources.remove(henanDataSource);
+    henanDataSource = null;
+    henanEntities = [];
+  }
+}
+
+// 存储当前高亮的省份
+let highlightedEntity = null;
+
+
+// 修改悬停检测逻辑
+function setupAdminLayerInteraction() {
+  // 移除之前的事件处理器
+  if (hoverHandler) {
+    hoverHandler.destroy();
+  }
+  
+  hoverHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  
+  // 存储上次悬停的实体
+  let lastHoveredEntity = null;
+  
+  // 存储鼠标位置，用于悬浮窗跟随
+  let lastMousePosition = null;
+
+  // 鼠标移动事件
+  hoverHandler.setInputAction((movement) => {
+    // 保存鼠标位置
+    lastMousePosition = movement.endPosition;
+    
+    // 尝试使用 Cesium 内置的 pick 方法
+    let hoveredEntity = null;
+    const pickedObject = viewer.scene.pick(movement.endPosition);
+    if (pickedObject && pickedObject.id) {
+      hoveredEntity = pickedObject.id;
+    }
+    
+    // 如果没直接点选到，进行多边形区域检测
+    if (!hoveredEntity) {
+      // 获取鼠标对应的地理坐标
+      const ray = viewer.camera.getPickRay(movement.endPosition);
+      if (!ray) return;
+      
+      const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+      if (!cartesian) return;
+      
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+      const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+      const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+      
+      // 检测点在哪个行政区多边形内
+      hoveredEntity = getEntityAtPosition(longitude, latitude);
+    }
+    
+    // 更新悬停状态
+    if (hoveredEntity) {
+      // 获取显示名称
+      let displayName = hoveredEntity.name || "未知区域";
+      
+      // 如果是河南省详细区划，尝试获取更友好的名称
+      if (showHenanLayer.value && henanEntities.includes(hoveredEntity)) {
+        if (hoveredEntity.properties) {
+          // 尝试从properties中获取名称
+          const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+          for (const prop of possibleProps) {
+            try {
+              const val = hoveredEntity.properties[prop];
+              if (val) {
+                displayName = val;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+      
+      // 更新悬停弹窗
+      updateHoverPopup(displayName, movement.endPosition);
+      
+      // 高亮显示当前悬停的区域
+      if (lastHoveredEntity && lastHoveredEntity !== hoveredEntity) {
+        resetHoverStyle(lastHoveredEntity);
+      }
+      setHoverStyle(hoveredEntity);
+      
+      lastHoveredEntity = hoveredEntity;
+    } 
+    else if (lastHoveredEntity) {
+      // 移出区域
+      resetHoverStyle(lastHoveredEntity);
+      hoverPopupShow.value = false;
+      lastHoveredEntity = null;
+    }
+    else if (lastMousePosition) {
+      // 在同一区域内移动，更新悬浮窗位置
+      updateHoverPopupPosition(movement.endPosition);
+    }
+    
+  }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+  hoverHandler.setInputAction((movement) => {
+  const ray = viewer.camera.getPickRay(movement.position);
+  if (!ray) return;
+  
+  const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+  if (!cartesian) return;
+  
+  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+  const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+  const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+  
+  // 先取消之前的高亮
+  if (highlightedEntity) {
+    resetEntityStyle(highlightedEntity);
+    highlightedEntity = null;
+  }
+  
+  // 检测点击区域
+  const clickedEntity = getEntityAtPosition(longitude, latitude);
+  
+  // ========== 新增逻辑：如果在河南详细视图且点击了其他省份 ==========
+  if (showHenanLayer.value) {
+    // 如果点击的实体存在且不是河南详细视图中的实体（即不是河南省内的市县）
+    if (clickedEntity && !henanEntities.includes(clickedEntity)) {
+      // 自动返回省级视图
+      backToProvinceLayer();
+      
+      // 返回后重新获取点击实体（现在是省级实体）
+      const newClickedEntity = getEntityAtPosition(longitude, latitude);
+      if (newClickedEntity) {
+        highlightedEntity = newClickedEntity;
+        setHighlightStyle(highlightedEntity);
+        
+        // 获取显示名称并飞行
+        let displayName = newClickedEntity.name || "未知区域";
+        if (showHenanLayer.value && henanEntities.includes(newClickedEntity)) {
+          // 这里不会进入，因为已经返回省级视图，但保留逻辑
+          if (newClickedEntity.properties) {
+            const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+            for (const prop of possibleProps) {
+              try {
+                const val = newClickedEntity.properties[prop];
+                if (val) {
+                  displayName = val;
+                  break;
+                }
+              } catch (e) {}
+            }
+          }
+        }
+        console.log(`点击选中区域: ${displayName}`);
+        flyToProvince(newClickedEntity);
+      }
+      return; // 结束，不再执行原有逻辑
+    }
+  }
+  if (clickedEntity) {
+    highlightedEntity = clickedEntity;
+    setHighlightStyle(highlightedEntity);
+    
+    // 获取显示名称
+    let displayName = clickedEntity.name || "未知区域";
+    if (showHenanLayer.value && henanEntities.includes(clickedEntity)) {
+      if (clickedEntity.properties) {
+        const possibleProps = ['NAME', 'name', '市', '县', '区', 'city', 'City', '地区'];
+        for (const prop of possibleProps) {
+          try {
+            const val = clickedEntity.properties[prop];
+            if (val) {
+              displayName = val;
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+    
+    console.log(`点击选中区域: ${displayName}`);
+    flyToProvince(clickedEntity);
+  }
+  
+}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// 新增辅助函数：根据经纬度获取对应的行政区实体
+function getEntityAtPosition(longitude, latitude) {
+  const point = Cesium.Cartesian3.fromDegrees(longitude, latitude, 0);
+  
+  // 先检查河南省详细区划（如果有显示）
+  if (showHenanLayer.value && henanEntities.length > 0) {
+    for (const entity of henanEntities) {
+      if (entity.polygon && isPointInPolygonFast(entity, point)) {
+        return entity;
+      }
+    }
+  }
+  
+  // 再检查省级行政区
+  for (const entity of adminEntities) {
+    if (entity.polygon && isPointInPolygonFast(entity, point)) {
+      return entity;
+    }
+  }
+  
+  return null;
+}
+
+
+// 新增辅助函数：优化的点在多边形检测
+function isPointInPolygonFast(entity, point) {
+  if (!entity.polygon) return false;
+  
+  try {
+    // 获取多边形的层次结构
+    const hierarchy = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now());
+    if (!hierarchy || !hierarchy.positions) return false;
+    
+    const positions = hierarchy.positions;
+    if (positions.length < 3) return false;
+    
+    // 射线法判断点是否在多边形内
+    const ellipsoid = viewer.scene.globe.ellipsoid;
+    const cartographic = ellipsoid.cartesianToCartographic(point);
+    
+    let inside = false;
+    const vertices = [];
+    
+    // 预转换所有顶点为经纬度
+    for (let i = 0; i < positions.length; i++) {
+      const vertexCartographic = ellipsoid.cartesianToCartographic(positions[i]);
+      vertices.push({
+        lon: vertexCartographic.longitude,
+        lat: vertexCartographic.latitude
+      });
+    }
+    
+    // 射线法算法
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const vi = vertices[i];
+      const vj = vertices[j];
+      
+      if (((vi.lat > cartographic.latitude) !== (vj.lat > cartographic.latitude)) &&
+          (cartographic.longitude < (vj.lon - vi.lon) * 
+           (cartographic.latitude - vi.lat) / 
+           (vj.lat - vi.lat) + vi.lon)) {
+        inside = !inside;
+      }
+    }
+    
+    return inside;
+  } catch (error) {
+    console.warn("点在多边形检测出错:", error);
+    return false;
+  }
+}
+
+// 更新悬停弹窗
+function updateHoverPopup(displayName, mousePosition) {
+  if (!displayName) return;
+  
+  hoverPopupContent.value = displayName;
+  hoverPopupShow.value = true;
+  
+  // 更新弹窗位置
+  updateHoverPopupPosition(mousePosition);
+}
+
+// 新增函数：更新悬停弹窗位置（跟随鼠标）
+function updateHoverPopupPosition(mousePosition) {
+  if (!hoverPopupShow.value) return;
+  
+  const hoverPopup = document.getElementById("hoverPopup");
+  if (!hoverPopup) return;
+  
+  // 设置悬浮窗位置（跟随鼠标，偏移一些距离避免遮挡）
+  const offsetX = 15;
+  const offsetY = 15;
+  
+  // 确保位置在可视区域内
+  const popupWidth = hoverPopup.offsetWidth || 120;
+  const popupHeight = hoverPopup.offsetHeight || 40;
+  
+  // 计算弹窗位置
+  let left = mousePosition.x + offsetX;
+  let top = mousePosition.y - popupHeight - offsetY;
+  
+  // 边界检查
+  const canvas = viewer.scene.canvas;
+  if (left + popupWidth > canvas.width) {
+    left = mousePosition.x - popupWidth - offsetX;
+  }
+  if (top < 0) {
+    top = mousePosition.y + offsetY;
+  }
+  
+  hoverPopup.style.left = `${left}px`;
+  hoverPopup.style.top = `${top}px`;
+}
+
+//设置高亮样式
+function setHighlightStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = true;
+    entity.polygon.material = Cesium.Color.fromCssColorString("#00ff00").withAlpha(0.3);
+    entity.polygon.outlineColor = Cesium.Color.RED;
+    entity.polygon.outlineWidth = 3;
+  }
+}
+// 新增：设置悬停高亮样式
+function setHoverStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = true;
+    entity.polygon.material = Cesium.Color.fromCssColorString("#47e8fe").withAlpha(0.2);
+    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+    entity.polygon.outlineWidth = 3;
+  }
+}
+
+// 新增：重置悬停样式
+function resetHoverStyle(entity) {
+  if (entity && entity.polygon) {
+    if (showHenanLayer.value && henanEntities.includes(entity)) {
+      // 河南省样式
+      entity.polygon.fill = false;
+      entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#ff6b6b");
+      entity.polygon.outlineWidth = 3;
+    } else {
+      // 省级样式
+      entity.polygon.fill = false;
+      entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+      entity.polygon.outlineWidth = 2;
+    }
+  }
+}
+
+//重置实体样式
+function resetEntityStyle(entity) {
+  if (entity && entity.polygon) {
+    entity.polygon.fill = false;
+    entity.polygon.outline = true;
+    entity.polygon.outlineColor = Cesium.Color.fromCssColorString("#47e8fe");
+    entity.polygon.outlineWidth = 2;
+  }
+}
+// 辅助函数：飞行到省份
+function flyToProvince(entity) {
+  if (!entity) return;
+  
+  try {
+    // 使用实体的包围盒进行飞行
+    const boundingSphere = entity.boundingSphere;
+    
+    if (boundingSphere) {
+      viewer.camera.flyToBoundingSphere(boundingSphere, {
+        duration: 2,
+        offset: new Cesium.HeadingPitchRange(
+          0,
+          Cesium.Math.toRadians(-45), // 俯视角度
+          boundingSphere.radius * 1.5 // 根据省份大小调整距离
+        ),
+        complete: () => {
+          console.log(`已飞行聚焦到 ${entity.name || '选中省份'}`);
+        }
+      });
+    } else {
+      // 如果没有包围盒，使用默认飞行参数
+      viewer.flyTo(entity, {
+        duration: 2,
+        offset: new Cesium.HeadingPitchRange(
+          0,
+          Cesium.Math.toRadians(-30),
+          0
+        ),
+        complete: () => {
+          console.log(`已飞行聚焦到 ${entity.name || '选中省份'}`);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("飞行失败:", error);
+  }
+}
+
+function removeAdminLayer() {
+  if (adminDataSource) {
+    viewer.dataSources.remove(adminDataSource);
+    adminDataSource = null;
+    adminEntities = [];
+    highlightedEntity = null;
+    
+    // 清理事件处理器
+    if (hoverHandler) {
+      hoverHandler.destroy();
+      hoverHandler = null;
+    }
+    
+    // 清理双击事件处理器
+    if (doubleClickHandler) {
+      doubleClickHandler.destroy();
+      doubleClickHandler = null;
+    }
+    
+    // 移除河南省图层
+    removeHenanLayer();
+    showHenanLayer.value = false;
+    
+    // 隐藏悬浮弹窗
+    hoverPopupShow.value = false;
+    
+    console.log("自定义行政区图层已移除");
   } else {
     console.log("行政区图层未加载，无需移除");
   }
@@ -750,6 +1398,211 @@ function closeEnlargeModal() {
   showEnlargeModal.value = false;
 }
 
+// ====================== AI 小助手 状态与逻辑 ======================
+const aiVisible = ref(false);
+const aiMessages = ref([
+  { from: "assistant", text: "你好，我是 AI 小助手，有什么我可以帮你的吗？" },
+]);
+const aiInput = ref("");
+
+function toggleAI() {
+  aiVisible.value = !aiVisible.value;
+  // 打开时聚焦输入框
+  if (aiVisible.value) {
+    setTimeout(() => {
+      const el = document.getElementById("ai-input");
+      if (el) el.focus();
+      // 滚动到底部
+      const c = document.querySelector(".ai-messages");
+      if (c) c.scrollTop = c.scrollHeight;
+    }, 80);
+  }
+}
+
+async function sendAIMessage() {
+  const text = (aiInput.value || "").trim();
+  if (!text) return;
+  aiMessages.value.push({ from: "user", text });
+  aiInput.value = "";
+
+  // 尝试请求后端 AI 接口，若不可用则使用本地规则回复
+  let reply = "";
+  try {
+    const base = process.env.VUE_APP_AI_PROXY_URL || '';
+    const url = base ? `${base}/api/ai-assistant` : '/api/ai-assistant';
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text }),
+    });
+    if (resp.ok) {
+      const textBody = await resp.text();
+      console.log('AI proxy response text:', textBody.slice(0,500));
+      // 尝试解析 JSON，否则直接使用返回的原始文本
+      let json;
+      try { json = JSON.parse(textBody); } catch (e) { json = null; }
+      const rawReply = (json && (json.reply || json.result)) || textBody;
+      // 解析并合并可能的 NDJSON/分片回复
+      reply = parseLLMReply(rawReply) || "抱歉，未收到有效回复";
+    } else {
+      reply = ruleBasedReply(text);
+    }
+  } catch (e) {
+    // 网络或未实现的接口走本地规则
+    reply = ruleBasedReply(text);
+  }
+
+  aiMessages.value.push({ from: "assistant", text: reply });
+
+  // 优先使用 LLM 的回答执行命令（例如 LLM 可能返回“放大到 ...”），若无效果也尝试使用用户原始指令
+  handleAssistantCommand(reply);
+  handleAssistantCommand(text);
+
+  // 确保消息区域滚动到底部
+  setTimeout(() => {
+    const c = document.querySelector(".ai-messages");
+    if (c) c.scrollTop = c.scrollHeight;
+  }, 120);
+}
+
+function ruleBasedReply(text) {
+  const t = String(text || "").toLowerCase();
+  if (t.includes("放大")) return "好的，帮你放大地图视图。";
+  if (t.includes("缩小")) return "好的，帮你缩小地图视图。";
+  if (t.includes("定位")) return "请告诉我经度和纬度，例如：定位到 114.34,34.79 或 定位到 114.34 34.79";
+  if (t.includes("加载水体") || t.includes("加载 水体")) return loadedWater.value ? "水体已加载。" : "收到，我将在地图上加载智慧水体。";
+  if (t.includes("隐藏水体")) return "收到，我将移除水体图层。";
+  return "抱歉，我还在学习中。你可以尝试询问其他相关水利问题。";
+}
+
+// 解析来自本地大模型的回复（可能是 NDJSON / 多行 JSON / 转义的 JSON 字符串）并合并为可读文本
+function parseLLMReply(raw) {
+  if (!raw) return '';
+  // 规范化转义的换行符和引号
+  let s = String(raw).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+
+  // 简单短句直接返回
+  if (!/\{|\n/.test(s)) return s;
+
+  // 尝试从文本中提取多个 JSON 对象（支持没有真实换行但包含多个 JSON 的情况）
+  function extractJsonObjects(text) {
+    const objs = [];
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '{') {
+        if (depth === 0) start = i;
+        depth++;
+      } else if (ch === '}') {
+        depth--;
+        if (depth === 0 && start !== -1) {
+          objs.push(text.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+    return objs;
+  }
+
+  const parts = [];
+
+  // 1) 优先按行拆分并解析每一行
+  const lines = s.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line);
+      if (obj.response) parts.push(String(obj.response));
+      else if (obj.output) {
+        if (Array.isArray(obj.output)) parts.push(obj.output.map(o => (typeof o === 'string' ? o : (o?.content || o?.text || JSON.stringify(o)))).join(''));
+        else parts.push(typeof obj.output === 'string' ? obj.output : (obj.output?.content || obj.output?.text || JSON.stringify(obj.output)));
+      } else if (obj.text) parts.push(obj.text);
+      else if (obj.result) parts.push(obj.result);
+    } catch (e) {
+      // 继续 - 有可能该行不是 JSON
+    }
+  }
+
+  // 2) 如果行解析没有结果，尝试从整体中抽取 JSON 对象并解析
+  if (parts.length === 0) {
+    const objs = extractJsonObjects(s);
+    for (const j of objs) {
+      try {
+        const obj = JSON.parse(j);
+        if (obj.response) parts.push(String(obj.response));
+        else if (obj.output) {
+          if (Array.isArray(obj.output)) parts.push(obj.output.map(o => (typeof o === 'string' ? o : (o?.content || o?.text || JSON.stringify(o)))).join(''));
+          else parts.push(typeof obj.output === 'string' ? obj.output : (obj.output?.content || obj.output?.text || JSON.stringify(obj.output)));
+        } else if (obj.text) parts.push(obj.text);
+        else if (obj.result) parts.push(obj.result);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  if (parts.length > 0) return parts.join('');
+
+  // 3) 最后尝试整体解析为 JSON
+  try {
+    const obj = JSON.parse(s);
+    if (obj.reply) return String(obj.reply);
+    if (obj.output) return Array.isArray(obj.output) ? obj.output.join('') : (obj.output?.content || obj.output?.text || String(obj.output));
+    if (obj.text) return String(obj.text);
+    if (obj.result) return String(obj.result);
+  } catch (e) {
+    // not JSON
+  }
+
+  // 返回原始文本
+  return s;
+}
+
+function handleAssistantCommand(text) {
+  if (!viewer) return;
+  const t = String(text || "").replace(/，/g, ",").trim().toLowerCase();
+
+  // 缩放（通过调整相机高度）
+  function adjustCameraScale(factor) {
+    try {
+      const carto = Cesium.Cartographic.fromCartesian(viewer.camera.position);
+      const lon = carto.longitude;
+      const lat = carto.latitude;
+      const height = carto.height || 10000;
+      const newHeight = Math.max(10, height * factor);
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromRadians(lon, lat, newHeight), duration: 1 });
+    } catch (e) {
+      console.warn('调整相机高度失败', e);
+    }
+  }
+
+  if (t.includes("放大")) {
+    adjustCameraScale(0.5);
+  }
+  if (t.includes("缩小")) {
+    adjustCameraScale(2.0);
+  }
+  if (t.includes("加载水体")) {
+    if (!loadedWater.value) toggleWaterFeatures();
+  }
+  if (t.includes("隐藏水体")) {
+    if (loadedWater.value) toggleWaterFeatures();
+  }
+
+  // 定位：尝试解析经纬度
+  if (t.startsWith("定位到") || t.startsWith("定位")) {
+    const nums = t.match(/(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/);
+    if (nums) {
+      const lon = parseFloat(nums[1]);
+      const lat = parseFloat(nums[2]);
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 15000), duration: 2 });
+      aiMessages.value.push({ from: "assistant", text: `已前往 ${lon}, ${lat}` });
+    } else {
+      aiMessages.value.push({ from: "assistant", text: "无法解析坐标，请使用“定位到 经度,纬度”格式" });
+    }
+  }
+}
+
 // 监听年份变化，确保联动更新
 watch([yearlyChangeStartYear, yearlyChangeEndYear], handleYearChange);
 // 监听月份变化，确保联动更新
@@ -765,6 +1618,101 @@ function metersToDegStep(latDeg, meters) {
   const dLat = meters / 111320;
   const dLon = meters / (111320 * Math.cos((latDeg * Math.PI) / 180));
   return { dLat, dLon };
+}
+// 【新增】经纬度转局部平面坐标（米）
+// 用于近似计算单个水面 polygon 面积
+function projectLonLatToMeters(lon, lat, lon0, lat0) {
+  const R = 6378137;
+  const x = ((lon - lon0) * Math.PI / 180) * R * Math.cos((lat0 * Math.PI) / 180);
+  const y = ((lat - lat0) * Math.PI / 180) * R;
+  return { x, y };
+}
+
+// 【新增】计算单个环面积（平方米）
+function calcRingAreaM2(ring) {
+  if (!Array.isArray(ring) || ring.length < 3) return 0;
+
+  let lon0 = 0;
+  let lat0 = 0;
+
+  for (const p of ring) {
+    lon0 += Number(p.lon) || 0;
+    lat0 += Number(p.lat) || 0;
+  }
+
+  lon0 /= ring.length;
+  lat0 /= ring.length;
+
+  const pts = ring.map(p =>
+    projectLonLatToMeters(
+      Number(p.lon) || 0,
+      Number(p.lat) || 0,
+      lon0,
+      lat0
+    )
+  );
+
+  let sum = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    sum += pts[j].x * pts[i].y - pts[i].x * pts[j].y;
+  }
+
+  return Math.abs(sum) * 0.5;
+}
+// 【新增】计算 ring 周长（米）
+// 用于更稳地识别弯曲细长水体
+function calcRingPerimeterM(ring) {
+  if (!Array.isArray(ring) || ring.length < 2) return 0;
+
+  let lon0 = 0;
+  let lat0 = 0;
+  for (const p of ring) {
+    lon0 += Number(p.lon) || 0;
+    lat0 += Number(p.lat) || 0;
+  }
+  lon0 /= ring.length;
+  lat0 /= ring.length;
+
+  const pts = ring.map(p =>
+    projectLonLatToMeters(
+      Number(p.lon) || 0,
+      Number(p.lat) || 0,
+      lon0,
+      lat0
+    )
+  );
+
+  let sum = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    sum += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return sum;
+}
+// 【新增】计算带洞多边形面积（平方米）
+function calcPolygonAreaM2(poly) {
+  if (!poly || !Array.isArray(poly.outer) || poly.outer.length < 3) return 0;
+
+  const outerArea = calcRingAreaM2(poly.outer);
+  const holesArea = (poly.holes || []).reduce((sum, hole) => {
+    return sum + calcRingAreaM2(hole);
+  }, 0);
+
+  return Math.max(0, outerArea - holesArea);
+}
+
+// 【新增】筛选“允许参与蔓延”的水面 polygon
+function getSpreadEligiblePolygons(polys) {
+  if (!Array.isArray(polys) || polys.length === 0) return [];
+
+  return polys.filter(poly => {
+    const areaM2 = calcPolygonAreaM2(poly);
+    return areaM2 >= WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2;
+  });
 }
 
 // 点在环内（射线法）
@@ -954,7 +1902,12 @@ function startFloodHeatmap() {
   floodEntity = viewer.entities.add({
     name: "flood-heatmap",
     rectangle: {
-      coordinates: Cesium.Rectangle.fromDegrees(b.lonMin, b.latMin, b.lonMax, b.latMax),
+      coordinates: Cesium.Rectangle.fromDegrees(
+        b.lonMin,
+        b.latMin,
+        b.lonMax,
+        b.latMax
+      ),
       material: new Cesium.ImageMaterialProperty({
         image: dynamicImage,
         transparent: true,
@@ -981,8 +1934,52 @@ function startFloodHeatmap() {
       clampToGround: false,
     },
   });
+  // 可调参数：-90 是完全俯视，越接近 0 越平视
+  const FLOOD_CAMERA_HEADING = 0;     // 朝向
+  const FLOOD_CAMERA_PITCH = -45;     // 倾斜角，建议 -35 到 -60 之间
+  const FLOOD_CAMERA_ROLL = 0;
+  // 4) 点击洪水模拟后，定位到指定 POINT，并把镜头拉到 500 米高度
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(
+      FLOOD_CAMERA_LON,
+      FLOOD_CAMERA_LAT,
+      FLOOD_CAMERA_HEIGHT
+    ),
+    orientation: {
+      heading: Cesium.Math.toRadians(FLOOD_CAMERA_HEADING),
+      pitch: Cesium.Math.toRadians(FLOOD_CAMERA_PITCH),
+      roll: Cesium.Math.toRadians(FLOOD_CAMERA_ROLL),
+    },
+    duration: 2,
+    easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+  });
 
-  // 4) 帧动画推进
+  // 5) 一万米高度以下不显示热力图
+  if (floodHeightCheckHandler) {
+    viewer.scene.preRender.removeEventListener(floodHeightCheckHandler);
+    floodHeightCheckHandler = null;
+  }
+
+  floodHeightCheckHandler = function () {
+    if (!viewer) return;
+
+    const cameraHeight = viewer.camera.positionCartographic.height;
+    const shouldShow = cameraHeight >= FLOOD_HIDE_HEIGHT;
+
+    if (floodEntity) {
+      floodEntity.show = shouldShow;
+    }
+    if (floodBorderEntity) {
+      floodBorderEntity.show = shouldShow;
+    }
+  };
+
+  viewer.scene.preRender.addEventListener(floodHeightCheckHandler);
+
+  // 启动后立刻执行一次，避免初始状态不对
+  floodHeightCheckHandler();
+
+  // 6) 帧动画推进
   if (floodTimer) window.clearInterval(floodTimer);
   floodTimer = window.setInterval(() => {
     floodFrameIndex = (floodFrameIndex + 1) % FLOOD_TOTAL_FRAMES;
@@ -990,6 +1987,9 @@ function startFloodHeatmap() {
   }, FLOOD_FRAME_MS);
 
   floodEnabled.value = true;
+
+  // 【新增】启动蔓延（与热力图无关，独立定时器）
+  startWaterSpread();
 }
 
 function stopFloodHeatmap() {
@@ -1001,6 +2001,12 @@ function stopFloodHeatmap() {
   }
   floodFrameIndex = 0;
 
+  // 【新增】移除高度监听，避免重复绑定或关闭后仍继续执行
+  if (viewer && floodHeightCheckHandler) {
+    viewer.scene.preRender.removeEventListener(floodHeightCheckHandler);
+    floodHeightCheckHandler = null;
+  }
+
   if (viewer && floodEntity) {
     viewer.entities.remove(floodEntity);
     floodEntity = null;
@@ -1009,8 +2015,487 @@ function stopFloodHeatmap() {
     viewer.entities.remove(floodBorderEntity);
     floodBorderEntity = null;
   }
+
+  // 停止蔓延并清理蔓延层
+  stopWaterSpread();
 }
 
+//ring 的中心点
+function ringCentroidDeg(ring) {
+  let sx = 0, sy = 0;
+  const n = ring?.length || 1;
+  for (let i = 0; i < (ring?.length || 0); i++) {
+    sx += ring[i].lon;
+    sy += ring[i].lat;
+  }
+  return { lon: sx / n, lat: sy / n };
+}
+// 将 ring 规范化：去掉重复闭合点、去掉相邻重复点
+function normalizeRingDeg(ring) {
+  if (!Array.isArray(ring)) return [];
+
+  const out = [];
+  for (const p of ring) {
+    if (!p || !Number.isFinite(p.lon) || !Number.isFinite(p.lat)) continue;
+
+    const last = out[out.length - 1];
+    if (!last || last.lon !== p.lon || last.lat !== p.lat) {
+      out.push({ lon: p.lon, lat: p.lat });
+    }
+  }
+
+  // 如果首尾重复，去掉最后一个
+  if (out.length >= 2) {
+    const first = out[0];
+    const last = out[out.length - 1];
+    if (first.lon === last.lon && first.lat === last.lat) {
+      out.pop();
+    }
+  }
+
+  return out;
+}
+
+// 以局部原点做经纬度 <-> 米 的近似投影（足够用于局部河道偏移）
+function projectDegToLocalXY(p, origin) {
+  const latRad = origin.lat * Math.PI / 180.0;
+  const metersPerDegLat = 111320.0;
+  const metersPerDegLon = 111320.0 * Math.cos(latRad);
+
+  return {
+    x: (p.lon - origin.lon) * metersPerDegLon,
+    y: (p.lat - origin.lat) * metersPerDegLat,
+  };
+}
+
+function projectLocalXYToDeg(p, origin) {
+  const latRad = origin.lat * Math.PI / 180.0;
+  const metersPerDegLat = 111320.0;
+  const metersPerDegLon = 111320.0 * Math.cos(latRad) || 1e-9;
+
+  return {
+    lon: origin.lon + p.x / metersPerDegLon,
+    lat: origin.lat + p.y / metersPerDegLat,
+  };
+}
+
+// 计算 ring 在局部平面下的有向面积
+function signedAreaXY(ringXY) {
+  let s = 0;
+  const n = ringXY.length;
+  for (let i = 0; i < n; i++) {
+    const a = ringXY[i];
+    const b = ringXY[(i + 1) % n];
+    s += a.x * b.y - b.x * a.y;
+  }
+  return s * 0.5;
+}
+
+function normalizeVec2(vx, vy) {
+  const len = Math.sqrt(vx * vx + vy * vy);
+  if (len < 1e-9) return { x: 0, y: 0, len: 0 };
+  return { x: vx / len, y: vy / len, len };
+}
+
+// 根据 ring 方向返回“外法线”
+// CCW：外侧在右手边 -> (dy, -dx)
+// CW ：外侧在左手边 -> (-dy, dx)
+function getOutwardNormal(dx, dy, isCCW) {
+  const v = normalizeVec2(dx, dy);
+  if (v.len < 1e-9) return { x: 0, y: 0 };
+
+  if (isCCW) {
+    return { x: v.y, y: -v.x };
+  } else {
+    return { x: -v.y, y: v.x };
+  }
+}
+
+// 两条二维直线求交点：L1 = p1 + t*d1, L2 = p2 + s*d2
+function lineIntersection2D(p1, d1, p2, d2) {
+  const cross = d1.x * d2.y - d1.y * d2.x;
+  if (Math.abs(cross) < 1e-9) return null;
+
+  const qpx = p2.x - p1.x;
+  const qpy = p2.y - p1.y;
+  const t = (qpx * d2.y - qpy * d2.x) / cross;
+
+  return {
+    x: p1.x + d1.x * t,
+    y: p1.y + d1.y * t,
+  };
+}
+// 【修改】计算 polygon 主轴方向上的长度/宽度（米）
+// 修正点：
+// 1. 不能直接用 PCA 次轴跨度当“河道宽度”，弯曲细长水体会被误判
+// 2. 改为：长度取 max(PCA主轴长度, 外环周长/2)
+// 3. 宽度取 面积/长度，得到平均宽度，更符合细长河道/水渠特征
+function getPolygonSlimStatsM(poly) {
+  if (!poly?.outer?.length || poly.outer.length < 3) return null;
+
+  const cleanRing = normalizeRingDeg(poly.outer);
+  if (cleanRing.length < 3) return null;
+
+  const origin = ringCentroidDeg(cleanRing);
+  const pts = cleanRing.map(p => projectDegToLocalXY(p, origin));
+  if (pts.length < 3) return null;
+
+  // ---------- 1) PCA 主轴长度 ----------
+  let mx = 0, my = 0;
+  for (const p of pts) {
+    mx += p.x;
+    my += p.y;
+  }
+  mx /= pts.length;
+  my /= pts.length;
+
+  let xx = 0, xy = 0, yy = 0;
+  for (const p of pts) {
+    const dx = p.x - mx;
+    const dy = p.y - my;
+    xx += dx * dx;
+    xy += dx * dy;
+    yy += dy * dy;
+  }
+  xx /= pts.length;
+  xy /= pts.length;
+  yy /= pts.length;
+
+  const trace = xx + yy;
+  const det = xx * yy - xy * xy;
+  const temp = Math.sqrt(Math.max(0, trace * trace * 0.25 - det));
+  const lambda1 = trace * 0.5 + temp;
+
+  let axis1;
+  if (Math.abs(xy) > 1e-9) {
+    axis1 = normalizeVec2(lambda1 - yy, xy);
+  } else {
+    axis1 = xx >= yy ? { x: 1, y: 0, len: 1 } : { x: 0, y: 1, len: 1 };
+  }
+
+  let min1 = Infinity;
+  let max1 = -Infinity;
+  for (const p of pts) {
+    const dx = p.x - mx;
+    const dy = p.y - my;
+    const s1 = dx * axis1.x + dy * axis1.y;
+    min1 = Math.min(min1, s1);
+    max1 = Math.max(max1, s1);
+  }
+  const pcaLengthM = Math.max(0, max1 - min1);
+
+  // ---------- 2) 面积 ----------
+  const areaM2 = calcPolygonAreaM2(poly);
+
+  // ---------- 3) 周长近似中心线长度 ----------
+  // 对细长水体，外环周长约等于 2*(长度 + 宽度)
+  // 用 perimeter/2 作为“河道长度”的稳健近似，对弯曲河道比 bbox/PCA 次轴更稳定
+  const perimeterM = calcRingPerimeterM(cleanRing);
+  const perimeterBasedLengthM = Math.max(0, perimeterM * 0.5);
+
+  // ---------- 4) 最终长度 / 平均宽度 ----------
+  // 弯曲河道常常 PCA 长度偏小，所以取两者较大值
+  const lengthM = Math.max(pcaLengthM, perimeterBasedLengthM);
+
+  if (lengthM < 1e-6) return null;
+
+  // 平均宽度 = 面积 / 长度
+  const widthM = areaM2 / Math.max(lengthM, 1e-6);
+  const aspect = lengthM / Math.max(widthM, 1e-6);
+
+  return {
+    lengthM,
+    widthM,
+    aspect,
+    pcaLengthM,
+    perimeterM,
+    areaM2,
+  };
+}
+
+// 【新增】识别是否为细长水体
+function isSlenderWaterPolygon(poly) {
+  const stats = getPolygonSlimStatsM(poly);
+  if (!stats) return false;
+
+  return (
+    stats.lengthM >= WATER_SPREAD_SLENDER_MIN_LENGTH_M &&
+    stats.widthM <= WATER_SPREAD_SLENDER_MAX_WIDTH_M &&
+    stats.aspect >= WATER_SPREAD_SLENDER_MIN_ASPECT
+  );
+}
+// 外环向外扩（改为“沿边法线偏移”，适合细长河道）
+// 外环向外扩（默认：从多边形中心向外发散，适用于普通水体）
+function expandRingDeg(ring, expandMeters) {
+  if (!ring || ring.length < 3) return ring;
+
+  const cleanRing = normalizeRingDeg(ring);
+  if (cleanRing.length < 3) return ring;
+
+  const c = ringCentroidDeg(cleanRing);
+  const step = metersToDegStep(c.lat, expandMeters);
+  const dLon = step.dLon;
+  const dLat = step.dLat;
+
+  const out = [];
+  for (let i = 0; i < cleanRing.length; i++) {
+    const p = cleanRing[i];
+    const vx = p.lon - c.lon;
+    const vy = p.lat - c.lat;
+    const len = Math.sqrt(vx * vx + vy * vy) || 1;
+
+    const ux = vx / len;
+    const uy = vy / len;
+
+    out.push({
+      lon: p.lon + ux * dLon,
+      lat: p.lat + uy * dLat,
+    });
+  }
+
+  return out;
+}
+// 【新增】沿边界法线偏移（仅适用于细长水体，如细长水渠）
+function expandRingByEdgeNormalDeg(ring, expandMeters) {
+  if (!ring || ring.length < 3 || !expandMeters) return ring;
+
+  const cleanRing = normalizeRingDeg(ring);
+  if (cleanRing.length < 3) return ring;
+
+  // 用中心只作为局部投影原点，不作为发散中心
+  const origin = ringCentroidDeg(cleanRing);
+
+  // 转为局部平面坐标（米）
+  const ringXY = cleanRing.map(p => projectDegToLocalXY(p, origin));
+  const n = ringXY.length;
+  if (n < 3) return ring;
+
+  // 判断方向：CCW 时外法线取右法线；CW 时外法线取左法线
+  const isCCW = signedAreaXY(ringXY) > 0;
+
+  const outXY = [];
+
+  for (let i = 0; i < n; i++) {
+    const prev = ringXY[(i - 1 + n) % n];
+    const curr = ringXY[i];
+    const next = ringXY[(i + 1) % n];
+
+    const e1 = normalizeVec2(curr.x - prev.x, curr.y - prev.y);
+    const e2 = normalizeVec2(next.x - curr.x, next.y - curr.y);
+
+    const n1 = isCCW
+      ? normalizeVec2(e1.y, -e1.x)
+      : normalizeVec2(-e1.y, e1.x);
+
+    const n2 = isCCW
+      ? normalizeVec2(e2.y, -e2.x)
+      : normalizeVec2(-e2.y, e2.x);
+
+    // 顶点法线：相邻边外法线求平均
+    let nv = normalizeVec2(n1.x + n2.x, n1.y + n2.y);
+
+    // 极端情况下退化
+    if (!isFinite(nv.x) || !isFinite(nv.y) || (Math.abs(nv.x) < 1e-9 && Math.abs(nv.y) < 1e-9)) {
+      nv = normalizeVec2(n2.x || n1.x, n2.y || n1.y);
+    }
+
+    // 轻量 miter 修正，避免尖角位移过小
+    const dot1 = Math.abs(nv.x * n1.x + nv.y * n1.y);
+    const dot2 = Math.abs(nv.x * n2.x + nv.y * n2.y);
+    const denom = Math.max(0.35, dot1, dot2);
+    const moveDist = Math.min(expandMeters * 2.5, expandMeters / denom);
+
+    outXY.push({
+      x: curr.x + nv.x * moveDist,
+      y: curr.y + nv.y * moveDist,
+    });
+  }
+
+  return outXY.map(p => projectLocalXYToDeg(p, origin));
+}
+// 先识别细长水体：
+// 细长水体 -> 沿边界法线偏移
+// 其余水体 -> 继续使用从多边形中心向外发散
+function expandPolygonWithHolesDeg(poly, expandMeters) {
+  const useEdgeNormal = isSlenderWaterPolygon(poly);
+
+  return {
+    outer: useEdgeNormal
+      ? expandRingByEdgeNormalDeg(poly.outer, expandMeters)
+      : expandRingDeg(poly.outer, expandMeters),
+    holes: (poly.holes || []).map(h => h),
+  };
+}
+
+// 【新增】删除蔓延层 primitive
+function clearWaterSpreadPrimitive() {
+  if (!viewer) return;
+  if (waterSpreadPrimitive) {
+    try { viewer.scene.primitives.remove(waterSpreadPrimitive); } catch (e) {}
+    waterSpreadPrimitive = null;
+  }
+}
+
+// 【新增】构建蔓延层（用 Primitive + height 抬高，避免看不见）
+function rebuildWaterSpreadPrimitive(expandMeters) {
+  if (!viewer) return;
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先清上一帧
+  clearWaterSpreadPrimitive();
+
+  const instances = [];
+
+  for (const poly of waterPolygonsDeg.value) {
+    const ep = expandPolygonWithHolesDeg(poly, expandMeters);
+
+    const hierarchy = new Cesium.PolygonHierarchy(
+      Cesium.Cartesian3.fromDegreesArray(ep.outer.flatMap(p => [p.lon, p.lat])),
+      (ep.holes || []).map(holeRing =>
+        new Cesium.PolygonHierarchy(
+          Cesium.Cartesian3.fromDegreesArray(holeRing.flatMap(p => [p.lon, p.lat]))
+        )
+      )
+    );
+
+    // 关键：给一个很小的 height 抬高，避开与贴地 waterPrimitive 的 z-fighting
+    const geom = new Cesium.PolygonGeometry({
+      polygonHierarchy: hierarchy,
+      height: WATER_SPREAD_HEIGHT_M,
+      vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+    });
+
+    instances.push(new Cesium.GeometryInstance({ geometry: geom }));
+  }
+
+  waterSpreadPrimitive = new Cesium.Primitive({
+    geometryInstances: instances,
+    appearance: new Cesium.EllipsoidSurfaceAppearance({
+      aboveGround: true,
+      material: waterMaterial, // 与原水体同材质
+    }),
+    asynchronous: false,
+  });
+
+  viewer.scene.primitives.add(waterSpreadPrimitive);
+}
+// 【新增】仅让“大于单体面积阈值”的水面参与蔓延
+rebuildWaterSpreadPrimitive = function (expandMeters) {
+  if (!viewer) return;
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先筛掉零碎小水面
+  const spreadPolygons = getSpreadEligiblePolygons(waterPolygonsDeg.value);
+
+  // 没有可参与蔓延的水面，则直接清掉蔓延层
+  if (spreadPolygons.length === 0) {
+    clearWaterSpreadPrimitive();
+    return;
+  }
+
+  // 先清上一帧
+  clearWaterSpreadPrimitive();
+
+  const instances = [];
+
+  for (const poly of spreadPolygons) {
+    const ep = expandPolygonWithHolesDeg(poly, expandMeters);
+
+    const hierarchy = new Cesium.PolygonHierarchy(
+      Cesium.Cartesian3.fromDegreesArray(ep.outer.flatMap(p => [p.lon, p.lat])),
+      (ep.holes || []).map(holeRing =>
+        new Cesium.PolygonHierarchy(
+          Cesium.Cartesian3.fromDegreesArray(holeRing.flatMap(p => [p.lon, p.lat]))
+        )
+      )
+    );
+
+    const geom = new Cesium.PolygonGeometry({
+      polygonHierarchy: hierarchy,
+      height: WATER_SPREAD_HEIGHT_M,
+      vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+    });
+
+    instances.push(new Cesium.GeometryInstance({ geometry: geom }));
+  }
+
+  if (instances.length === 0) {
+    clearWaterSpreadPrimitive();
+    return;
+  }
+
+  waterSpreadPrimitive = new Cesium.Primitive({
+    geometryInstances: instances,
+    appearance: new Cesium.EllipsoidSurfaceAppearance({
+      aboveGround: true,
+      material: waterMaterial,
+    }),
+    asynchronous: false,
+  });
+
+  viewer.scene.primitives.add(waterSpreadPrimitive);
+};
+
+// 【新增】启动蔓延（独立于热力图定时器）
+function startWaterSpread() {
+  if (!viewer) return;
+
+  // 必须有水体缓存
+  if (!waterPolygonsDeg.value || waterPolygonsDeg.value.length === 0) return;
+  if (!waterMaterial) return;
+
+  // 先建第0帧
+  waterSpreadFrameIndex = 0;
+  rebuildWaterSpreadPrimitive(0);
+
+  // 独立定时器
+  if (waterSpreadTimer) window.clearInterval(waterSpreadTimer);
+  waterSpreadTimer = window.setInterval(() => {
+    waterSpreadFrameIndex = (waterSpreadFrameIndex + 1) % WATER_SPREAD_TOTAL_FRAMES;
+
+    // easeOut：前期明显、后期趋缓
+    const t01 = waterSpreadFrameIndex / (WATER_SPREAD_TOTAL_FRAMES - 1);
+    const ease = 1 - Math.pow(1 - t01, 3);
+    const spreadMeters = WATER_SPREAD_MAX_M * ease;
+
+    rebuildWaterSpreadPrimitive(spreadMeters);
+    viewer.scene?.requestRender?.();
+  }, WATER_SPREAD_FRAME_MS);
+}
+
+// 【新增】启动蔓延前，先判断是否存在“可参与蔓延”的水面
+const __rawStartWaterSpread = startWaterSpread;
+
+startWaterSpread = function (...args) {
+  const spreadPolygons = getSpreadEligiblePolygons(waterPolygonsDeg.value || []);
+
+  if (spreadPolygons.length === 0) {
+    clearWaterSpreadPrimitive();
+    if (waterSpreadTimer) {
+      window.clearInterval(waterSpreadTimer);
+      waterSpreadTimer = null;
+    }
+    waterSpreadFrameIndex = 0;
+
+    console.info(
+      `[waterSpread] 已跳过蔓延：当前只有零碎小水面，单体面积阈值为 ${WATER_SPREAD_MIN_SINGLE_POLY_AREA_M2}㎡`
+    );
+    return;
+  }
+
+  return __rawStartWaterSpread.apply(this, args);
+};
+// 【新增】停止蔓延
+function stopWaterSpread() {
+  if (waterSpreadTimer) {
+    window.clearInterval(waterSpreadTimer);
+    waterSpreadTimer = null;
+  }
+  waterSpreadFrameIndex = 0;
+  clearWaterSpreadPrimitive();
+}
 function toggleFloodHeatmap() {
   if (!viewer) return;
   if (!floodEnabled.value) startFloodHeatmap();
@@ -2161,7 +3646,7 @@ async function initializeCesium() {
   //隐藏logo
   viewer._cesiumWidget._creditContainer.style.display = "none";
   // 设置最小缩放距离（以米为单位）
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000; // 例如设置为 1000 米
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 100; // 例如设置为 1000 米
 
   // 设置最大缩放距离（以米为单位）
   viewer.scene.screenSpaceCameraController.maximumZoomDistance = 800000; // 例如设置为 5000000 米
@@ -2434,6 +3919,37 @@ async function initializeWater() {
 
     // 将生成的 Primitive 添加到场景中，并缩放至目标区域
     viewer.scene.primitives.add(primitive);
+
+    // 你原来的水面材质创建位置：把 Material 对象缓存到 waterMaterial
+    waterMaterial = new Cesium.Material({
+      fabric: {
+        type: "Water",
+        uniforms: {
+          normalMap: "./water/water.jpg",
+          frequency: 2000.0,
+          animationSpeed: 0.1,
+          amplitude: 5.0,
+          specularIntensity: 0.5,
+          baseWaterColor: new Cesium.Color(
+              0 / 255.0,
+              54 / 255.0,
+              84 / 255.0,
+              0.8
+          ),
+        },
+      },
+    });
+
+    // 你原来的 primitive：把 primitive 缓存到 waterPrimitive
+    waterPrimitive = new Cesium.GroundPrimitive({
+      geometryInstances: instances,
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        aboveGround: true,
+        material: waterMaterial, // 用缓存材质（与原效果一致）
+      }),
+    });
+
+    viewer.scene.primitives.add(waterPrimitive);
   });
   console.log("水体加载完毕");
 }
@@ -2842,14 +4358,14 @@ async function onMovement(movement) {
   //     // 设置模型轮廓宽度
   //     //entity.model.silhouetteSize = 0;
   // }
-
+  
   // 如果点击到了一个具有 monitoItems 属性的实体对象
   if (pickedObject && pickedObject.id && pickedObject.id.monitoItems) {
     // 获取实体的位置信息（Cartesian 坐标）
     const entityPosition = pickedObject.id.position.getValue(
       Cesium.JulianDate.now()
     );
-
+    
     // 将 Cartesian 坐标转换为窗口坐标
     const windowPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
       viewer.scene,
@@ -2864,7 +4380,7 @@ async function onMovement(movement) {
       modalElement.style.left = windowPosition.x + "px";
       modalElement.style.top = windowPosition.y + "px";
       // 在悬浮窗中显示实体名称
-      modal_P_Element.innerHTML = pickedObject.id.monitoItems.data.name || "监测点";
+      //modal_P_Element.innerHTML = pickedObject.id.monitoItems.data.name || "监测点";
     }
 
     // 判断clickPopup状态决定是否显示hoverPopup
@@ -3941,7 +5457,43 @@ async function rotate() {
     transform: translateY(0);
   }
 }
+.back-to-province-btn {
+  position: fixed;
+  top: 6px;
+  left: 60px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 24px;
+  background: rgba(71, 232, 254, 0.2);
+  border: 1px solid rgba(71, 232, 254, 0.5);
+  border-radius: 4px;
+  color: #47e8fe;
+  font-family: PuHuiTi, serif;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  pointer-events: all;
 
+  i {
+    margin-right: 0px;
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(71, 232, 254, 0.3);
+    border-color: #47e8fe;
+    box-shadow: 0 0 10px rgba(71, 232, 254, 0.5);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
 /* ====================== 响应式适配 ====================== */
 /* 笔记本屏幕适配 (最大宽度1440px) */
 @media screen and (max-width: 1440px) {
@@ -3962,6 +5514,14 @@ async function rotate() {
     height: 34px;
     font-size: 13px;
   }
+  .back-to-province-btn {
+    top: 24px;
+    right: 140px;
+    width: 110px;
+    height: 34px;
+    font-size: 13px;
+  }nt-size: 13px;
+  
 }
 
 /* 小屏幕笔记本适配 (最大宽度1366px) */
@@ -3975,6 +5535,14 @@ async function rotate() {
   }
 
   .admin-layer-btn {
+    top: 26px;
+    right: 240px;
+    width: 100px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .back-to-province-btn{
     top: 26px;
     right: 240px;
     width: 100px;
@@ -4010,5 +5578,148 @@ async function rotate() {
     font-size: 14px;
     margin-right: 5px;
   }
+
+  .back-to-province-btn {
+    top: 21px;
+    right: 110px;
+    width: 90px;
+    height: 30px;
+    font-size: 11px;
+    
+
+  }    
+  .back-to-province-btn i {
+      font-size: 14px;
+      margin-right: 5px;
+  }
 }
+
+/* ====================== AI 小助手 样式 ====================== */
+.ai-assistant {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 99999;
+  pointer-events: all;
+}
+
+.ai-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(31, 124, 129, 0.2);
+  }
+
+  .ai-button .ai-btn-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+  }
+
+  /* AI 面板样式：白底、圆角、阴影，便于在地图上阅读 */
+  .ai-panel {
+    width: 340px;
+    max-height: 480px;
+    background: #ffffff;
+    color: #222;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+.ai-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-weight: 600;
+  background: linear-gradient(90deg, rgba(31,124,129,0.06), rgba(34,232,254,0.03));
+  color: #0b2930; /* 深色，便于白底显示 */
+}
+
+.ai-header .close {
+  cursor: pointer;
+  color: #4b5563;
+  font-weight: 700;
+}
+
+.ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 90%;
+}
+
+.ai-message .ai-from {
+  font-size: 12px;
+  color: #6b7280; /* 深灰，更适合白底 */
+  margin-bottom: 4px;
+}
+
+.ai-message.assistant .ai-text {
+  background: #f7f7f9; /* 浅灰背景 */
+  color: #111827; /* 深色文字 */
+  padding: 8px 10px;
+  border-radius: 6px;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.ai-message.user .ai-text {
+  background: linear-gradient(90deg, #e6f7fa, #d5f1ef); /* 浅蓝-青背景 */
+  color: #0b2930; /* 深色文字 */
+  padding: 8px 10px;
+  border-radius: 6px;
+  align-self: flex-end;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.ai-input {
+  display: flex;
+  padding: 10px;
+  gap: 8px;
+  background: #f4f6f8;
+  border-top: 1px solid #e6e9ec;
+}
+
+.ai-input input {
+  flex: 1;
+  height: 36px;
+  border-radius: 6px;
+  padding: 0 8px;
+  border: 1px solid #dbe4e8;
+  background: #ffffff;
+  color: #111827;
+}
+
+.ai-input button {
+  width: 64px;
+  border-radius: 6px;
+  background: #0d98a2; /* 稍深的青色按钮 */
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
 </style>
