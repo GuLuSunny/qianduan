@@ -21,14 +21,14 @@ import { ElMessage, ElLoading } from 'element-plus'
 
 const soilChart = ref(null)
 let myChart = null
-const periodDataList = ref({})
-let intervalId = null
-const chartOptionsList = null
-let idxCount = 0
+const periodDataList = ref({}) //接口返回的数据列表
+let intervalId = null //定时器ID，用来每10秒切换一次图
+const chartOptionsList = null 
+let idxCount = 0 
 const chartTitle = ref('')
 
 const loadingoptions = {
-  // 加载配置
+  // 加载配置，请求时的加载遮罩配置（黑色半透明背景+“数据加载中...”）
   target: '.wetLandDiv',
   fullscreen: false,
   background: 'rgba(0, 0, 0, 0.7)',
@@ -98,7 +98,7 @@ const chartOptions = {
 /* 数据查询 */
 function fetchSoilData () {
   const loadingInstance = ElLoading.service(loadingoptions)
-  WetlandSoilGetData({ time: props.shiDiData.time })
+  WetlandSoilGetData({ time: props.shiDiData.time })//props.shiDiData.time父组件传入的查询时间
     .then((res) => {
       loadingInstance.close()
       const result = res.response.value
@@ -171,11 +171,12 @@ function updateChart () {
   }
 
   if (periodDataList.value.length === 0) return {}
+  // 获取当前要显示的图表配置
   const { title, yAxisName, dataKey } = chartOptions[idxCount] || {}
 
   // Handle missing options
   if (!title || !yAxisName) return {}
-
+  // 1. X轴数据：深度范围（类目轴）
   const xAxisData = periodDataList.value.map((item) => item.depthRange)
   const seriesData = periodDataList.value.map((item) =>
     parseFloat(item[dataKey]).toFixed(2)
@@ -192,7 +193,7 @@ function updateChart () {
     },
     tooltip: { trigger: 'axis' },
     xAxis: {
-      type: 'category',
+      type: 'category', //类目轴
       data: xAxisData,
       name: '深度(cm)',
       nameLocation: 'middle',

@@ -11,6 +11,7 @@
           title="修改个人信息"
         />
         <el-text class="mx-1" type="info" size="large">{{ nickname }}</el-text>
+        <el-button type="info" text bg @click="goToKgqa">AI小助手</el-button>
         <el-button type="info" text bg @click="goToLink">进入大屏系统</el-button>
         <el-button type="info" text bg @click="goToQuit">退出系统</el-button>
       </el-space>
@@ -26,6 +27,11 @@ import { ElMessage } from 'element-plus'
 // 纯静态昵称（不用读缓存）
 const nickname = ref('刘思远')
 const router = useRouter()
+
+// 跳转知识图谱问答页面
+function goToKgqa() {
+  router.push('/kgqa')
+}
 
 // 跳转大屏系统（静态路由跳转）
 function goToLink() {
