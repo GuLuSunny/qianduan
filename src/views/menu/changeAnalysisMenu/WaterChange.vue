@@ -1,231 +1,257 @@
 <template>
   <div>
-    <!-- 水体变化识别功能 -->
+    <!-- 植被覆盖度变化生产功能 -->
     <div class="feature-container">
-      <!-- 自定义步骤条 -->
-      <div class="steps-container">
+      <!-- 自定义步骤条 - 添加动画 -->
+      <div class="steps-container animate__animated animate__fadeInDown">
         <div class="custom-steps">
           <div :class="['step-item', { 'active': predictCurrent === 0 }]">
-            <div class="step-number">1</div>
+            <div 
+              class="step-number animate__animated" 
+              :class="{'animate__pulse animate__infinite': predictCurrent === 0}"
+            >
+              1
+            </div>
             <div class="step-title">选择文件和参数</div>
           </div>
           <div :class="['step-item', { 'active': predictCurrent === 1 }]">
-            <div class="step-number">2</div>
+            <div 
+              class="step-number animate__animated" 
+              :class="{'animate__pulse animate__infinite': predictCurrent === 1}"
+            >
+              2
+            </div>
             <div class="step-title">生产结果</div>
           </div>
         </div>
       </div>
 
-      <!-- 选择文件和参数页面 -->
-      <div class="form-container" v-if="predictCurrent === 0">
-        <el-form :model="form" label-width="140px">
-          <div class="form-horizontal-group">
-            <div class="form-column-full">
-              <!-- 早期文件上传 -->
-              <el-form-item label="早期文件" required>
-                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
-                  <el-input
-                    v-model="earlyFilePath"
-                    placeholder="请选择早期文件"
-                    readonly
-                    style="width: 100%;"
-                    clearable
-                    @clear="handleRemoveFile('early')"
-                    @keydown.delete="handleKeydown($event, 'early')"
-                    @focus="handleInputFocus('early')"
-                  >
-                    <template #append>
-                      <el-button @click="handleEarlyBrowseClick" style="background-color: #409eff; color: white; border: none;">
-                        浏览
-                      </el-button>
-                    </template>
-                  </el-input>
-                  <input
-                    type="file"
-                    ref="earlyFileInput"
-                    @change="handleEarlyFileSelect"
-                    accept=".tif,.zip,.rar"
-                    style="display: none;"
-                  />
-                </div>
-              </el-form-item>
+      <!-- 选择文件和参数页面 - 添加切换动画 -->
+      <transition 
+        enter-active-class="animate__animated animate__fadeInRight" 
+        leave-active-class="animate__animated animate__fadeOutLeft"
+        mode="out-in"
+      >
+        <!-- 用一个 div 包裹两个页面，通过 v-if/v-else 控制显示哪一个 -->
+        <div :key="predictCurrent">
+          <!-- 表单页面 -->
+          <div class="form-container" v-if="predictCurrent === 0">
+            <el-form :model="form" label-width="auto" class="center-form">
+              <div class="form-horizontal-group">
+                <div class="form-column-full">
+                  <!-- 早期文件上传 - 添加动画 -->
+                  <el-form-item label="早期文件：" required>
+                    <div class="file-input-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.1s'}">
+                      <el-input
+                        v-model="earlyFilePath"
+                        placeholder="请选择早期文件"
+                        readonly
+                        clearable
+                        @clear="handleRemoveFile('early')"
+                        @keydown.delete="handleKeydown($event, 'early')"
+                        @focus="handleInputFocus('early')"
+                      >
+                        <template #append>
+                          <el-button @click="handleEarlyBrowseClick" class="browse-button">
+                            浏览
+                          </el-button>
+                        </template>
+                      </el-input>
+                      <input
+                        type="file"
+                        ref="earlyFileInput"
+                        @change="handleEarlyFileSelect"
+                        accept=".tif,.zip,.rar"
+                        class="file-input-hidden"
+                      />
+                    </div>
+                  </el-form-item>
 
-              <!-- 后期文件上传 -->
-              <el-form-item label="后期文件" required>
-                <div style="display: flex; align-items: center; gap: 10px; width: 400px;">
-                  <el-input
-                    v-model="lateFilePath"
-                    placeholder="请选择后期文件"
-                    readonly
-                    style="width: 100%;"
-                    clearable
-                    @clear="handleRemoveFile('late')"
-                    @keydown.delete="handleKeydown($event, 'late')"
-                    @focus="handleInputFocus('late')"
-                  >
-                    <template #append>
-                      <el-button @click="handleLateBrowseClick" style="background-color: #409eff; color: white; border: none;">
-                        浏览
-                      </el-button>
-                    </template>
-                  </el-input>
-                  <input
-                    type="file"
-                    ref="lateFileInput"
-                    @change="handleLateFileSelect"
-                    accept=".tif,.zip,.rar"
-                    style="display: none;"
-                  />
-                </div>
-              </el-form-item>
+                  <!-- 后期文件上传 - 添加动画 -->
+                  <el-form-item label="后期文件：" required>
+                    <div class="file-input-wrapper animate__animated animate__fadeInUp" :style="{animationDelay: '0.2s'}">
+                      <el-input
+                        v-model="lateFilePath"
+                        placeholder="请选择后期文件"
+                        readonly
+                        clearable
+                        @clear="handleRemoveFile('late')"
+                        @keydown.delete="handleKeydown($event, 'late')"
+                        @focus="handleInputFocus('late')"
+                      >
+                        <template #append>
+                          <el-button @click="handleLateBrowseClick" class="browse-button">
+                            浏览
+                          </el-button>
+                        </template>
+                      </el-input>
+                      <input
+                        type="file"
+                        ref="lateFileInput"
+                        @change="handleLateFileSelect"
+                        accept=".tif,.zip,.rar"
+                        class="file-input-hidden"
+                      />
+                    </div>
+                  </el-form-item>
 
-              <!-- 文件状态提示 -->
-              <el-form-item label="文件状态">
-                <div class="file-status">
-                  <div v-if="earlyFileObject" class="status-item">
-                    <el-icon color="#67C23A"><Check /></el-icon>
-                    <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
-                  </div>
-                  <div v-else class="status-item">
-                    <el-icon color="#F56C6C"><Close /></el-icon>
-                    <span>未选择早期文件</span>
-                  </div>
-                  <div v-if="lateFileObject" class="status-item">
-                    <el-icon color="#67C23A"><Check /></el-icon>
-                    <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
-                  </div>
-                  <div v-else class="status-item">
-                    <el-icon color="#F56C6C"><Close /></el-icon>
-                    <span>未选择后期文件</span>
-                  </div>
-                </div>
-              </el-form-item>
-              
-              <el-form-item label="水体标签值" prop="waterTagValue">
-                <el-input-number
-                  v-model="form.waterTagValue"
-                  :min="0"
-                  :max="255"
-                  step="1"
-                  placeholder="请输入水体标签值（0-255）"
-                  style="width: 200px;"
-                />
-                <div style="font-size: 12px; color: #909399; margin-top: 5px;">
-                  注：代表水体的像素值，通常为0-255之间的整数
-                </div>
-              </el-form-item>
-              
-              <!-- 生产参数选项 -->
-              <el-form-item label="生产参数">
-                <el-checkbox-group v-model="predictOptions">
-                  <el-checkbox label="change_stats">变化统计</el-checkbox>
-                  <el-checkbox label="change_image">变化预览</el-checkbox>
-                  <el-checkbox label="change_tif">变化结果下载</el-checkbox>
-                </el-checkbox-group>
-              </el-form-item>
+                  <!-- 文件状态提示 - 添加动画 -->
+                  <el-form-item label="文件状态">
+                    <div class="file-status animate__animated animate__fadeInUp" :style="{animationDelay: '0.3s'}">
+                      <div v-if="earlyFileObject" class="status-item success">
+                        <el-icon color="#67C23A"><Check /></el-icon>
+                        <span>早期文件: {{ earlyFilePath }} ({{ (earlyFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                      </div>
+                      <div v-else class="status-item error">
+                        <el-icon color="#F56C6C"><Close /></el-icon>
+                        <span>未选择早期文件</span>
+                      </div>
+                      <div v-if="lateFileObject" class="status-item success">
+                        <el-icon color="#67C23A"><Check /></el-icon>
+                        <span>后期文件: {{ lateFilePath }} ({{ (lateFileObject.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                      </div>
+                      <div v-else class="status-item error">
+                        <el-icon color="#F56C6C"><Close /></el-icon>
+                        <span>未选择后期文件</span>
+                      </div>
+                    </div>
+                  </el-form-item>
 
-              <div class="button-group">
-                <el-button
-                  @click="handlePredict"
-                  class="submit-button"
-                  type="primary"
-                  :loading="predictLoading"
-                  :disabled="!earlyFileObject || !lateFileObject"
-                >
-                  {{ predictLoading ? '上传并生产中...' : '开始生产' }}
-                </el-button>
+                  <!-- 生产参数选项 - 添加动画 -->
+                  <el-form-item label="生产参数">
+                    <div class="center-content animate__animated animate__fadeInUp" :style="{animationDelay: '0.4s'}">
+                      <el-checkbox-group v-model="predictOptions" class="checkbox-group">
+                        <el-checkbox label="change_stats" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.45s'}">变化统计</el-checkbox>
+                        <el-checkbox label="change_image" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.5s'}">变化预览</el-checkbox>
+                        <el-checkbox label="change_tif" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.55s'}">变化结果下载</el-checkbox>
+                      </el-checkbox-group>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 按钮组 - 添加动画 -->
+                  <div class="button-group animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
+                    <el-button
+                      @click="handlePredict"
+                      class="submit-button"
+                      type="primary"
+                      :loading="predictLoading"
+                      :disabled="!earlyFileObject || !lateFileObject"
+                      :class="{'animate__animated animate__pulse animate__infinite': earlyFileObject && lateFileObject && !predictLoading}"
+                    >
+                      {{ predictLoading ? '上传并生产中...' : '开始生产' }}
+                    </el-button>
+                  </div>
+                </div>
               </div>
-            </div>
+            </el-form>
           </div>
-        </el-form>
-      </div>
 
-      <!-- 生产结果页面 -->
-      <div class="result-container" v-if="predictCurrent === 1">
-        <div class="result-content">
-          <!-- 结果内容区域 -->
-          <div class="result-layout">
-            <!-- 左侧：变化统计和下载区域 -->
-            <div class="left-panel">
-              <!-- 变化统计 -->
-              <div class="stats-section" v-if="predictOptions.includes('change_stats') && Object.keys(changeStats).length > 0">
-                <h3 class="section-title">变化统计</h3>
-                <div class="stats-grid">
-                  <div v-for="(value, key) in changeStats" :key="key" class="stats-item">
-                    <span class="stats-key">{{ key }}：</span>
-                    <span class="stats-value">面积: {{ value.area }} ㎡, 比例: {{ (value.ratio * 100).toFixed(2) }}%</span>
+          <!-- 生产结果页面 - 添加切换动画 -->
+          <div class="result-container" v-else-if="predictCurrent === 1">
+            <div class="result-content">
+              <!-- 结果内容区域 - 真正的左右布局 -->
+              <div class="result-layout">
+                <!-- 左边：变化统计 - 添加动画 -->
+                <div class="result-panel stats-panel animate__animated animate__fadeInLeft" :style="{animationDelay: '0.1s'}">
+                  <h3 class="animate__animated animate__fadeIn">变化统计</h3>
+                  <div class="stats-grid">
+                    <div 
+                      v-for="(value, key, index) in changeStats" 
+                      :key="key" 
+                      class="stat-card animate__animated animate__fadeInUp"
+                      :style="{animationDelay: `${0.2 + index * 0.1}s`}"
+                    >
+                      <span class="stat-label">{{ key }}：</span>
+                      <span class="stat-value">面积: {{ value.area }} ㎡, 比例: {{ (value.ratio * 100).toFixed(2) }}%</span>
+                    </div>
+                  </div>
+                  <div class="download-section" v-if="predictOptions.includes('change_stats')">
+                    <h3 class="animate__animated animate__fadeIn">统计文件下载</h3>
+                    <el-button 
+                      @click="downloadStatsFile" 
+                      type="primary" 
+                      plain 
+                      icon="Download" 
+                      class="download-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.5s'}"
+                    >
+                      下载统计文件
+                    </el-button>
                   </div>
                 </div>
-              </div>
-              
-              <!-- 下载区域 -->
-              <div class="download-section">
-                <!-- 统计文件下载 -->
-                <el-button 
-                  v-if="predictOptions.includes('change_stats') && downloadFiles.stats_file" 
-                  @click="downloadStatsFile" 
-                  type="primary" 
-                  plain 
-                  :icon="Download" 
-                  class="download-btn"
-                >
-                  下载统计文件
-                </el-button>
-                
-                <!-- 变化地图下载 -->
-                <el-button 
-                  v-if="predictOptions.includes('change_tif') && downloadFiles.tif_file" 
-                  @click="downloadTifFile" 
-                  type="primary" 
-                  plain 
-                  :icon="Download" 
-                  class="download-btn"
-                >
-                  下载变化地图
-                </el-button>
-              </div>
-            </div>
 
-            <!-- 右侧：变化图像预览 -->
-            <div class="right-panel">
-              <div class="preview-section" v-if="predictOptions.includes('change_image')">
-                <h3 class="section-title">变化预览图</h3>
-                <div v-if="previewData" class="image-preview">
-                  <img :src="previewData" alt="变化结果预览" class="preview-image" />
-                  <div class="preview-actions">
-                    <el-button @click="openImageDialog" type="primary" plain>
+                <!-- 右边：变化图像 - 添加动画 -->
+                <div class="result-panel image-panel animate__animated animate__fadeInRight" :style="{animationDelay: '0.2s'}">
+                  <div v-if="previewData && predictOptions.includes('change_image')" class="image-container">
+                    <img 
+                      :src="previewData" 
+                      alt="变化结果预览" 
+                      class="preview-image animate__animated animate__fadeIn"
+                      @load="onImagePreviewLoad"
+                    />
+                    <el-button 
+                      @click="openImageDialog" 
+                      type="primary" 
+                      plain 
+                      class="view-image-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.3s'}"
+                    >
                       <el-icon><ZoomIn /></el-icon>
                       查看大图
                     </el-button>
                   </div>
+                  <div v-else class="no-data animate__animated animate__fadeIn">
+                    <el-icon><Picture /></el-icon>
+                    <div>暂无预览图</div>
+                  </div>
+                  <div class="download-section" v-if="predictOptions.includes('change_tif')">
+                    <h3 class="animate__animated animate__fadeIn">变化地图下载</h3>
+                    <el-button 
+                      @click="downloadTifFile" 
+                      type="primary" 
+                      plain 
+                      icon="Download" 
+                      class="download-button animate__animated animate__fadeInUp"
+                      :style="{animationDelay: '0.4s'}"
+                    >
+                      下载变化地图
+                    </el-button>
+                  </div>
                 </div>
-                <div v-else class="no-preview">
-                  <el-icon class="no-preview-icon"><Picture /></el-icon>
-                  <div>暂无预览图</div>
-                </div>
+              </div>
+
+              <!-- 操作按钮 - 添加动画 -->
+              <div class="action-buttons animate__animated animate__fadeInUp" :style="{animationDelay: '0.6s'}">
+                <el-button @click="handlePredictPrevious" icon="Back" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.65s'}">
+                  上一步
+                </el-button>
+                <el-button @click="handlePredictContinue" type="primary" icon="RefreshRight" class="animate__animated animate__fadeIn" :style="{animationDelay: '0.7s'}">
+                  继续生产
+                </el-button>
               </div>
             </div>
           </div>
-
-          <!-- 操作按钮 -->
-          <div class="action-buttons">
-            <el-button @click="handlePredictPrevious" :icon="Back">
-              上一步
-            </el-button>
-            <el-button @click="handlePredictContinue" type="primary" :icon="RefreshRight">
-              继续生产
-            </el-button>
-          </div>
         </div>
-      </div>
+      </transition>
 
-      <!-- 大图预览对话框 -->
-      <el-dialog v-model="imageDialogVisible" title="预览大图" width="90%" :destroy-on-close="true">
+      <!-- 大图预览对话框 - 添加动画 -->
+      <el-dialog 
+        v-model="imageDialogVisible" 
+        title="预览大图" 
+        width="90%" 
+        :destroy-on-close="true"
+        :modal-append-to-body="false"
+      >
         <div class="full-image-container">
-          <img :src="previewData" alt="完整预览" class="full-size-image" @load="onImageLoad" />
-          <div v-if="isImageLoaded" class="zoom-controls">
-            <el-button @click="zoomIn" icon="ZoomIn" circle size="small" />
-            <el-button @click="zoomOut" icon="ZoomOut" circle size="small" />
+          <img 
+            :src="previewData" 
+            alt="完整预览" 
+            class="full-size-image animate__animated animate__fadeIn" 
+            @load="onImageLoad" 
+          />
+          <div v-if="isImageLoaded" class="zoom-controls animate__animated animate__fadeInUp">
+            <el-button @click="zoomIn" icon="ZoomIn" circle size="small" class="animate__animated animate__pulse animate__infinite" />
+            <el-button @click="zoomOut" icon="ZoomOut" circle size="small" class="animate__animated animate__pulse animate__infinite" />
           </div>
         </div>
       </el-dialog>
@@ -236,7 +262,7 @@
 <script setup>
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { Check, Picture, Download, Back,RefreshRight , ZoomIn, ZoomOut, Close } from '@element-plus/icons-vue'
+import { Check, Picture, Download, Back, RefreshRight, ZoomIn, ZoomOut, Close } from '@element-plus/icons-vue'
 import {
   ElForm,
   ElFormItem,
@@ -245,10 +271,9 @@ import {
   ElIcon,
   ElCheckbox,
   ElCheckboxGroup,
-  ElDialog,
-  ElInputNumber
+  ElDialog
 } from 'element-plus'
-import { getWaterChangeResult } from '@/api/getData'
+import { getPlantChangeResult } from '@/api/getData'
 
 // 状态定义
 const predictCurrent = ref(0)
@@ -261,9 +286,7 @@ const isImageLoaded = ref(false)
 const zoomLevel = ref(1)
 
 // 表单数据
-const form = ref({
-  waterTagValue: 1
-})
+const form = ref({})
 
 // 文件上传相关状态
 const earlyFilePath = ref('')
@@ -313,11 +336,11 @@ const handleRemoveFile = (type) => {
   if (type === 'early') {
     earlyFilePath.value = ''
     earlyFileObject.value = null
-    earlyFileInput.value && (earlyFileInput.value.value = '')
+    if (earlyFileInput.value) earlyFileInput.value.value = ''
   } else if (type === 'late') {
     lateFilePath.value = ''
     lateFileObject.value = null
-    lateFileInput.value && (lateFileInput.value.value = '')
+    if (lateFileInput.value) lateFileInput.value.value = ''
   }
 }
 
@@ -356,12 +379,6 @@ const handlePredict = async () => {
     return
   }
 
-  // 验证水体标签值
-  if (form.value.waterTagValue === undefined || form.value.waterTagValue === null || form.value.waterTagValue === '') {
-    message.error('请输入水体标签值')
-    return
-  }
-
   predictLoading.value = true
   error.value = ''
 
@@ -369,14 +386,13 @@ const handlePredict = async () => {
     const formData = new FormData()
     formData.append('earlyFile', earlyFileObject.value)
     formData.append('lateFile', lateFileObject.value)
-    formData.append('waterTagValue', form.value.waterTagValue.toString())
     
     // 只添加用户选择的参数
     predictOptions.value.forEach(option => {
       formData.append(option, 'True')
     })
 
-    const res = await getWaterChangeResult(formData)
+    const res = await getPlantChangeResult(formData)
     const response = res?.response?.value || res?.value || res
 
     if (response?.code === 'SUCCESS') {
@@ -478,13 +494,24 @@ const loadPreviewImage = async (imagePath) => {
   }
 }
 
+// 图片预览加载完成后的动画
+const onImagePreviewLoad = () => {
+  const img = document.querySelector('.preview-image')
+  if (img) {
+    img.classList.add('animate__pulse')
+    setTimeout(() => {
+      img.classList.remove('animate__pulse')
+    }, 1000)
+  }
+}
+
 // 下载功能
 const downloadStatsFile = async () => {
   if (!downloadFiles.value.stats_file) {
     message.error('没有可下载的统计文件')
     return
   }
-  await downloadFile(downloadFiles.value.stats_file, 'water_change_stats.txt')
+  await downloadFile(downloadFiles.value.stats_file, 'plant_change_stats.txt')
 }
 
 const downloadTifFile = async () => {
@@ -492,7 +519,7 @@ const downloadTifFile = async () => {
     message.error('没有可下载的变化地图')
     return
   }
-  await downloadFile(downloadFiles.value.tif_file, 'water_change_map.tif')
+  await downloadFile(downloadFiles.value.tif_file, 'plant_change_map.tif')
 }
 
 const downloadFile = async (filePath, defaultName) => {
@@ -538,12 +565,11 @@ const handlePredictContinue = () => {
   lateFilePath.value = ''
   earlyFileObject.value = null
   lateFileObject.value = null
-  earlyFileInput.value && (earlyFileInput.value.value = '')
-  lateFileInput.value && (lateFileInput.value.value = '')
+  if (earlyFileInput.value) earlyFileInput.value.value = ''
+  if (lateFileInput.value) lateFileInput.value.value = ''
   changeStats.value = {}
   downloadFiles.value = { stats_file: '', image_file: '', tif_file: '' }
   previewData.value = ''
-  form.value.waterTagValue = 1
   predictCurrent.value = 0
 }
 
@@ -580,39 +606,30 @@ const applyZoom = () => {
 </script>
 
 <style scoped>
-.file-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
-  margin-left: 0px;
-}
+/* 导入animate.css - 确保在使用前已安装 */
+@import 'animate.css';
 
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-/* 功能容器 */
+/* 基础样式 */
 .feature-container {
   margin: 0 auto;
   max-width: 1200px;
+  width: 100%;
+  padding: 0 15px;
+  box-sizing: border-box;
 }
 
-/* 步骤容器 */
+/* 步骤条样式 */
 .steps-container {
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 30px auto;
-  width: 80%;
+  width: 100%;
 }
 
-/* 自定义步骤条样式 */
 .custom-steps {
   display: flex;
-  width: 70%;
+  width: 100%;
   max-width: 600px;
   justify-content: space-between;
 }
@@ -650,12 +667,14 @@ const applyZoom = () => {
   z-index: 1;
   border: 2px solid #e0e0e0;
   color: #999;
+  transition: all 0.3s ease;
 }
 
 .step-title {
   font-size: 14px;
   color: #999;
   text-align: center;
+  transition: all 0.3s ease;
 }
 
 .step-item.active .step-number {
@@ -671,9 +690,100 @@ const applyZoom = () => {
 
 /* 表单容器 */
 .form-container {
-  margin: 50px;
   width: 100%;
-  margin-left: 280px;
+  margin: 30px 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.center-form {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 文件输入样式 */
+.file-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.browse-button {
+  background-color: #409eff;
+  color: white;
+  border: none;
+  min-width: 60px;
+  transition: all 0.3s ease;
+}
+
+.browse-button:hover {
+  background-color: #79bbff;
+  transform: scale(1.05);
+}
+
+/* 文件状态 */
+.file-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 5px 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  min-width: 300px;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.status-item.success {
+  border-left: 3px solid #67C23A;
+}
+
+.status-item.error {
+  border-left: 3px solid #F56C6C;
+}
+
+.status-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* 复选框组 */
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.checkbox-group .el-checkbox {
+  transition: all 0.3s ease;
+}
+
+.checkbox-group .el-checkbox:hover {
+  transform: scale(1.05);
+  color: #409eff;
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 /* 按钮组 */
@@ -681,8 +791,7 @@ const applyZoom = () => {
   display: flex;
   justify-content: center;
   margin-top: 30px;
-  margin-right: 550px;
-  gap: 20px;
+  width: 100%;
 }
 
 .submit-button {
@@ -691,17 +800,27 @@ const applyZoom = () => {
   color: white;
   border-radius: 4px;
   font-weight: 500;
+  width: 100%;
+  max-width: 200px;
+  transition: all 0.3s ease;
 }
 
 .submit-button:hover {
   background-color: #40a9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+}
+
+.submit-button:active {
+  transform: translateY(0);
 }
 
 /* 结果容器 */
 .result-container {
   margin: 20px auto;
-  max-width: 1200px;
-  padding: 0 20px;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .result-content {
@@ -713,131 +832,138 @@ const applyZoom = () => {
 /* 结果布局 */
 .result-layout {
   display: flex;
-  gap: 30px;
+  gap: 20px;
   align-items: flex-start;
   width: 100%;
-  max-width: 1100px;
+  flex-wrap: wrap;
 }
 
-/* 左侧面板 */
-.left-panel {
-  flex: 1;
-  min-width: 350px;
+.result-panel {
   background: #f8f9fa;
-  padding: 25px;
+  padding: 20px;
   border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-/* 右侧面板 */
-.right-panel {
   flex: 1;
-  min-width: 350px;
-  background: #f8f9fa;
-  padding: 25px;
-  border-radius: 10px;
+  min-width: 300px;
+  transition: all 0.3s ease;
 }
 
-/* 区域标题 */
-.section-title {
-  margin: 0 0 20px 0;
-  color: #303133;
-  font-size: 16px;
-  font-weight: 600;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e4e7ed;
+.result-panel:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
-/* 修改统计网格间隔 - 增大gap值 */
+.stats-panel {
+  flex: 1.5;
+}
+
+.image-panel {
+  flex: 1.5;
+  text-align: center;
+}
+
+/* 统计网格 */
 .stats-grid {
   display: grid;
-  gap: 20px; /* 修改：从15px改为20px，增大间隔 */
+  gap: 15px;
 }
 
-/* 可选：如果希望统计项本身也有更大间隔，可以增加padding */
-.stats-item {
+.stat-card {
   display: flex;
-  justify-content: space-between;
-  padding: 18px; /* 修改：从15px改为18px，略微增大内边距 */
+  flex-direction: column;
+  padding: 15px;
   background: white;
   border-radius: 8px;
   border: 1px solid #e4e7ed;
+  gap: 8px;
+  transition: all 0.3s ease;
 }
 
-.stats-key {
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #1890ff;
+}
+
+.stat-label {
   font-weight: bold;
   color: #606266;
 }
 
-.stats-value {
+.stat-value {
   color: #303133;
 }
 
-.left-panel .el-button + .el-button {
-  margin-left: 0 !important;
-}
-
-/* 修改下载区域样式 */
-.download-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  align-items: center; /* 新增：水平居中 */
-}
-
-.download-btn {
-  width: 100%; /* 修改：从100%改为80%，使按钮不占满整个宽度 */
-  max-width: 800px; /* 新增：限制最大宽度 */
-}
-
-/* 预览区域 */
-.preview-section {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.image-preview {
-  flex: 1;
+/* 图片容器 */
+.image-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 15px;
 }
 
 .preview-image {
   max-width: 100%;
-  max-height: 350px;
+  max-height: 400px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  object-fit: contain;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.preview-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+.preview-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.view-image-button,
+.download-button {
   width: 100%;
+  margin-top: 10px;
+  transition: all 0.3s ease;
 }
 
-.preview-actions .el-button {
-  flex: 1;
+.view-image-button:hover,
+.download-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64,158,255,0.3);
 }
 
-.no-preview {
+/* 无数据状态 */
+.no-data {
+  color: #909399;
+  padding: 40px;
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: #909399;
-  padding: 60px 20px;
-  height: 100%;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
-.no-preview-icon {
+.no-data:hover {
+  transform: scale(1.02);
+  color: #606266;
+}
+
+.no-data .el-icon {
   font-size: 48px;
   margin-bottom: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 下载区域 */
+.download-section {
+  margin-top: 25px;
+}
+
+.download-section h3 {
+  margin: 0 0 15px 0;
+  color: #303133;
+  text-align: center;
 }
 
 /* 操作按钮 */
@@ -847,29 +973,20 @@ const applyZoom = () => {
   gap: 10px;
   margin-top: 30px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
-/* 修复操作按钮的相邻外边距 */
-.action-buttons .el-button + .el-button {
-  margin-left: 10px; /* 保持适当的间距 */
+.action-buttons .el-button {
+  transition: all 0.3s ease;
+  min-width: 120px;
 }
 
-/* 如果操作按钮中有隐藏的按钮导致偏移，可以重置 */
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px; /* 使用gap替代margin-left更可靠 */
-  margin-top: 30px;
-  width: 100%;
+.action-buttons .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* 移除所有隐藏元素的影响 */
-.action-buttons .el-button:empty,
-.action-buttons .el-button[style*="display: none"] {
-  display: none !important;
-}
-
-/* 大图容器优化 */
+/* 大图预览 */
 .full-image-container {
   width: 100%;
   height: 70vh;
@@ -895,42 +1012,215 @@ const applyZoom = () => {
   gap: 5px;
 }
 
-/* 响应式调整 */
+.zoom-controls .el-button {
+  transition: all 0.3s ease;
+}
+
+.zoom-controls .el-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* 响应式断点 */
+@media (max-width: 1200px) {
+  .feature-container {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+  
+  .result-layout {
+    gap: 15px;
+  }
+  
+  .result-panel {
+    min-width: 280px;
+  }
+}
+
 @media (max-width: 992px) {
   .form-container {
-    width: 95%;
-    margin-left: 20px;
+    margin: 20px 0;
   }
   
   .custom-steps {
     max-width: 90%;
   }
   
-  .full-image-container {
-    height: 50vh;
+  .file-input-wrapper {
+    max-width: 100%;
   }
   
   .result-layout {
     flex-direction: column;
   }
   
-  .left-panel,
-  .right-panel {
-    min-width: 100%;
+  .result-panel {
+    width: 100%;
+    min-width: unset;
   }
   
-  .button-group {
-    margin-right: 0;
+  .full-image-container {
+    height: 60vh;
   }
 }
 
 @media (max-width: 768px) {
-  .form-container {
-    margin: 20px;
+  .feature-container {
+    padding: 0 15px;
   }
   
   .steps-container {
-    width: 95%;
+    margin: 20px auto;
+  }
+  
+  .step-number {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .step-title {
+    font-size: 13px;
+  }
+  
+  .step-item:not(:last-child):after {
+    top: 17.5px;
+  }
+  
+  .form-container {
+    margin: 15px 0;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+    width: 100%;
+  }
+  
+  :deep(.el-form-item__content) {
+    width: 100%;
+  }
+  
+  .checkbox-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .stat-card {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-buttons .el-button {
+    width: 100%;
+  }
+  
+  .full-image-container {
+    height: 50vh;
+  }
+  
+  .button-group {
+    margin-top: 20px;
+  }
+  
+  .submit-button {
+    max-width: 100%;
+  }
+  
+  .status-item {
+    min-width: 250px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .feature-container {
+    padding: 0 10px;
+  }
+  
+  .step-number {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  
+  .step-title {
+    font-size: 12px;
+  }
+  
+  .step-item:not(:last-child):after {
+    top: 15px;
+  }
+  
+  .result-panel {
+    padding: 15px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .no-data {
+    padding: 30px 20px;
+  }
+  
+  .no-data .el-icon {
+    font-size: 36px;
+  }
+  
+  .full-image-container {
+    height: 40vh;
+  }
+  
+  .status-item {
+    min-width: 200px;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+/* 高分辨率适配 */
+@media (min-width: 1920px) {
+  .feature-container {
+    max-width: 1400px;
+  }
+  
+  .result-layout {
+    gap: 30px;
+  }
+  
+  .result-panel {
+    padding: 30px;
+  }
+  
+  .preview-image {
+    max-height: 500px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .browse-button,
+  .submit-button,
+  .view-image-button,
+  .download-button,
+  .action-buttons .el-button {
+    min-height: 44px;
+  }
+  
+  .step-number {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .step-item:not(:last-child):after {
+    top: 22px;
   }
 }
 </style>

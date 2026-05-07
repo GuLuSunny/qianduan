@@ -1,5 +1,5 @@
 <template>
-  <a-layout style="min-height: 100vh" class="layoutLoading">
+  <a-layout style="height: 100vh; overflow: hidden" class="layoutLoading">
     <!-- 侧边栏宽度不固定，允许折叠 -->
     <a-layout-sider 
       v-model:collapsed="collapsed" 
@@ -9,7 +9,7 @@
       breakpoint="lg" 
       @collapse="onCollapse"
       @breakpoint="onBreakpoint"
-      style="position: fixed; height: 100vh; overflow: auto; left: 0; top: 0; z-index: 100;"
+      style="position: fixed; height: 100vh; overflow-y: auto; left: 0; top: 0; z-index: 100;"
     >
       <div v-if="!collapsed" class="logo">地表水资源<br></br>综合信息遥感监测系统</div>
       <div v-else class="logo-collapsed">
@@ -22,6 +22,7 @@
         mode="inline" 
         :openKeys="openKeys"
         :inlineCollapsed="collapsed"
+        style="border-right: 0;"
       >
         <template v-for="menu in menus" :key="menu.key">
           <a-sub-menu>
@@ -45,23 +46,25 @@
       </a-menu>
     </a-layout-sider>
     
-    <a-layout :style="{ marginLeft: collapsed ? '80px' : '280px' }">
-      <a-layout-header style="background: #fff; padding: 0">
+    <a-layout :style="{ marginLeft: collapsed ? '80px' : '280px', height: '100vh', overflow: 'hidden' }">
+      <a-layout-header style="background: #fff; padding: 0; height: 48px; line-height: 48px;">
         <span class="head">
           <Head></Head>
         </span>
       </a-layout-header>
       
-      <a-layout-content style="margin: 0 16px">
-        <a-breadcrumb style="margin: 16px 0">
+      <a-layout-content style="margin: 0 16px; height: calc(100vh - 48px - 48px); overflow-y: auto;">
+        <a-breadcrumb style="margin: 8px 0; height: 24px;">
           <a-breadcrumb-item v-for="(breadcrumb, index) in breadcrumbs" :key="index">
             {{ breadcrumb }}
           </a-breadcrumb-item>
         </a-breadcrumb>
-        <component :is="currentComponent" />
+        <div style="height: calc(100% - 40px); overflow-y: auto;">
+          <component :is="currentComponent" />
+        </div>
       </a-layout-content>
       
-      <a-layout-footer style="text-align: center">
+      <a-layout-footer style="text-align: center; height: 32px; line-height: 32px; padding: 0; background: #f0f2f5;">
         河南大学 版权所有
       </a-layout-footer>
     </a-layout>
@@ -118,13 +121,6 @@ const menus_pre = [
     title: '地表水资源遥感产品生产',
     icon: MenuFoldOutlined,
     items: [
-      // {
-      //   key:'17',
-      //   title: '文件上传',
-      //   component: GeographicIdentificationUpload,
-      //   breadcrumb: ['水生态要素提取','文件提交'] ,
-      //   pressionKey: 'menu_subE_a'
-      // },
       {
         key: '19',
         title: '水资源分布产品生产',
@@ -213,13 +209,6 @@ const menus_pre = [
         breadcrumb: ['地表水文数据查询', '气象'],
         pressionKey: 'menu_subB_a'
       },
-      // {
-      //   key: '6',
-      //   title: '水鸟',
-      //   component: Birdsdata,
-      //   breadcrumb: ['数据查询', '水鸟'],
-      //   pressionKey: 'menu_subB_b'
-      // },
       {
         key: '7',
         title: '水质',
@@ -255,37 +244,8 @@ const menus_pre = [
         breadcrumb: ['地表水文数据查询', '土壤'],
         pressionKey: 'menu_subB_g'
       }
-      // {
-      //   key: '16',
-      //   title: '遥感',
-      //   component: RemoteSensingQuery,
-      //   breadcrumb: ['数据查询', '遥感'],
-      //   pressionKey: 'menu_subB_h'
-      // }
     ]
   },
-  // {
-  //   key: 'sub3',
-  //   pressionKey: 'menu_subC',
-  //   title: '数据共享',
-  //   icon: InsertRowAboveOutlined,
-  //   items: [
-  //     {
-  //       key: '12',
-  //       title: '数据管理',
-  //       component: dataUploadMenu,
-  //       breadcrumb: ['数据共享', '数据管理'],
-  //       pressionKey: 'menu_subC_a'
-  //     },
-  //     {
-  //       key: "13",
-  //       title: "数据申请",
-  //       component: dataDownloadMenu,
-  //       breadcrumb: ["数据共享", "数据申请"],
-  //     }, 
-  //   ]
-  // },
-  
   {
     key: 'sub5',
     pressionKey: 'menu_subA',
@@ -313,14 +273,6 @@ const menus_pre = [
         breadcrumb: ['地表水文数据上传', '光谱与水质'],
         pressionKey: 'menu_subA_c'
       }
-      // ,
-      // {
-      //   key: '4',
-      //   title: '研究数据',
-      //   component: researchData,
-      //   breadcrumb: ['地表水文数据上传', '研究数据'],
-      //   pressionKey: 'menu_subA_d'
-      // }
     ]
   },
   {
@@ -453,14 +405,13 @@ function getMenuItemByKey(key) {
 }
 </script>
 
-
 <style scoped>
 /* 移除之前的固定宽度设置，让侧边栏可折叠 */
 
 /* 折叠状态下的logo样式 */
 .logo-collapsed {
   height: 32px;
-  margin: 18px 8px;
+  margin: 12px 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -471,7 +422,7 @@ function getMenuItemByKey(key) {
 
 .logo {
   height: 32px;
-  margin: 18px;
+  margin: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,26 +444,24 @@ function getMenuItemByKey(key) {
   font-size: 16px;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* 图标保持在左侧 */
-  margin-left: 20px; /* 添加左边距，使图标不要太靠左 */
-  margin-right: 12px; /* 添加右边距，与文字分开 */
-  flex-shrink: 0; /* 防止图标被压缩 */
+  justify-content: flex-start;
+  margin-left: 24px;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 /* 二级菜单文字样式 - 居中效果 */
 .menu-text {
   display: flex;
   align-items: center;
-  justify-content: center; /* 文字居中 */
+  justify-content: center;
   font-size: 14px;
   width: 100%;
   text-align: center;
   padding: 0 8px;
-  flex: 1; /* 占据剩余空间 */
-  margin-right: 52px;
+  flex: 1;
+  margin-right: 32px;
 }
-
-
 
 /* 三级导航栏样式 - 确保文字水平和垂直都居中 */
 :deep(.ant-menu-item) {
@@ -520,8 +469,9 @@ function getMenuItemByKey(key) {
   align-items: center !important;
   justify-content: center !important;
   text-align: center !important;
-  height: 44px !important;
-  padding: 24px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  margin: 4px 0 !important;
   border-radius: 4px;
 }
 
@@ -530,30 +480,20 @@ function getMenuItemByKey(key) {
   display: block !important;
   width: 100% !important;
   font-size: 13px;
-  text-align: center !important;
-  padding: 8 8px;
+  text-align: center;
+  padding: 0 8px;
+  margin-left: 8px;
 }
 
-/* 折叠状态下调整菜单图标和文字的边距 */
-:deep(.ant-menu-inline-collapsed .menu-icon) {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  justify-content: center; /* 折叠时图标居中 */
-}
-
-:deep(.ant-menu-inline-collapsed .menu-text) {
-  display: none; /* 折叠时隐藏文字 */
-}
-
-/* 修改二级菜单标题样式 - 保持图标在左侧，文字居中 */
+/* 修改二级菜单标题样式 */
 :deep(.ant-menu-submenu-title) {
   display: flex !important;
   align-items: center !important;
-  height: 48px !important;
+  height: 44px !important;
   padding: 0 0px !important;
   line-height: normal !important;
   border-radius: 4px !important;
-  margin: 4px 0 !important;
+  margin: 2px 0 !important;
 }
 
 /* 二级菜单标题内部的容器 */
@@ -563,7 +503,6 @@ function getMenuItemByKey(key) {
   width: 100%;
 }
 
-
 /* 菜单项悬停效果 */
 :deep(.ant-menu-item:hover),
 :deep(.ant-menu-submenu-title:hover) {
@@ -572,7 +511,7 @@ function getMenuItemByKey(key) {
 
 /* 选中菜单项样式 */
 :deep(.ant-menu-item-selected) {
-  background-color: #1890ff !important; /* 选中时背景色 */
+  background-color: #1890ff !important;
 }
 
 /* 折叠状态下菜单项的调整 */
@@ -604,6 +543,18 @@ function getMenuItemByKey(key) {
   font-size: 16px;
 }
 
+/* 折叠状态下菜单图标样式 */
+:deep(.ant-menu-inline-collapsed .menu-icon) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-content: center;
+}
+
+/* 折叠状态下隐藏菜单文字 */
+:deep(.ant-menu-inline-collapsed .menu-text) {
+  display: none;
+}
+
 .head {
   font-size: 1.5em;
 }
@@ -633,5 +584,4 @@ function getMenuItemByKey(key) {
   overflow-y: auto;
   overflow-x: hidden;
 }
-
 </style>

@@ -9,6 +9,7 @@ import DataDownload from '../views/menu/dataDownloadMenu/DataDownload.vue';
 import BigscreenHomeSample from '../views/sample/BigscreenHomeSample.vue';
 import Cesuimap from '../views/sample/Cesuimap.vue';
 import Profile from '@/views/user/profile.vue';
+import Kgqa from '@/views/kgqa.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -67,6 +68,14 @@ const routes: Array<RouteRecordRaw> = [
     component: Profile,
     meta: {
       title: '个人信息修改' 
+    }
+  },
+  {
+    path: '/kgqa',
+    name: 'Kgqa',
+    component: Kgqa,
+    meta: {
+      title: '水资源知识图谱问答'
     }
   }
 ];

@@ -13,6 +13,11 @@ module.exports = defineConfig({
   devServer: {
     port: 8081,
     proxy: {
+      "/api/ai-assistant": {
+        target: "http://127.0.0.1:3002",
+        changeOrigin: true,
+        pathRewrite: { "^/api/ai-assistant": "/api/ai-assistant" },
+      },
       "/api": {
         target: "http://127.0.0.1:8091",
         changeOrigin: true,

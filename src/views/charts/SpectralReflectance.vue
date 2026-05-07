@@ -266,21 +266,21 @@ function updateChart () {
       nameTextStyle: {
         color: 'white'
       },
-      nameGap: 25,
+      nameGap: 25,// 标题与轴线的距离(px)
       min: 400,
       max: 1000,
-      interval: 50,
+      interval: 50,// 每隔50显示一个刻度
       splitLine: {
-        show: false
+        show: false  // 不显示纵向网格线
       },
       axisLine: {
-        show: true
+        show: true // 显示轴线
       },
       axisTick: {
-        show: true
+        show: true // 显示刻度标记
       },
       axisLabel: {
-        color: 'white'
+        color: 'white' //刻度标签颜色白色
       }
     },
     yAxis: {
