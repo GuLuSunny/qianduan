@@ -13,16 +13,32 @@
       <i class="el-icon-back"></i>
       <span>返回省级视图</span>
     </div>
-     <!-- 新增：行政区图层切换开关 -->
-    <div class="admin-layer-btn" @click="toggleAdminLayer">
-      <i class="el-icon-map-location"></i>
-      <span>{{ showAdminLayer ? "关闭行政区" : "行政区图层" }}</span>
-    </div>
-    <!-- 新增：数据菜单按钮（在标题下方右侧） -->
-    <div class="data-menu-btn" @click="goToModelView">
-      <i class="el-icon-menu"></i>
-      <span>数据菜单</span>
-    </div>
+<!-- 右上角横向按钮容器 -->
+<div style="position: absolute; top: 30px; right: 30px; z-index: 99999; display: flex; flex-direction: row; gap: 15px;">
+  <!-- 1. 行政区图层按钮 -->
+  <div class="admin-layer-btn" @click="toggleAdminLayer" style="position: relative; top: 0; right: 0;">
+    <i class="el-icon-map-location"></i>
+    <span>{{ showAdminLayer ? "关闭行政区" : "行政区图层" }}</span>
+  </div>
+
+  <!-- 2. 数据菜单按钮 -->
+  <div class="data-menu-btn" @click="goToModelView" style="position: relative; top: 0; right: 0;">
+    <i class="el-icon-menu"></i>
+    <span>数据菜单</span>
+  </div>
+
+  <!-- 3. 测试洪水接口按钮 -->
+  <div class="data-menu-btn" @click="testConnect" style="position: relative; top: 0; right: 0;">
+    <i class="el-icon-connection"></i>
+    <span>测试洪水接口</span>
+  </div>
+
+  <!-- 4. 加载洪水动画按钮 -->
+  <div class="data-menu-btn" @click="loadFloodData" style="position: relative; top: 0; right: 0;">
+    <i class="el-icon-video-play"></i>
+    <span>加载洪水动画</span>
+  </div>
+</div>
 
     <!-- ====================== 6个模块====================== -->
     <div v-if="currentModuleGroup === 'old'">
@@ -344,7 +360,11 @@ import router from "@/router";
 import { resolve } from "path";
 //新增：热力图
 import h337 from "heatmap.js";
+import { pingPython, createFloodRun, getFloodFrame } from '@/api/flood'
+import { ElMessage } from 'element-plus'
 
+
+let currentRunId = null // 加上这一行
 // 新增:洪水热力图模拟状态
 const floodEnabled = ref(false);
 const heatmapContainer = ref(null);
@@ -2803,7 +2823,7 @@ async function initializeEntites(points) {
         font: "bold 30px Helvetica", // 字体大小和样式
         scale: 0.5,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 使用填充和轮廓
-        fillColor: new Cesium.Color.fromCssColorString("#47e8fe"), // 文字颜色
+        fillColor: Cesium.Color.fromCssColorString("#47e8fe"), // 文字颜色
         outlineColor: new Cesium.Color(0, 0, 0, 0.3), // 轮廓颜色，模拟阴影
         outlineWidth: 2.0, // 轮廓宽度
         pixelOffset: new Cesium.Cartesian2(0, -100), // 负值，将标签置于广告牌上方
@@ -3745,12 +3765,13 @@ async function initializeCesium() {
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         pixelOffset: new Cesium.Cartesian2(0, 16),
       },
+
       label: {
         text: pointConfig.name + "产品",
         font: "bold 30px Helvetica",
         scale: 0.5,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        fillColor: new Cesium.Color.fromCssColorString("#47e8fe"),
+        fillColor: Cesium.Color.fromCssColorString("#47e8fe"),
         outlineColor: new Cesium.Color(0, 0, 0, 0.3),
         outlineWidth: 2.0,
         pixelOffset: new Cesium.Cartesian2(0, -100),
@@ -4444,6 +4465,98 @@ async function rotate() {
 }
 
 
+// eslint-disable-next-line no-unused-vars
+import * as floodApi from '../../api/flood'
+// 1.测试连接
+const testConnect = async () => {
+  const isOk = await floodApi.pingPython()
+  if (isOk) {
+    ElMessage.success('洪水后端连接正常')
+  } else {
+    ElMessage.error('洪水后端连接失败，请启动Python服务')
+  }
+}
+
+// 2.加载单帧
+const loadSingleFrame = async (frameIndex) => {
+  try {
+    console.log('请求第', frameIndex, '帧')
+    
+    const res = await fetch(`http://127.0.0.1:8000/api/runs/1/frames/${frameIndex}`)
+    if (!res.ok) throw new Error(`请求失败：${res.status}`)
+    
+    const data = await res.arrayBuffer()
+    console.log('返回字节：', data.byteLength)
+
+    if (!data || data.byteLength <= 0) {
+      throw new Error('后端返回空数据')
+    }
+
+    const blob = new Blob([data], { type: 'image/png' })
+    const url = URL.createObjectURL(blob)
+
+    if (window.floodLayer) {
+      viewer.imageryLayers.remove(window.floodLayer)
+    }
+
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    await new Promise(resolve => {
+      img.onload = resolve
+      img.src = url
+    })
+
+    window.floodLayer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.SingleTileImageryProvider({
+        url: img,
+        rectangle: Cesium.Rectangle.fromDegrees(110.0, 32.0, 116.0, 36.0)
+      })
+    )
+    viewer.imageryLayers.raiseToTop(window.floodLayer)
+    window.floodLayer.alpha = 1.0
+
+    // 先注释掉，不提前释放
+    // URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('渲染异常详情：', err)
+    ElMessage.error('洪水数据渲染失败，动画已停止')
+    if (floodTimer) {
+      clearInterval(floodTimer)
+      floodTimer = null
+    }
+  }
+}
+// 3.加载动画（先硬编码runId=1，跳过创建任务）
+const loadFloodData = async () => {
+  try {
+    if (floodTimer) {
+      clearInterval(floodTimer)
+      floodTimer = null
+      floodFrameIndex = 0
+    }
+
+    currentRunId = 1 // 临时固定，先跑通动画
+    ElMessage.success('开始加载洪水动画，共266帧')
+
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(113.0, 34.0, 80000),
+      duration: 2
+    })
+
+    setTimeout(() => {
+      floodTimer = setInterval(() => {
+        loadSingleFrame(floodFrameIndex)
+        floodFrameIndex++
+        if (floodFrameIndex >= 266) {
+          floodFrameIndex = 0
+        }
+      }, 500)
+    }, 3500)
+  } catch (err) {
+    console.error('加载失败：', err)
+    ElMessage.error('洪水动画加载失败')
+  }
+}
 </script>
 <style lang="less" scoped>
 /* 【新增】heatmap 容器必须有宽高（与 HEATMAP_W/HEATMAP_H 一致） */
@@ -4452,7 +4565,7 @@ async function rotate() {
   height: 500px;
 }
 
-/* 【新增】洪水按钮样式（位置你可按需调） */
+/* 【新增】洪水按钮样式 */
 .flood-heatmap-btn {
   position: absolute;
   top: 90px;     /* 放在 data-menu-btn 下方即可 */

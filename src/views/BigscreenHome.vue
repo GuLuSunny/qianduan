@@ -265,11 +265,21 @@
           </div>
         </dv-border-box-6>
         <dv-border-box-2
-          style="width: calc(100vw * 0.5); height: calc(100vh * 0.53)"
-        >
-          <!-- 陆浑湖野外观测场地图 -->
-          <MapView />
-        </dv-border-box-2>
+  style="width: calc(100vw * 0.5); height: calc(100vh * 0.53); position: relative;"
+>
+  <!-- 洪水模型两个按钮 -->
+  <div style="position: absolute; top: 15px; left: 15px; z-index: 999;">
+    <el-button @click="testConnect" size="small" style="margin-right: 10px;">
+      测试后端连接
+    </el-button>
+    <el-button type="primary" @click="loadFloodData" size="small">
+      加载洪水数据
+    </el-button>
+  </div>
+
+  <!-- 原有地图组件 -->
+  <MapView />
+</dv-border-box-2>
       </div>
       <!-- 第三列 -->
       <div style="flex: 0 1 24vw">
@@ -728,6 +738,8 @@ import {
 } from '@/api/getData'
 
 import axios from 'axios'
+
+import { pingPython, getFloodFrame } from '@/api/flood'
 /* 径流地点弹框 */
 const visible_jingliu_didian = ref(false)
 /* 径流时间 */
@@ -1234,6 +1246,27 @@ function goLink (addressLink, menuItemKey, openKey) {
   const menuItemKeyList = { menuItemKey: menuItemKey, openSubKey: openKey }
   localStorage.setItem('menuItemKeyList', JSON.stringify(menuItemKeyList))
   routers.push(addressLink)
+}
+// 测试后端连接
+async function testConnect() {
+  const res = await pingPython()
+  if (res) {
+    ElMessage.success('后端连接正常')
+  } else {
+    ElMessage.error('连接失败，请启动后端服务')
+  }
+}
+
+// 加载洪水帧数据
+async function loadFloodData() {
+  try {
+    const frameData = await getFloodFrame(1, 0)
+    console.log('洪水帧数据：', frameData)
+    ElMessage.success(`数据加载成功，字节长度：${frameData.length}`)
+  } catch (err) {
+    console.error('加载洪水数据失败：', err)
+    ElMessage.error('数据加载失败')
+  }
 }
 </script>
 <style scoped>
