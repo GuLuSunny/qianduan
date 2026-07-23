@@ -49,7 +49,8 @@
   <!-- 洪水动画状态显示 -->
   <div class="data-menu-btn flood-status" style="position: relative; top: 0; right: 0;" v-if="currentRunId">
     <i class="el-icon-loading"></i>
-    <span>Flood: {{ floodFrameIndex }}/{{ FLOOD_TOTAL_FRAMES_COUNT }}</span>
+    <span v-if="floodLoadingProgress < 100">预加载 {{ floodLoadingProgress }}%</span>
+    <span v-else>Flood: {{ floodFrameIndex }}/{{ FLOOD_TOTAL_FRAMES_COUNT }}</span>
   </div>
 </div>
 
@@ -394,9 +395,10 @@ const floodFrameIndex = ref(0); // 改为响应式ref，用于模板显示
 let floodFrameCache = {}; // { frameIndex: canvas }
 let floodIsPreloading = false;
 let floodPreloadProgress = 0;
-const FLOOD_PRELOAD_BATCH = 100; // 每次预加载100帧（增大批次减少等待）
+const floodLoadingProgress = ref(0); // 预加载进度（0-100），用于模板显示
+const FLOOD_PRELOAD_BATCH = 100; // 每次预加载批次大小
 const FLOOD_PRELOAD_THRESHOLD = 20; // 缓存低于20帧时开始预加载
-const FLOOD_FRAME_DURATION = 50; // 每帧显示时间(ms)（加快动画速度）
+const FLOOD_FRAME_DURATION = 50; // 每帧显示时间(ms)
 
 // 【新增】洪水热力图相机高度控制
 let floodHeightCheckHandler = null;
@@ -4628,7 +4630,10 @@ function renderFloodFrameToCanvas(frameData, reuseCanvas = null) {
   return canvas;
 }
 
-// 创建或获取洪水实体（复用）
+// 当前显示的洪水帧canvas引用（CallbackProperty每次渲染时读取）
+let currentFloodCanvas = null;
+
+// 创建或获取洪水实体（使用CallbackProperty自动同步渲染）
 function getOrCreateFloodEntity() {
   if (!floodEntity) {
     const b = floodBounds.value;
@@ -4639,7 +4644,10 @@ function getOrCreateFloodEntity() {
           b.lonMin, b.latMin, b.lonMax, b.latMax
         ),
         material: new Cesium.ImageMaterialProperty({
-          image: null,
+          image: new Cesium.CallbackProperty(() => {
+            // Cesium每帧渲染时自动读取最新的canvas
+            return currentFloodCanvas;
+          }, false),
           transparent: true,
         }),
       },
@@ -4648,14 +4656,10 @@ function getOrCreateFloodEntity() {
   return floodEntity;
 }
 
-// 更新洪水实体的材质图片
+// 更新洪水实体的材质图片（只更新引用，Cesium CallbackProperty自动拉取）
 function updateFloodEntityMaterial(canvas) {
-  const entity = getOrCreateFloodEntity();
-  entity.rectangle.material = new Cesium.ImageMaterialProperty({
-    image: canvas,
-    transparent: true,
-  });
-  viewer.scene.requestRender();
+  getOrCreateFloodEntity(); // 确保实体已创建
+  currentFloodCanvas = canvas;
 }
 
 // 加载单帧（带缓存）
@@ -4736,33 +4740,21 @@ const getCachedFrameCount = () => {
 };
 
 const floodAnimationLoop = (timestamp) => {
-  if (!currentRunId.value || floodTimer) return; // 如果用setInterval则不执行
+  if (!currentRunId.value) return;
   
   const elapsed = timestamp - floodLastTime;
   
   if (elapsed >= FLOOD_FRAME_DURATION) {
-    // 加载当前帧（如果缓存中有，同步渲染；如果没有，异步加载）
-    if (floodFrameCache[floodFrameIndex.value]) {
-      // 缓存命中，立即渲染
-      updateFloodEntityMaterial(floodFrameCache[floodFrameIndex.value]);
+    // 渲染当前帧（全部266帧已预加载，缓存命中率100%）
+    const cachedCanvas = floodFrameCache[floodFrameIndex.value];
+    if (cachedCanvas) {
+      updateFloodEntityMaterial(cachedCanvas);
     } else {
-      // 缓存未命中，异步加载
+      // 兜底：缓存未命中时异步加载
       loadSingleFrame(floodFrameIndex.value);
     }
     
-    // 智能预加载：缓存低于阈值时开始预加载
-    const cachedCount = getCachedFrameCount();
-    if (!floodIsPreloading && cachedCount < FLOOD_PRELOAD_THRESHOLD) {
-      // 预加载接下来的帧
-      let preloadStart = (floodFrameIndex.value + 1) % FLOOD_TOTAL_FRAMES_COUNT;
-      // 如果预加载起点已经超过总帧数，从0开始
-      if (preloadStart + FLOOD_PRELOAD_BATCH > FLOOD_TOTAL_FRAMES_COUNT) {
-        preloadStart = 0;
-      }
-      preloadFrames(preloadStart, FLOOD_PRELOAD_BATCH);
-    }
-    
-    // 下一帧
+    // 下一帧（循环播放）
     floodFrameIndex.value++;
     if (floodFrameIndex.value >= FLOOD_TOTAL_FRAMES_COUNT) {
       floodFrameIndex.value = 0;
@@ -4804,13 +4796,23 @@ const toggleFloodAnimation = () => {
 // 3.加载动画（先硬编码runId=1，跳过创建任务）
 const loadFloodData = async () => {
   try {
-    // 先停止之前的动画
+    // 先停止之前的动画和热力图（避免冲突）
     stopFloodAnimation();
+    if (floodEnabled.value) {
+      stopFloodHeatmap(); // 停止旧版热力图，清除floodTimer
+    }
+    // 清理旧实体（热力图清除了就重建，避免冲突）
+    if (floodEntity) {
+      viewer.entities.remove(floodEntity);
+      floodEntity = null;
+    }
+    currentFloodCanvas = null;
     
     // 清空缓存
     floodFrameCache = {};
     floodFrameIndex.value = 0;
     floodPreloadProgress = 0;
+    floodLoadingProgress.value = 0;
     
     currentRunId.value = 1 // 临时固定，先跑通动画
     
@@ -4821,19 +4823,45 @@ const loadFloodData = async () => {
       easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT
     })
 
-    // 显示加载进度
-    ElMessage.info('正在预加载洪水帧数据...');
+    // 预加载全部266帧（分批加载，显示进度）
+    ElMessage({
+      message: '正在预加载洪水帧数据 0%...',
+      duration: 0,
+      type: 'info'
+    })
     
-    // 预加载第一批帧
-    await preloadFrames(0, FLOOD_PRELOAD_BATCH);
+    const totalFrames = FLOOD_TOTAL_FRAMES_COUNT;
+    let loadedCount = 0;
     
-    // 启动动画
-    ElMessage.success(`洪水动画开始，共${FLOOD_TOTAL_FRAMES_COUNT}帧`);
+    // 分批预加载所有帧
+    for (let start = 0; start < totalFrames; start += FLOOD_PRELOAD_BATCH) {
+      const count = Math.min(FLOOD_PRELOAD_BATCH, totalFrames - start);
+      await preloadFrames(start, count);
+      loadedCount = start + count;
+      const percent = Math.round((loadedCount / totalFrames) * 100);
+      floodLoadingProgress.value = percent;
+      
+      // 更新页面上的消息（关闭旧消息重新显示）
+      ElMessage.closeAll();
+      ElMessage({
+        message: `正在预加载洪水帧数据 ${percent}%...`,
+        duration: 0,
+        type: 'info'
+      })
+    }
     
-    setTimeout(() => {
-      floodLastTime = performance.now();
-      floodAnimationFrameId.value = requestAnimationFrame(floodAnimationLoop);
-    }, 500);
+    ElMessage.closeAll();
+    
+    // 预加载完成后立即显示第一帧
+    if (floodFrameCache[0]) {
+      updateFloodEntityMaterial(floodFrameCache[0]);
+    }
+    
+    ElMessage.success(`洪水动画加载完成，共${totalFrames}帧，开始播放`);
+    
+    // 启动动画循环，从帧0开始连续播放
+    floodLastTime = performance.now();
+    floodAnimationFrameId.value = requestAnimationFrame(floodAnimationLoop);
     
   } catch (err) {
     console.error('加载失败：', err)
