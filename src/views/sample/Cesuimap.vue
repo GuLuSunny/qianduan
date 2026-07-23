@@ -38,6 +38,19 @@
     <i class="el-icon-video-play"></i>
     <span>加载洪水动画</span>
   </div>
+
+  <!-- 5. 暂停/继续洪水动画按钮 -->
+  <div class="data-menu-btn" @click="toggleFloodAnimation" style="position: relative; top: 0; right: 0;" v-if="currentRunId">
+    <i v-if="floodAnimationFrameId" class="el-icon-pause"></i>
+    <i v-else class="el-icon-video-play"></i>
+    <span>{{ floodAnimationFrameId ? '暂停动画' : '继续动画' }}</span>
+  </div>
+
+  <!-- 洪水动画状态显示 -->
+  <div class="data-menu-btn flood-status" style="position: relative; top: 0; right: 0;" v-if="currentRunId">
+    <i class="el-icon-loading"></i>
+    <span>Flood: {{ floodFrameIndex }}/{{ FLOOD_TOTAL_FRAMES_COUNT }}</span>
+  </div>
 </div>
 
     <!-- ====================== 6个模块====================== -->
@@ -360,11 +373,11 @@ import router from "@/router";
 import { resolve } from "path";
 //新增：热力图
 import h337 from "heatmap.js";
-import { pingPython, createFloodRun, getFloodFrame } from '@/api/flood'
+import { pingPython, createFloodRun, getFloodFrame, preloadFloodFrames } from '@/api/flood'
 import { ElMessage } from 'element-plus'
 
 
-let currentRunId = null // 加上这一行
+const currentRunId = ref(null) // 改为响应式ref，用于模板显示
 // 新增:洪水热力图模拟状态
 const floodEnabled = ref(false);
 const heatmapContainer = ref(null);
@@ -374,7 +387,16 @@ let floodEntity = null;
 let floodBorderEntity = null;
 
 let floodTimer = null;
-let floodFrameIndex = 0;
+const floodAnimationFrameId = ref(null); // 改为响应式ref，用于模板显示
+const floodFrameIndex = ref(0); // 改为响应式ref，用于模板显示
+
+// 帧缓存系统
+let floodFrameCache = {}; // { frameIndex: canvas }
+let floodIsPreloading = false;
+let floodPreloadProgress = 0;
+const FLOOD_PRELOAD_BATCH = 100; // 每次预加载100帧（增大批次减少等待）
+const FLOOD_PRELOAD_THRESHOLD = 20; // 缓存低于20帧时开始预加载
+const FLOOD_FRAME_DURATION = 50; // 每帧显示时间(ms)（加快动画速度）
 
 // 【新增】洪水热力图相机高度控制
 let floodHeightCheckHandler = null;
@@ -404,10 +426,10 @@ const FLOOD_MAX_DEPTH = 100;
 // 洪水贴图覆盖矩形：
 // 实际布点会“只在水面多边形内部”，但 Cesium 贴图需要一个矩形区域（用水面总 bbox）
 const floodBounds = ref({
-  lonMin: 114.260,
-  latMin: 34.780,
-  lonMax: 114.295,
-  latMax: 34.805,
+  lonMin: 114.30,   // 河南区域经度范围
+  latMin: 34.80,    // 河南区域纬度范围
+  lonMax: 114.40,
+  latMax: 34.90,
 });
 
 //【新增】缓存水面多边形（经纬度）用于“只在水面内布点” 
@@ -1910,7 +1932,7 @@ function startFloodHeatmap() {
 
   // 3) 动态材质（CallbackProperty + ImageMaterialProperty）
   const dynamicImage = new Cesium.CallbackProperty(() => {
-    return getFloodCanvasForFrame(floodFrameIndex);
+    return getFloodCanvasForFrame(floodFrameIndex.value);
   }, false);
 
   const b = floodBounds.value;
@@ -2002,7 +2024,7 @@ function startFloodHeatmap() {
   // 6) 帧动画推进
   if (floodTimer) window.clearInterval(floodTimer);
   floodTimer = window.setInterval(() => {
-    floodFrameIndex = (floodFrameIndex + 1) % FLOOD_TOTAL_FRAMES;
+    floodFrameIndex.value = (floodFrameIndex.value + 1) % FLOOD_TOTAL_FRAMES;
     viewer.scene?.requestRender?.();
   }, FLOOD_FRAME_MS);
 
@@ -2019,7 +2041,7 @@ function stopFloodHeatmap() {
     window.clearInterval(floodTimer);
     floodTimer = null;
   }
-  floodFrameIndex = 0;
+  floodFrameIndex.value = 0;
 
   // 【新增】移除高度监听，避免重复绑定或关闭后仍继续执行
   if (viewer && floodHeightCheckHandler) {
@@ -4477,81 +4499,342 @@ const testConnect = async () => {
   }
 }
 
-// 2.加载单帧
-const loadSingleFrame = async (frameIndex) => {
+// 洪水帧数据配置
+const FLOOD_GRID_ROWS = 153;
+const FLOOD_GRID_COLS = 238;
+const FLOOD_WATER_THRESHOLD = 0.03; // 水深小于此值视为无水
+
+// 颜色渐变配置（更美观的洪水效果）
+const FLOOD_COLOR_STOPS = [
+  { depth: 0.0, color: [200, 230, 255, 0] },      // 透明（无水）
+  { depth: 0.1, color: [180, 220, 255, 100] },    // 浅蓝（刚淹没）
+  { depth: 0.5, color: [120, 190, 255, 160] },    // 蓝色（浅水区）
+  { depth: 1.0, color: [60, 150, 255, 200] },     // 中蓝（中等水深）
+  { depth: 2.0, color: [30, 100, 230, 220] },     // 深蓝（较深）
+  { depth: 3.0, color: [20, 70, 200, 230] },      // 暗蓝
+  { depth: 5.0, color: [10, 40, 150, 240] },      // 最深
+];
+
+// 预计算颜色查找表（避免每帧重复计算）
+const COLOR_LOOKUP_TABLE = [];
+const MAX_DEPTH = 5.0;
+const TABLE_SIZE = 501; // 0-5.0米，精度0.01米
+
+// 初始化颜色查找表
+(function initColorLookup() {
+  for (let i = 0; i < TABLE_SIZE; i++) {
+    const depth = (i / (TABLE_SIZE - 1)) * MAX_DEPTH;
+    
+    if (depth < FLOOD_WATER_THRESHOLD) {
+      COLOR_LOOKUP_TABLE[i] = [0, 0, 0, 0]; // 完全透明
+    } else {
+      // 找到当前深度所在的渐变区间
+      let lower = FLOOD_COLOR_STOPS[0];
+      let upper = FLOOD_COLOR_STOPS[FLOOD_COLOR_STOPS.length - 1];
+      
+      for (let j = 0; j < FLOOD_COLOR_STOPS.length - 1; j++) {
+        if (depth >= FLOOD_COLOR_STOPS[j].depth && depth <= FLOOD_COLOR_STOPS[j + 1].depth) {
+          lower = FLOOD_COLOR_STOPS[j];
+          upper = FLOOD_COLOR_STOPS[j + 1];
+          break;
+        }
+      }
+      
+      // 计算插值比例
+      const range = upper.depth - lower.depth;
+      const t = range > 0 ? (depth - lower.depth) / range : 0;
+      
+      // 线性插值颜色
+      const r = Math.round(lower.color[0] + (upper.color[0] - lower.color[0]) * t);
+      const g = Math.round(lower.color[1] + (upper.color[1] - lower.color[1]) * t);
+      const b = Math.round(lower.color[2] + (upper.color[2] - lower.color[2]) * t);
+      const a = Math.round(lower.color[3] + (upper.color[3] - lower.color[3]) * t);
+      
+      COLOR_LOOKUP_TABLE[i] = [r, g, b, a];
+    }
+  }
+})();
+
+// 使用查找表的颜色映射（速度更快）
+function depthToColor(depth) {
+  if (depth < FLOOD_WATER_THRESHOLD) {
+    return [0, 0, 0, 0]; // 完全透明
+  }
+  
+  // 使用查找表快速获取颜色
+  const idx = Math.min(Math.floor(depth / MAX_DEPTH * (TABLE_SIZE - 1)), TABLE_SIZE - 1);
+  return COLOR_LOOKUP_TABLE[idx];
+}
+
+// 边缘羽化效果（优化版：只检查4个方向，减少计算量）
+function applyEdgeFeathering(imageData, floatArray, cols, rows) {
+  const pixels = imageData.data;
+  const threshold = FLOOD_WATER_THRESHOLD;
+  
+  // 只检查4个方向（上下左右），减少50%计算量
+  const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  
+  for (let row = 1; row < rows - 1; row++) {
+    for (let col = 1; col < cols - 1; col++) {
+      const idx = (row * cols + col) * 4;
+      if (pixels[idx + 3] === 0) continue; // 跳过透明像素
+      
+      // 检查周围4个像素
+      let neighborCount = 0;
+      for (const [dr, dc] of directions) {
+        const nr = row + dr;
+        const nc = col + dc;
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+          if (floatArray[nr * cols + nc] < threshold) {
+            neighborCount++;
+          }
+        }
+      }
+      
+      // 如果有透明邻居，应用羽化
+      if (neighborCount > 0) {
+        const featherFactor = 1 - (neighborCount / 4) * 0.5; // 最多减少50%透明度
+        pixels[idx + 3] = Math.round(pixels[idx + 3] * featherFactor);
+      }
+    }
+  }
+}
+
+// 将float32帧数据渲染为Canvas（复用canvas）
+function renderFloodFrameToCanvas(frameData, reuseCanvas = null) {
+  const floatArray = new Float32Array(frameData);
+  const canvas = reuseCanvas || document.createElement('canvas');
+  canvas.width = FLOOD_GRID_COLS;
+  canvas.height = FLOOD_GRID_ROWS;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(FLOOD_GRID_COLS, FLOOD_GRID_ROWS);
+  const pixels = imageData.data;
+  
+  // 渲染主图像
+  for (let i = 0; i < floatArray.length; i++) {
+    const depth = floatArray[i];
+    const color = depthToColor(depth);
+    const idx = i * 4;
+    pixels[idx] = color[0];
+    pixels[idx + 1] = color[1];
+    pixels[idx + 2] = color[2];
+    pixels[idx + 3] = color[3];
+  }
+  
+  // 应用边缘羽化（使边缘更柔和）
+  applyEdgeFeathering(imageData, floatArray, FLOOD_GRID_COLS, FLOOD_GRID_ROWS);
+  
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+// 创建或获取洪水实体（复用）
+function getOrCreateFloodEntity() {
+  if (!floodEntity) {
+    const b = floodBounds.value;
+    floodEntity = viewer.entities.add({
+      name: 'flood-frame',
+      rectangle: {
+        coordinates: Cesium.Rectangle.fromDegrees(
+          b.lonMin, b.latMin, b.lonMax, b.latMax
+        ),
+        material: new Cesium.ImageMaterialProperty({
+          image: null,
+          transparent: true,
+        }),
+      },
+    });
+  }
+  return floodEntity;
+}
+
+// 更新洪水实体的材质图片
+function updateFloodEntityMaterial(canvas) {
+  const entity = getOrCreateFloodEntity();
+  entity.rectangle.material = new Cesium.ImageMaterialProperty({
+    image: canvas,
+    transparent: true,
+  });
+  viewer.scene.requestRender();
+}
+
+// 加载单帧（带缓存）
+const loadSingleFrame = async (frameIndex, force = false) => {
   try {
+    // 如果缓存中已有，直接使用
+    if (!force && floodFrameCache[frameIndex]) {
+      updateFloodEntityMaterial(floodFrameCache[frameIndex]);
+      return true;
+    }
+
     console.log('请求第', frameIndex, '帧')
     
-    const res = await fetch(`http://127.0.0.1:8000/api/runs/1/frames/${frameIndex}`)
-    if (!res.ok) throw new Error(`请求失败：${res.status}`)
-    
-    const data = await res.arrayBuffer()
-    console.log('返回字节：', data.byteLength)
+    // 使用封装的接口函数
+    const data = await getFloodFrame(currentRunId.value, frameIndex)
 
     if (!data || data.byteLength <= 0) {
       throw new Error('后端返回空数据')
     }
 
-    const blob = new Blob([data], { type: 'image/png' })
-    const url = URL.createObjectURL(blob)
-
-    if (window.floodLayer) {
-      viewer.imageryLayers.remove(window.floodLayer)
-    }
-
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    await new Promise(resolve => {
-      img.onload = resolve
-      img.src = url
-    })
-
-    window.floodLayer = viewer.imageryLayers.addImageryProvider(
-      new Cesium.SingleTileImageryProvider({
-        url: img,
-        rectangle: Cesium.Rectangle.fromDegrees(110.0, 32.0, 116.0, 36.0)
-      })
-    )
-    viewer.imageryLayers.raiseToTop(window.floodLayer)
-    window.floodLayer.alpha = 1.0
-
-    // 先注释掉，不提前释放
-    // URL.revokeObjectURL(url)
+    // 渲染为Canvas并缓存
+    const canvas = renderFloodFrameToCanvas(data);
+    floodFrameCache[frameIndex] = canvas;
+    
+    // 更新Cesium洪水图层
+    updateFloodEntityMaterial(canvas);
+    
+    return true;
   } catch (err) {
     console.error('渲染异常详情：', err)
-    ElMessage.error('洪水数据渲染失败，动画已停止')
-    if (floodTimer) {
-      clearInterval(floodTimer)
-      floodTimer = null
-    }
+    return false;
   }
 }
+
+// 预加载帧数据（后台并发加载）
+const preloadFrames = async (startIndex, count) => {
+  if (floodIsPreloading) return;
+  
+  floodIsPreloading = true;
+  try {
+    const buffers = await preloadFloodFrames(
+      currentRunId.value, 
+      startIndex, 
+      count,
+      (completed, total) => {
+        floodPreloadProgress = (completed / total) * 100;
+      }
+    );
+    
+    // 将预加载的帧数据渲染为Canvas并缓存
+    for (let i = 0; i < buffers.length; i++) {
+      const frameIndex = startIndex + i;
+      if (buffers[i] && !floodFrameCache[frameIndex]) {
+        const canvas = renderFloodFrameToCanvas(buffers[i]);
+        floodFrameCache[frameIndex] = canvas;
+      }
+    }
+  } catch (err) {
+    console.error('预加载失败：', err);
+  } finally {
+    floodIsPreloading = false;
+  }
+};
+
+// 动画循环（使用requestAnimationFrame）
+let floodLastTime = 0;
+const FLOOD_TOTAL_FRAMES_COUNT = 266;
+
+// 计算当前缓存中可用的帧数
+const getCachedFrameCount = () => {
+  let count = 0;
+  const current = floodFrameIndex.value;
+  for (let i = current + 1; i < current + FLOOD_PRELOAD_BATCH; i++) {
+    const idx = i % FLOOD_TOTAL_FRAMES_COUNT;
+    if (floodFrameCache[idx]) count++;
+  }
+  return count;
+};
+
+const floodAnimationLoop = (timestamp) => {
+  if (!currentRunId.value || floodTimer) return; // 如果用setInterval则不执行
+  
+  const elapsed = timestamp - floodLastTime;
+  
+  if (elapsed >= FLOOD_FRAME_DURATION) {
+    // 加载当前帧（如果缓存中有，同步渲染；如果没有，异步加载）
+    if (floodFrameCache[floodFrameIndex.value]) {
+      // 缓存命中，立即渲染
+      updateFloodEntityMaterial(floodFrameCache[floodFrameIndex.value]);
+    } else {
+      // 缓存未命中，异步加载
+      loadSingleFrame(floodFrameIndex.value);
+    }
+    
+    // 智能预加载：缓存低于阈值时开始预加载
+    const cachedCount = getCachedFrameCount();
+    if (!floodIsPreloading && cachedCount < FLOOD_PRELOAD_THRESHOLD) {
+      // 预加载接下来的帧
+      let preloadStart = (floodFrameIndex.value + 1) % FLOOD_TOTAL_FRAMES_COUNT;
+      // 如果预加载起点已经超过总帧数，从0开始
+      if (preloadStart + FLOOD_PRELOAD_BATCH > FLOOD_TOTAL_FRAMES_COUNT) {
+        preloadStart = 0;
+      }
+      preloadFrames(preloadStart, FLOOD_PRELOAD_BATCH);
+    }
+    
+    // 下一帧
+    floodFrameIndex.value++;
+    if (floodFrameIndex.value >= FLOOD_TOTAL_FRAMES_COUNT) {
+      floodFrameIndex.value = 0;
+    }
+    
+    floodLastTime = timestamp;
+  }
+  
+  floodAnimationFrameId.value = requestAnimationFrame(floodAnimationLoop);
+};
+
+// 停止洪水动画
+const stopFloodAnimation = () => {
+  if (floodTimer) {
+    clearInterval(floodTimer);
+    floodTimer = null;
+  }
+  if (floodAnimationFrameId.value) {
+    cancelAnimationFrame(floodAnimationFrameId.value);
+    floodAnimationFrameId.value = null;
+  }
+  floodIsPreloading = false;
+};
+
+// 暂停/继续洪水动画
+const toggleFloodAnimation = () => {
+  if (floodTimer || floodAnimationFrameId.value) {
+    // 当前在播放，暂停
+    stopFloodAnimation();
+    ElMessage.info('洪水动画已暂停');
+  } else if (currentRunId.value) {
+    // 当前已暂停，继续
+    floodLastTime = performance.now();
+    floodAnimationFrameId.value = requestAnimationFrame(floodAnimationLoop);
+    ElMessage.info('洪水动画已继续');
+  }
+};
+
 // 3.加载动画（先硬编码runId=1，跳过创建任务）
 const loadFloodData = async () => {
   try {
-    if (floodTimer) {
-      clearInterval(floodTimer)
-      floodTimer = null
-      floodFrameIndex = 0
-    }
-
-    currentRunId = 1 // 临时固定，先跑通动画
-    ElMessage.success('开始加载洪水动画，共266帧')
-
+    // 先停止之前的动画
+    stopFloodAnimation();
+    
+    // 清空缓存
+    floodFrameCache = {};
+    floodFrameIndex.value = 0;
+    floodPreloadProgress = 0;
+    
+    currentRunId.value = 1 // 临时固定，先跑通动画
+    
+    // 飞到洪水区域附近（中国河南）
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(113.0, 34.0, 80000),
-      duration: 2
+      destination: Cesium.Cartesian3.fromDegrees(114.35, 34.85, 5000),
+      duration: 2,
+      easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT
     })
 
+    // 显示加载进度
+    ElMessage.info('正在预加载洪水帧数据...');
+    
+    // 预加载第一批帧
+    await preloadFrames(0, FLOOD_PRELOAD_BATCH);
+    
+    // 启动动画
+    ElMessage.success(`洪水动画开始，共${FLOOD_TOTAL_FRAMES_COUNT}帧`);
+    
     setTimeout(() => {
-      floodTimer = setInterval(() => {
-        loadSingleFrame(floodFrameIndex)
-        floodFrameIndex++
-        if (floodFrameIndex >= 266) {
-          floodFrameIndex = 0
-        }
-      }, 500)
-    }, 3500)
+      floodLastTime = performance.now();
+      floodAnimationFrameId.value = requestAnimationFrame(floodAnimationLoop);
+    }, 500);
+    
   } catch (err) {
     console.error('加载失败：', err)
     ElMessage.error('洪水动画加载失败')
@@ -4589,6 +4872,22 @@ const loadFloodData = async () => {
 .flood-heatmap-btn:hover {
   background: rgba(0, 0, 0, 0.6);
 }
+
+/* 洪水状态显示样式 */
+.flood-status {
+  background: rgba(0, 150, 255, 0.6) !important;
+  border-color: rgba(0, 150, 255, 0.8) !important;
+  
+  .el-icon-loading {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ====================== 新模块样式 ====================== */
 /* 自定义边框盒，替代data-view */
 .custom-border-box {
