@@ -374,7 +374,8 @@ import router from "@/router";
 import { resolve } from "path";
 //新增：热力图
 import h337 from "heatmap.js";
-import { pingPython, createFloodRun, getFloodFrame, preloadFloodFrames } from '@/api/flood'
+// ③ 统一用 floodApi 命名空间导入所有洪水接口（和下面第4493行保持一致）
+import * as floodApi from '@/api/flood'
 import { ElMessage } from 'element-plus'
 
 
@@ -388,8 +389,9 @@ let floodEntity = null;
 let floodBorderEntity = null;
 
 let floodTimer = null;
-const floodAnimationFrameId = ref(null); // 改为响应式ref，用于模板显示
-const floodFrameIndex = ref(0); // 改为响应式ref，用于模板显示
+const floodAnimationFrameId = ref(null); // 动画帧ID，用于模板显示
+const floodFrameIndex = ref(0);          // 当前帧号，用于模板显示
+const floodTotalFrames = ref(266);       // ⑦ 总帧数，从 getFrameStats() 动态获取（用于页面显示 "Flood: X/266"）
 
 // 帧缓存系统
 let floodFrameCache = {}; // { frameIndex: canvas }
@@ -4489,15 +4491,13 @@ async function rotate() {
 }
 
 
-// eslint-disable-next-line no-unused-vars
-import * as floodApi from '../../api/flood'
-// 1.测试连接
+// 1.测试连接 —— 调用 floodApi.pingPython() → /api/flood/health
 const testConnect = async () => {
   const isOk = await floodApi.pingPython()
   if (isOk) {
-    ElMessage.success('洪水后端连接正常')
+    ElMessage.success('✅ 洪水后端（Java 8091）连接正常')
   } else {
-    ElMessage.error('洪水后端连接失败，请启动Python服务')
+    ElMessage.error('❌ 洪水后端连接失败，请确认 Java 后端(8091)和 Python(8000)都已启动')
   }
 }
 
@@ -4673,8 +4673,9 @@ const loadSingleFrame = async (frameIndex, force = false) => {
 
     console.log('请求第', frameIndex, '帧')
     
-    // 使用封装的接口函数
-    const data = await getFloodFrame(currentRunId.value, frameIndex)
+    // ④ 调用 floodApi.getFloodFrame() → /api/flood/frame/{index}
+    //    返回二进制 arrayBuffer，解析成 float32 水深数组
+    const data = await floodApi.getFloodFrame(currentRunId.value, frameIndex)
 
     if (!data || data.byteLength <= 0) {
       throw new Error('后端返回空数据')
@@ -4700,7 +4701,9 @@ const preloadFrames = async (startIndex, count) => {
   
   floodIsPreloading = true;
   try {
-    const buffers = await preloadFloodFrames(
+    // ⑤ 调用 floodApi.preloadFloodFrames() —— 并发请求多帧
+    //    内部循环调用 getFloodFrame，用 Promise.all 并发加速
+    const buffers = await floodApi.preloadFloodFrames(
       currentRunId.value, 
       startIndex, 
       count,
@@ -4814,23 +4817,42 @@ const loadFloodData = async () => {
     floodPreloadProgress = 0;
     floodLoadingProgress.value = 0;
     
-    currentRunId.value = 1 // 临时固定，先跑通动画
+    currentRunId.value = 1 // runId 在 Java 后端内部处理，前端传个占位值即可
     
-    // 飞到洪水区域附近（中国河南）
+    // 飞到洪水区域附近（坐标以后用 overview 接口获取，目前先固定）
     viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(114.35, 34.85, 5000),
       duration: 2,
       easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT
     })
 
-    // 预加载全部266帧（分批加载，显示进度）
+    // ========================================
+    // ⑥ 第一步：调用 getFrameStats() 获取总帧数
+    //    不要再硬编码 266 了！从后端动态拿
+    // ========================================
     ElMessage({
-      message: '正在预加载洪水帧数据 0%...',
+      message: '正在获取洪水帧统计信息...',
       duration: 0,
       type: 'info'
     })
-    
-    const totalFrames = FLOOD_TOTAL_FRAMES_COUNT;
+
+    let frameStatsList = []
+    try {
+      frameStatsList = await floodApi.getFrameStats()
+    } catch (e) {
+      console.warn('获取帧统计失败，使用默认帧数 266：', e)
+    }
+
+    const totalFrames = frameStatsList.length > 0 ? frameStatsList.length : FLOOD_TOTAL_FRAMES_COUNT
+    floodTotalFrames.value = totalFrames  // 同步到页面显示
+
+    ElMessage.closeAll()
+    ElMessage({
+      message: `共 ${totalFrames} 帧，开始预加载 0%...`,
+      duration: 0,
+      type: 'info'
+    })
+
     let loadedCount = 0;
     
     // 分批预加载所有帧
