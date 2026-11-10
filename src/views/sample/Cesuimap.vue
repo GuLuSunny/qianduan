@@ -368,7 +368,8 @@ import {
   selectAllPumpingStationByConditions,
   getProductPageData,
   getModelClassName,
-  getFilesByConditions
+  getFilesByConditions,
+  getForestTreePoints
 } from "@/api/getData";
 import router from "@/router";
 import { resolve } from "path";
@@ -3015,486 +3016,349 @@ function checkCesiumLoaded() {
 }
 
 class TreeDataLoader {
-  constructor(viewer, options = {}) {
-    this.viewer = viewer;
-    this.config = {
-      rangeUrl: "./tree/TreeRange.geojson",
-      pointUrl: "./tree/trees.geojson",
-      models: {
-        high: {
-          url: "./tree/tree.glb",
-          scale: 2.0,
-          maxDistance: 500,
-        },
-        low: {
-          url: "./tree/l_tree.glb",
-          scale: 2.0,
-          maxDistance: 6000,
-        },
-      },
-      heightThreshold: 5000,
-      chunkSize: 200,
-      idleTimeout: 15,
-      maximumScreenSpaceError: 2,
-      visibleDistance: 6000,
-      rangeStyle: {
-        fill: Cesium.Color.GREEN.withAlpha(0.3),
-        stroke: Cesium.Color.GREEN,
-      },
-    };
-    Object.assign(this.config, options);
+    constructor(viewer, options = {}) {
+        this.viewer = viewer;
+        this.config = {
+            treeIconUrl: './tree/tree_icon.png',
+            billboardWidth: 12,
+            billboardHeight: 12,
+            billboardScaleByDistance: new Cesium.NearFarScalar(1500, 1.5, 6000, 0.5),
+            modelUrl: './tree/tree.glb',
+            modelScale: 2.0,
+            modelMinPixelSize: 8,
+            modelDistance: 2000,
+            maxModelCount: 300,
+            updateInterval: 500
+        };
+        Object.assign(this.config, options);
 
-    this.rangeDataSource = null;
-    this.pointDataSource = null;
-    this.allPoints = [];
-    this.loaded = false;
-    this.isInitialized = false; //标记是否已初始化
-    this.currentVisible = new Map();
-
-    this.modelCaches = {
-      high: null,
-      low: null,
-    };
-    this.modelInstances = new Map();
-
-    this.lastCameraHeight = 0;
-    this.shouldShowModels = false;
-    this.isActive = false;
-  }
-
-  // 新增：初始化方法（不立即加载数据）
-  async init() {
-    if (this.isInitialized) return;
-
-    await this._preloadModels();
-    this.isInitialized = true;
-    console.log("树木加载器初始化完成，等待激活");
-  }
-
-  // 新增激活方法
-  async activate() {
-    if (!this.isInitialized) {
-      await this.init();
+        this.allPoints = [];
+        this.billboards = [];
+        this.billboardCollection = null;
+        this.modelDataSource = null;
+        this.modelSlots = [];
+        this.modelTreeSet = new Set();
+        this.warmupModel = null;
+        this.loaded = false;
+        this.isInitialized = false;//标记是否已初始化
+        this.isActive = false;
+        this.cameraWatchTimer = null;
     }
 
-    if (this.isActive) return;
+    async init() {
+        if (this.isInitialized) return;
 
-    this.isActive = true;
-
-    if (!this.loaded) {
-      await this._loadRangeData();
-      await this._loadAllPoints();
-      this.loaded = true;
-    }
-
-    // 确保范围数据初始状态正确
-    if (this.rangeDataSource) {
-      const currentHeight = this.viewer.camera.positionCartographic.height;
-      this.rangeDataSource.show = currentHeight >= this.config.heightThreshold;
-    }
-
-    // 确保点数据源显示
-    if (this.pointDataSource) {
-      this.pointDataSource.show = true;
-    }
-
-    this._setupCameraListener();
-    this._updateVisibility();
-  }
-
-  // 修改 deactivate 方法
-  deactivate() {
-    if (!this.isActive) return;
-
-    this.isActive = false;
-
-    // 移除相机监听
-    if (this.cameraChangedListener) {
-      this.viewer.camera.changed.removeEventListener(
-        this.cameraChangedListener
-      );
-      this.cameraChangedListener = null;
-    }
-
-    // 隐藏所有模型
-    this._hideAllModels();
-
-    // 完全移除数据源，而不是只隐藏
-    if (this.rangeDataSource) {
-      this.viewer.dataSources.remove(this.rangeDataSource);
-      this.rangeDataSource = null;
-    }
-
-    if (this.pointDataSource) {
-      this.viewer.dataSources.remove(this.pointDataSource);
-      this.pointDataSource = null;
-    }
-
-    // 重置状态
-    this.loaded = false;
-    this.allPoints = [];
-    this.currentVisible.clear();
-    this.modelInstances.clear();
-
-    console.log("树木加载器已停用");
-  }
-
-  // 新增：切换显示状态
-  toggle() {
-    if (this.loaded && this.shouldShowModels) {
-      this.deactivate();
-    } else {
-      this.activate();
-    }
-  }
-
-  async _preloadModels() {
-    try {
-      for (const [key, modelConfig] of Object.entries(this.config.models)) {
-        this.modelCaches[key] = await Cesium.Model.fromGltfAsync({
-          url: modelConfig.url,
-          scale: modelConfig.scale,
-          maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        });
-        console.log(`已预加载 ${key} 精度模型: ${modelConfig.url}`);
-      }
-    } catch (e) {
-      console.error("模型加载失败:", e);
-    }
-  }
-
-  _getAppropriateModel(distance) {
-    if (distance <= this.config.models.high.maxDistance) {
-      return "high";
-    } else {
-      return "low";
-    }
-  }
-
-  _isInViewFrustum(position) {
-    /*ry {
-            const camera = this.viewer.camera;
-            const cullingVolume = camera.frustum.computeCullingVolume(
-                camera.position, 
-                camera.direction, 
-                camera.up
-            );
-            
-            const boundingSphere = new Cesium.BoundingSphere(position, 1.0);
-            const visibility = cullingVolume.computeVisibility(boundingSphere);
-            
-            return visibility !== Cesium.Intersect.OUTSIDE;
-        } catch (e) {
-            console.warn('视锥体检测出错:', e);
-            return true;
-        }*/
-    return true;
-  }
-
-  _syncModelVisibility(visiblePoints, cameraPosition) {
-    const newVisibleIds = new Set(visiblePoints.map((p) => p.id));
-    const entitiesToHide = [];
-
-    this.currentVisible.forEach((entity, id) => {
-      if (!newVisibleIds.has(id)) {
-        entitiesToHide.push(id);
-      }
-    });
-
-    entitiesToHide.forEach((id) => {
-      const entity = this.currentVisible.get(id);
-      if (entity) {
-        entity.show = false;
-        entity._currentInView = false;
-      }
-    });
-
-    this._processVisiblePointsBatch(visiblePoints, cameraPosition, 0);
-  }
-
-  _processVisiblePointsBatch(visiblePoints, cameraPosition, startIndex) {
-    const batchSize = 50;
-    const endIndex = Math.min(startIndex + batchSize, visiblePoints.length);
-
-    for (let i = startIndex; i < endIndex; i++) {
-      const point = visiblePoints[i];
-      this._updateOrCreateEntity(point, cameraPosition);
-    }
-
-    if (endIndex < visiblePoints.length) {
-      requestIdleCallback(
-        () => {
-          this._processVisiblePointsBatch(
-            visiblePoints,
-            cameraPosition,
-            endIndex
-          );
-        },
-        { timeout: 50 }
-      );
-    }
-  }
-
-  _updateOrCreateEntity(point, cameraPosition) {
-    const inViewFrustum = this._isInViewFrustum(point.position);
-
-    let entity = this.currentVisible.get(point.id);
-
-    if (!inViewFrustum) {
-      if (entity) {
-        entity.show = false;
-        entity._currentInView = false;
-      }
-      return;
-    }
-
-    const distance = Cesium.Cartesian3.distance(cameraPosition, point.position);
-    const modelType = this._getAppropriateModel(distance);
-
-    const currentModelType = this.modelInstances.get(point.id);
-
-    if (entity) {
-      if (currentModelType !== modelType) {
-        this._updateEntityModel(entity, point, modelType);
-        this.modelInstances.set(point.id, modelType);
-      }
-      entity.show = true;
-      entity._currentInView = true;
-    } else {
-      this._createEntity(point, modelType);
-    }
-  }
-
-  _createEntity(point, modelType) {
-    try {
-      const cachedModel = this.modelCaches[modelType];
-      if (!cachedModel) {
-        console.warn(`模型缓存不存在: ${modelType}`);
-        return;
-      }
-
-      const entity = this.pointDataSource.entities.add({
-        id: point.id,
-        position: point.position,
-        model: {
-          uri: this.config.models[modelType].url,
-          scale: this.config.models[modelType].scale,
-          maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        },
-        show: true,
-      });
-
-      entity._currentInView = true;
-
-      this.currentVisible.set(point.id, entity);
-      this.modelInstances.set(point.id, modelType);
-    } catch (e) {
-      console.error("创建实体时出错:", e);
-    }
-  }
-
-  _updateEntityModel(entity, point, newModelType) {
-    try {
-      entity.model = new Cesium.ModelGraphics({
-        uri: this.config.models[newModelType].url,
-        scale: this.config.models[newModelType].scale,
-        maximumScreenSpaceError: this.config.maximumScreenSpaceError,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-      });
-    } catch (e) {
-      console.error("更新实体模型时出错:", e);
-    }
-  }
-
-  async _loadRangeData() {
-    // 如果已存在，先移除
-    if (this.rangeDataSource) {
-      this.viewer.dataSources.remove(this.rangeDataSource);
-    }
-
-    this.rangeDataSource = await Cesium.GeoJsonDataSource.load(
-      this.config.rangeUrl,
-      { clampToGround: true, ...this.config.rangeStyle }
-    );
-    this.viewer.dataSources.add(this.rangeDataSource);
-    this.rangeDataSource.show = false; // 初始隐藏
-  }
-
-  async _loadAllPoints() {
-    try {
-      const response = await fetch(this.config.pointUrl);
-      const geojson = await response.json();
-
-      // 如果已存在，先移除
-      if (this.pointDataSource) {
-        this.viewer.dataSources.remove(this.pointDataSource);
-      }
-
-      this.pointDataSource = new Cesium.CustomDataSource("treeModels");
-      this.viewer.dataSources.add(this.pointDataSource);
-
-      await this._processPointsInBatches(geojson.features);
-      this.loaded = true;
-    } catch (e) {
-      console.error("点数据加载失败:", e);
-    }
-  }
-
-  _processPointsInBatches(features) {
-    return new Promise((resolve) => {
-      let processed = 0;
-
-      const processBatch = (deadline) => {
-        const startTime = performance.now();
-
-        while (
-          processed < features.length &&
-          (deadline.timeRemaining() > 0 || deadline.didTimeout) &&
-          performance.now() - startTime < this.config.idleTimeout
-        ) {
-          const feature = features[processed];
-          if (feature.geometry?.coordinates) {
-            const [lon, lat] = feature.geometry.coordinates;
-            this.allPoints.push({
-              id: `tree_${processed}`,
-              position: Cesium.Cartesian3.fromDegrees(lon, lat),
+        try {
+            this.warmupModel = await Cesium.Model.fromGltfAsync({
+                url: this.config.modelUrl,
+                scale: this.config.modelScale
             });
-          }
-          processed++;
+            console.log('树木模型预热完成:', this.config.modelUrl);
+        } catch (e) {
+            console.warn('树木模型预热失败（不影响使用）:', e);
         }
 
-        if (processed < features.length) {
-          requestIdleCallback(processBatch, { timeout: 50 });
-        } else {
-          console.log(`已加载 ${processed} 个树木位置`);
-          resolve();
-        }
-      };
-
-      requestIdleCallback(processBatch, { timeout: 50 });
-    });
-  }
-
-  _setupCameraListener() {
-    // 移除之前的监听器
-    if (this.cameraChangedListener) {
-      this.viewer.camera.changed.removeEventListener(
-        this.cameraChangedListener
-      );
+        this.isInitialized = true;
+        console.log('树木加载器初始化完成，等待激活');
     }
 
-    let lastUpdate = 0;
-    this.cameraChangedListener = this.viewer.camera.changed.addEventListener(
-      () => {
+    async activate(params = {}) {
+        if (!this.isInitialized) {
+            await this.init();
+        }
+
+        if (this.isActive) return;
+
+        this.isActive = true;
+
+        if (!this.loaded) {
+            await this._loadAllPoints();
+            await this._createBillboards();
+            this.loaded = true;
+        }
+
+        if (this.billboardCollection) {
+            this.billboardCollection.show = true;
+        }
+
+        this._setupCameraListener();
+        this._updateVisibility();
+
+        console.log(`智慧林地已显示，共 ${this.allPoints.length} 个树点`);
+    }
+
+    deactivate() {
         if (!this.isActive) return;
 
-        const now = Date.now();
-        if (now - lastUpdate < 300) return;
-        lastUpdate = now;
+        this.isActive = false;
 
-        this._updateVisibility();
-      }
-    );
-  }
+        this._removeCameraListener();
 
-  _updateVisibility() {
-    // 只有在激活状态下才更新可见性
-    if (!this.isActive) {
-      this._hideAllModels();
-      return;
+        this._hideAll();
+
+        console.log('智慧林地已隐藏');
     }
 
-    const currentHeight = this.viewer.camera.positionCartographic.height;
-
-    const shouldShowNow = currentHeight < this.config.heightThreshold;
-
-    // 如果高度状态发生变化
-    if (shouldShowNow !== this.shouldShowModels) {
-      this.shouldShowModels = shouldShowNow;
-
-      // 更新范围数据显示状态
-      if (this.rangeDataSource) {
-        this.rangeDataSource.show = !shouldShowNow;
-      }
-
-      if (!shouldShowNow) {
-        // 高度超过阈值，隐藏所有模型
-        this._hideAllModels();
-      }
-      return;
-    }
-    // 只有在应该显示模型时才进行后续处理
-    if (!this.shouldShowModels) {
-      return;
+    toggle() {
+        if (this.isActive) {
+            this.deactivate();
+        } else {
+            this.activate();
+        }
     }
 
-    const cameraPosition = this.viewer.camera.position;
-    const visiblePoints = this._getPointsInView(cameraPosition);
-    this._syncModelVisibility(visiblePoints, cameraPosition);
-  }
+    async _loadAllPoints() {
+        try {
+            const response = await getForestTreePoints();
+            const result = response.response?.value;
 
-  _getPointsInView(cameraPosition) {
-    return this.allPoints.filter((point) => {
-      const distance = Cesium.Cartesian3.distance(
-        cameraPosition,
-        point.position
-      );
-      return distance <= this.config.visibleDistance;
-    });
-  }
+            const failMessage = result?.message || result?.msg;
+            if (result && (result.success === false || result.code === 'ERROR')) {
+                console.warn('获取树点失败:', failMessage, result);
+                ElMessage.warning(`获取树点失败：${failMessage || '原因未知'}`);
+                return;
+            }
 
-  _hideAllModels() {
-    this.currentVisible.forEach((entity, id) => {
-      try {
-        entity.show = false;
-        entity._currentInView = false;
-      } catch (e) {
-        console.warn("隐藏实体时出错:", e);
-      }
-    });
-  }
+            const geoJson = result?.data;
 
-  destroy() {
-    this.isActive = false;
-    if (this.pointDataSource) {
-      this.viewer.dataSources.remove(this.pointDataSource);
+            if (!geoJson || !geoJson.features) {
+                console.warn('树点数据格式不正确:', result);
+                return;
+            }
+
+            this.allPoints = [];
+            geoJson.features.forEach((feature, index) => {
+                if (feature.geometry && feature.geometry.coordinates) {
+                    const [lon, lat] = feature.geometry.coordinates;
+                    this.allPoints.push({
+                        id: `tree_${index}`,
+                        position: Cesium.Cartesian3.fromDegrees(lon, lat)
+                    });
+                }
+            });
+
+            console.log(`已加载 ${this.allPoints.length} 个树木位置`);
+        } catch (e) {
+            console.error('点数据加载失败:', e);
+            ElMessage.error(`树点数据加载失败：${e || '请检查后端是否已启动'}`);
+        }
     }
-    if (this.rangeDataSource) {
-      this.viewer.dataSources.remove(this.rangeDataSource);
+
+    _createBillboards() {
+        return new Promise((resolve) => {
+            if (!this.billboardCollection) {
+                this.billboardCollection = this.viewer.scene.primitives.add(
+                    new Cesium.BillboardCollection({ scene: this.viewer.scene })
+                );
+            }
+            this.billboards = new Array(this.allPoints.length);
+
+            const batchSize = 500;
+            let index = 0;
+
+            const addBatch = () => {
+                const end = Math.min(index + batchSize, this.allPoints.length);
+                for (; index < end; index++) {
+                    try {
+                        this.billboards[index] = this.billboardCollection.add({
+                            position: this.allPoints[index].position,
+                            image: this.config.treeIconUrl,
+                            width: this.config.billboardWidth,
+                            height: this.config.billboardHeight,
+                            scaleByDistance: this.config.billboardScaleByDistance,
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                            show: false
+                        });
+                    } catch (e) {
+                        console.warn('创建树图标失败:', e);
+                    }
+                }
+
+                if (index < this.allPoints.length) {
+                    setTimeout(addBatch, 0);
+                } else {
+                    resolve();
+                }
+            };
+
+            addBatch();
+        });
     }
-    this.currentVisible.clear();
-    this.allPoints = [];
+
+    _setupCameraListener() {
+        this._removeCameraListener();
+
+        this._lastCameraPosition = undefined;
+        this._lastCameraDirection = undefined;
+
+        this.cameraWatchTimer = setInterval(() => {
+            if (!this.isActive) return;
+
+            const camera = this.viewer.camera;
+            const position = camera.positionWC;
+            const direction = camera.directionWC;
+
+            const moved = !this._lastCameraPosition || !this._lastCameraDirection ||
+                Cesium.Cartesian3.distance(position, this._lastCameraPosition) > 1.0 ||
+                Cesium.Cartesian3.angleBetween(direction, this._lastCameraDirection) > Cesium.Math.toRadians(0.3);
+
+            if (!moved) return;
+
+            this._lastCameraPosition = Cesium.Cartesian3.clone(position);
+            this._lastCameraDirection = Cesium.Cartesian3.clone(direction);
+
+            this._updateVisibility();
+        }, this.config.updateInterval);
+    }
+
+    _removeCameraListener() {
+        if (this.cameraWatchTimer) {
+            clearInterval(this.cameraWatchTimer);
+            this.cameraWatchTimer = null;
+        }
+    }
+
+    _updateVisibility() {
+        if (!this.isActive) {
+            this._hideAll();
+            return;
+        }
+        if (!this.allPoints.length) return;
+
+        if (this.billboardCollection) {
+            this.billboardCollection.show = true;
+        }
+
+        const cameraPosition = this.viewer.camera.position;
+        const modelDistance = this.config.modelDistance;
+
+        const points = this.allPoints;
+
+        const acceptDistance = modelDistance * 1.15;
+        const candidates = [];
+        for (let i = 0; i < points.length; i++) {
+            const distance = Cesium.Cartesian3.distance(cameraPosition, points[i].position);
+            points[i]._distance = distance;
+            const accept = this.modelTreeSet.has(i) ? acceptDistance : modelDistance;
+            if (distance <= accept) {
+                candidates.push(i);
+            }
+        }
+        candidates.sort((a, b) => points[a]._distance - points[b]._distance);
+
+        const nearest = candidates.slice(0, this.config.maxModelCount);
+        const modelIndexes = new Set(nearest);
+
+        for (let i = 0; i < points.length; i++) {
+            const billboard = this.billboards[i];
+            if (!billboard) continue;
+
+            const show = !modelIndexes.has(i);
+            if (billboard.show !== show) {
+                billboard.show = show;
+            }
+        }
+
+        this._syncModels(nearest);
+    }
+
+    _syncModels(nearestIndexes) {
+        if (!this.modelDataSource) {
+            this.modelDataSource = new Cesium.CustomDataSource('treeModels');
+            this.viewer.dataSources.add(this.modelDataSource);
+        }
+
+        const points = this.allPoints;
+        const slotCount = Math.max(this.config.maxModelCount, nearestIndexes.length);
+
+        for (let slot = 0; slot < slotCount; slot++) {
+            const treeIndex = slot < nearestIndexes.length ? nearestIndexes[slot] : -1;
+            let entity = this.modelSlots[slot];
+
+            if (!entity) {
+                if (treeIndex < 0) continue;
+                try {
+                    entity = this.modelDataSource.entities.add({
+                        id: `tree_model_slot_${slot}`,
+                        position: points[treeIndex].position,
+                        model: {
+                            uri: this.config.modelUrl,
+                            scale: this.config.modelScale,
+                            minimumPixelSize: this.config.modelMinPixelSize,
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                        }
+                    });
+                    entity._treeIndex = treeIndex;
+                    this.modelSlots[slot] = entity;
+                } catch (e) {
+                    console.warn('创建树木模型失败:', e);
+                }
+                continue;
+            }
+
+            if (treeIndex < 0) {
+                if (entity.show) entity.show = false;
+                entity._treeIndex = -1;
+                continue;
+            }
+
+            if (entity._treeIndex !== treeIndex) {
+                entity._treeIndex = treeIndex;
+                entity.position = points[treeIndex].position;
+            }
+            if (!entity.show) entity.show = true;
+        }
+
+        this.modelTreeSet = new Set(nearestIndexes);
+    }
+
+    _hideAll() {
+        if (this.billboardCollection) {
+            this.billboardCollection.show = false;
+        }
+        this.modelSlots.forEach((entity) => {
+            if (entity && entity.show) entity.show = false;
+        });
+        this.modelTreeSet = new Set();
+    }
+
+    destroy() {
+        this.isActive = false;
+
+        this._removeCameraListener();
+
+        this.modelSlots = [];
+        this.modelTreeSet = new Set();
+        if (this.modelDataSource) {
+            this.viewer.dataSources.remove(this.modelDataSource, true);
+            this.modelDataSource = null;
+        }
+
+        if (this.billboardCollection) {
+            this.viewer.scene.primitives.remove(this.billboardCollection);
+            this.billboardCollection = null;
+        }
+
+        this.billboards = [];
+        this.allPoints = [];
+        this.warmupModel = null;
+        this.loaded = false;
+        this.isInitialized = false;
+
+        console.log('树木加载器已销毁');
+    }
   }
-}
 
 // 初始化树木加载器（但不立即加载）
 const initializeTreeLoader = async () => {
-  if (!treeLoader && viewer) {
-    treeLoader = new TreeDataLoader(viewer, {
-      heightThreshold: 4000,
-      models: {
-        high: {
-          url: "./tree/tree.glb",
-          scale: 2.0,
-          maxDistance: 500,
-        },
-        low: {
-          url: "./tree/l_tree.glb",
-          scale: 2.0,
-          maxDistance: 6000,
-        },
-      },
-      maximumScreenSpaceError: 4,
-      visibleDistance: 6000,
-    });
+    if (!treeLoader && viewer) {
+        treeLoader = new TreeDataLoader(viewer);
 
-    // 只初始化，不加载数据
-    await treeLoader.init();
-    console.log("树木加载器初始化完成");
-  }
-  return treeLoader;
+        await treeLoader.init();
+        console.log('树木加载器初始化完成');
+    }
+    return treeLoader;
 };
 
 // 智慧林地按钮点击事件

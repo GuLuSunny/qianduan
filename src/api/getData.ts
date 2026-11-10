@@ -1446,3 +1446,11 @@ export function queryModelFileStatusList(data: any) {
     data: data
   })
 }
+
+/** 获取林地树点（后端缓存） */
+export function getForestTreePoints() {
+  return useAxiosApi('/api/forest/getTreePoints', {
+    method: 'POST',
+    responseType: 'json'
+  })
+}
